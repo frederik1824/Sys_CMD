@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Space+Grotesk:wght@500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#eef5f6",
+                        "tertiary-fixed-dim": "#ffb2b7",
+                        "on-background": "#161d1e",
+                        "inverse-primary": "#01daf3",
+                        "on-secondary-fixed-variant": "#005236",
+                        "background": "#f3fbfc",
+                        "on-error": "#ffffff",
+                        "surface": "#f3fbfc",
+                        "tertiary-container": "#ffb2b6",
+                        "secondary-container": "#6cf8bb",
+                        "surface-variant": "#dce4e5",
+                        "surface-dim": "#d4dbdd",
+                        "on-tertiary-container": "#a70031",
+                        "surface-container-high": "#e2e9eb",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#6ffbbe",
+                        "surface-tint": "#006875",
+                        "on-secondary-fixed": "#002113",
+                        "on-primary-fixed-variant": "#004f58",
+                        "surface-container-highest": "#dce4e5",
+                        "on-tertiary-fixed-variant": "#92002a",
+                        "primary-fixed": "#9cefff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#ffdadb",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#40000d",
+                        "outline-variant": "#bac9cc",
+                        "surface-bright": "#f3fbfc",
+                        "on-surface": "#161d1e",
+                        "tertiary": "#bc0b3b",
+                        "on-surface-variant": "#3b494c",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "secondary": "#006c49",
+                        "on-primary-container": "#005b67",
+                        "primary-fixed-dim": "#01daf3",
+                        "on-secondary-container": "#00714d",
+                        "outline": "#6b7a7d",
+                        "inverse-surface": "#2a3233",
+                        "primary-container": "#00daf3",
+                        "surface-container": "#e8eff1",
+                        "inverse-on-surface": "#ebf2f4",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001f24",
+                        "secondary-fixed-dim": "#4edea3",
+                        "primary": "#006875"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "margin-page": "40px",
+                        "md": "16px",
+                        "unit": "4px",
+                        "lg": "24px",
+                        "xl": "48px",
+                        "sm": "8px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "terminal-code": ["Space Grotesk"],
+                        "headline-xl": ["Inter"],
+                        "body-base": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "terminal-code": ["14px", {"lineHeight": "1.5", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-xl": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-base": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background: radial-gradient(circle at top right, #e0f2fe, #f3fbfc);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="font-body-base text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full border-b border-white/80 z-50 bg-white/40 backdrop-blur-xl flex justify-between items-center px-10 h-16 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold tracking-tighter text-slate-900 font-['Inter']">ARS CMD</span>
+<div class="h-6 w-px bg-slate-200 ml-2"></div>
+<span class="font-label-caps text-primary uppercase ml-2">Sync Center</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="bg-white/50 border border-white/80 rounded-full py-1.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-container w-64" placeholder="Search operations..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-slate-500">
+<span class="material-symbols-outlined hover:text-cyan-500 cursor-pointer transition-colors" data-icon="hub">hub</span>
+<span class="material-symbols-outlined hover:text-cyan-500 cursor-pointer transition-colors" data-icon="settings">settings</span>
+<div class="relative">
+<span class="material-symbols-outlined hover:text-cyan-500 cursor-pointer transition-colors" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+</div>
+</div>
+<img alt="Admin profile" class="w-8 h-8 rounded-full border-2 border-white shadow-sm" data-alt="professional portrait of a technical systems administrator in a clean modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjBcUlaWkgnbVmn4o9FcpO-AG4x5AZM9-cLJYmrca3PW9PJ2IfO35cWK0TldLFc5D2P-gemEzqboFJVFaK-iQ3ofwGN_WF0RcAnqn_Rq-cOvhdgogG82Kk24q9sg9A24IUznCRHHroUJf9NO1guIbOXhaqP8RSuUswY6CoCy5I08bSWDvvTF5DvXs4dFoVgLEpCKBxFBoWY8-ut5_6YHFmchEmXI2VYg1tAYOnFqeV7HR2cASjToAxYqBSvWDP9DcoHrK0zhqjq6A"/>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 border-r border-white/80 bg-white/40 backdrop-blur-2xl z-40 flex flex-col p-6 gap-2 shadow-xl">
+<div class="mb-8 px-4">
+<h2 class="text-lg font-black text-slate-900 font-['Space_Grotesk'] uppercase">Command Center</h2>
+<p class="text-[10px] tracking-widest text-slate-500 uppercase font-['Space_Grotesk']">Operational Lead</p>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-white/60 transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary" data-icon="group">group</span>
+<span class="font-label-caps">Afiliados</span>
+</a>
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-white/60 transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary" data-icon="business">business</span>
+<span class="font-label-caps">Empresas</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-3 bg-cyan-500 text-white rounded-lg px-4 py-3 shadow-[0_0_15px_rgba(0,218,243,0.4)] transition-transform active:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="sync">sync</span>
+<span class="font-label-caps">Sync Center</span>
+</a>
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-white/60 transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary" data-icon="local_shipping">local_shipping</span>
+<span class="font-label-caps">Logistics</span>
+</a>
+<a class="flex items-center gap-3 text-slate-600 px-4 py-3 hover:bg-white/60 transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary" data-icon="emergency">emergency</span>
+<span class="font-label-caps">Emergency</span>
+</a>
+</nav>
+<div class="mt-auto p-4 glass-panel rounded-xl">
+<p class="text-[10px] font-bold text-slate-400 mb-2 uppercase">System Health</p>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_#4edea3]"></div>
+<span class="text-xs font-terminal-code text-secondary">All Systems Nominal</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 pb-12 px-10">
+<div class="max-w-7xl mx-auto space-y-gutter">
+<!-- KPI Section (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="glass-panel p-lg rounded-xl flex flex-col gap-sm">
+<p class="font-label-caps text-slate-500 uppercase">Local Database</p>
+<div class="flex items-end justify-between">
+<h3 class="text-headline-md font-headline-md text-on-surface">12,482</h3>
+<span class="material-symbols-outlined text-primary-container" data-icon="database">database</span>
+</div>
+<div class="h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-3/4"></div>
+</div>
+</div>
+<div class="glass-panel p-lg rounded-xl flex flex-col gap-sm">
+<p class="font-label-caps text-slate-500 uppercase">Firebase Cloud</p>
+<div class="flex items-end justify-between">
+<h3 class="text-headline-md font-headline-md text-on-surface">12,480</h3>
+<span class="material-symbols-outlined text-secondary-fixed-dim" data-icon="cloud">cloud</span>
+</div>
+<p class="text-xs text-slate-400">-2 records pending</p>
+</div>
+<div class="glass-panel p-lg rounded-xl flex flex-col gap-sm">
+<p class="font-label-caps text-slate-500 uppercase">Integrity Index</p>
+<div class="flex items-end justify-between">
+<h3 class="text-headline-md font-headline-md text-on-surface">99.8%</h3>
+<span class="text-xs font-bold px-2 py-1 bg-secondary-container text-on-secondary-container rounded-full uppercase">Stable</span>
+</div>
+<div class="flex gap-1 mt-1">
+<div class="h-1 flex-1 bg-secondary rounded-full"></div>
+<div class="h-1 flex-1 bg-secondary rounded-full"></div>
+<div class="h-1 flex-1 bg-secondary rounded-full"></div>
+<div class="h-1 flex-1 bg-secondary rounded-full"></div>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full"></div>
+</div>
+</div>
+<div class="glass-panel p-lg rounded-xl flex flex-col justify-between">
+<div>
+<p class="font-label-caps text-slate-500 uppercase mb-2">API Quota</p>
+<div class="space-y-3">
+<div>
+<div class="flex justify-between text-[10px] font-bold mb-1">
+<span>READS</span>
+<span>32.4k / 50k</span>
+</div>
+<div class="h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[64.8%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] font-bold mb-1 text-error">
+<span>WRITES (CRITICAL)</span>
+<span>18.2k / 20k</span>
+</div>
+<div class="h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-error w-[91%] shadow-[0_0_8px_rgba(186,26,26,0.4)]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Middle Section: Actions & Config -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Sync Config -->
+<div class="lg:col-span-1 glass-panel p-lg rounded-xl flex flex-col">
+<p class="font-label-caps text-slate-500 uppercase mb-md">Configuración de Sincronización</p>
+<div class="space-y-lg flex-1">
+<div class="flex items-center justify-between p-md bg-white/20 rounded-lg border border-white/40">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400" data-icon="group">group</span>
+<span class="text-sm font-semibold">Afiliados</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-md bg-white/20 rounded-lg border border-white/40">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400" data-icon="business">business</span>
+<span class="text-sm font-semibold">Empresas</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="pt-4">
+<div class="flex justify-between items-center mb-4">
+<span class="text-xs font-bold text-slate-500 uppercase">Throttling Speed</span>
+<span class="text-xs font-terminal-code text-primary font-bold">250 rec/sec</span>
+</div>
+<input class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-container" max="1000" min="10" type="range" value="250"/>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-sm mt-xl">
+<button class="bg-primary-container text-on-primary-container font-label-caps py-4 rounded-xl flex flex-col items-center gap-1 hover:shadow-[0_0_20px_rgba(0,218,243,0.3)] transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="upload">upload</span>
+                            PUSH TO CLOUD
+                        </button>
+<button class="bg-white/80 text-primary font-label-caps py-4 rounded-xl border border-primary-container/30 flex flex-col items-center gap-1 hover:bg-primary-container/10 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                            PULL FROM CLOUD
+                        </button>
+</div>
+</div>
+<!-- Terminal Section -->
+<div class="lg:col-span-2 glass-panel p-lg rounded-xl flex flex-col">
+<div class="flex justify-between items-center mb-md">
+<p class="font-label-caps text-slate-500 uppercase">Terminal de Transmisión</p>
+<div class="flex gap-2">
+<button class="p-1.5 glass-panel rounded-lg hover:bg-white/80 text-slate-600 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="pause">pause</span>
+</button>
+<button class="p-1.5 glass-panel rounded-lg hover:bg-white/80 text-error transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="stop">stop</span>
+</button>
+</div>
+</div>
+<div class="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-lg font-terminal-code text-terminal-code text-slate-700 overflow-y-auto max-h-[300px] shadow-inner">
+<div class="flex gap-4 opacity-70">
+<span class="text-slate-400">14:22:01</span>
+<span class="text-secondary">[SUCCESS]</span>
+<span>Handshake established with firebase-prod-01</span>
+</div>
+<div class="flex gap-4">
+<span class="text-slate-400">14:22:05</span>
+<span class="text-primary">[SYNC]</span>
+<span>Comparing local hashes for collection 'Afiliados'...</span>
+</div>
+<div class="flex gap-4">
+<span class="text-slate-400">14:22:08</span>
+<span class="text-primary">[SYNC]</span>
+<span>Patching 42 records in 'Empresas' (ID: 88201...88243)</span>
+</div>
+<div class="flex gap-4">
+<span class="text-slate-400">14:22:10</span>
+<span class="text-tertiary">[WARN]</span>
+<span>Rate limit approaching for API Region US-EAST</span>
+</div>
+<div class="flex gap-4 animate-pulse">
+<span class="text-slate-400">14:22:15</span>
+<span class="text-secondary font-bold">&gt;&gt;</span>
+<span>Streaming block 812/967...</span>
+</div>
+<div class="mt-4 text-xs text-slate-400 border-t border-slate-200 pt-2">
+                            Type 'help' for available terminal commands...
+                        </div>
+</div>
+<div class="mt-lg">
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs font-bold text-slate-500">MASTER PROGRESS</span>
+<span class="text-xs font-terminal-code font-bold">84%</span>
+</div>
+<div class="h-3 bg-surface-container-highest rounded-full overflow-hidden p-0.5 border border-white">
+<div class="h-full bg-gradient-to-r from-primary-container to-secondary-container rounded-full w-[84%] relative">
+<div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Danger Zone -->
+<div class="glass-panel p-lg rounded-xl border-t-4 border-t-error">
+<div class="flex flex-col md:flex-row items-center justify-between gap-lg">
+<div class="flex items-center gap-lg">
+<div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+</div>
+<div>
+<h4 class="font-headline-md text-on-surface">Danger Zone</h4>
+<p class="text-sm text-slate-500">Force an immediate, non-incremental overwrite of all cloud data with local records.</p>
+</div>
+</div>
+<button class="bg-error text-white px-8 py-4 rounded-xl font-label-caps flex items-center gap-2 hover:bg-error/90 transition-all shadow-[0_8px_16px_rgba(186,26,26,0.2)] active:scale-95">
+<span class="material-symbols-outlined" data-icon="priority_high">priority_high</span>
+                        FORZAR SINCRONIZACIÓN TOTAL
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Visual Decorative Element -->
+<div class="fixed -bottom-24 -right-24 w-96 h-96 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="fixed -top-24 -left-24 w-96 h-96 bg-secondary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+</body></html>

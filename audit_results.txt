@@ -1,0 +1,12 @@
+Role: Super-Admin
+Permissions: 
+
+Role: Admin
+Permissions: access_admin_panel, manage_companies, manage_affiliates, view_reports, physical_closing
+
+Role: Operador
+Permissions: manage_companies, manage_affiliates, view_reports, physical_closing
+
+Role: Auditor
+Permissions: view_reports
+

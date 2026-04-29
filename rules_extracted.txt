@@ -1,0 +1,459 @@
+DOCUMENTO DE REGLAS DE NEGOCIO Y LÓGICA FUNCIONAL
+
+Sistema de Gestión de Carnetización y Control Documental
+
+ARS CMD
+
+
+
+1. OBJETIVO DEL SISTEMA
+Desarrollar una aplicación web que permita gestionar de manera integral el proceso de carnetización masiva de afiliados, incluyendo:
+
+Carga masiva de afiliados
+
+Asignación de responsables
+
+Seguimiento operativo
+
+Entrega de 
+carnet
+
+
+Recepción documental
+
+Validación de evidencias
+
+Cierre del expediente
+El sistema debe garantizar trazabilidad completa, control operativo, integridad de datos y cumplimiento de procesos regulatorios.
+
+
+
+2. CONCEPTOS CLAVE
+
+2.1 Afiliado
+Entidad principal del sistema que representa a un usuario registrado para carnetización.
+
+2.2 Corte
+Periodo de agrupación de afiliados (
+ej
+: 1 febrero 2026, 2 febrero 2026).
+
+2.3 
+Responsable
+
+Entidad asignada para gestionar afiliados:
+
+ARS CMD
+
+SAFESURE
+
+2.4 Lote
+Grupo de afiliados cargados en una misma importación.
+
+
+
+3. FLUJO GENERAL DEL PROCESO
+
+Carga masiva de afiliados
+
+Asignación de responsable
+
+Contacto con afiliado
+
+Gestión de entrega (en ruta)
+
+Entrega de 
+carnet
+
+
+Recepción de acuse
+
+Recepción de formulario
+
+Validación documental
+
+Cierre del expediente
+
+
+
+4. ESTRUCTURA DE ESTADOS
+
+4.1 Estados Operativos
+
+pendiente
+
+asignado
+
+contactado
+
+en ruta
+
+entregado
+
+no localizado
+
+reprogramado
+
+incidencia
+
+cancelado
+
+4.2 Estados Documentales
+
+sin soporte
+
+acuse recibido
+
+formulario recibido
+
+cierre parcial
+
+completado
+
+rechazado documental
+
+4.3 Estado General (calculado automáticamente)
+
+en proceso
+
+pendiente documental
+
+cierre parcial
+
+completado
+
+observado
+
+
+
+5. REGLAS DE NEGOCIO PRINCIPALES
+
+5.1 Regla de cierre automático
+Un afiliado solo puede estar en estado COMPLETADO cuando:
+
+
+carnet
+ entregado = TRUE
+
+acuse = recibido o validado
+
+formulario = recibido o validado
+
+no tiene incidencias abiertas
+El sistema debe calcular este estado automáticamente.
+
+
+
+5.2 Regla de cierre parcial
+Si solo uno de los documentos está recibido:
+
+estado general = cierre parcial
+
+
+
+5.3 Regla de inmutabilidad de cierre
+Si un afiliado está en estado COMPLETADO:
+NO se permite:
+
+cambiar estado
+
+cambiar responsable
+
+editar corte
+
+eliminar documentos
+
+modificar datos críticos
+Solo se puede modificar mediante proceso de reapertura.
+
+
+
+5.4 Regla de reapertura
+Solo usuarios con rol autorizado pueden reabrir un caso.
+Requisitos:
+
+motivo obligatorio
+
+registro en auditoría
+
+fecha y usuario
+
+
+
+5.5 Regla de transición de estados
+El sistema debe validar transiciones válidas:
+Permitidos:
+
+pendiente → asignado
+
+asignado → contactado
+
+contactado → en ruta
+
+en ruta → entregado
+
+entregado → pendiente recepción
+No permitidos:
+
+completado → pendiente
+
+pendiente → completado
+
+no localizado → completado
+
+
+
+5.6 Regla de documentos independientes
+El sistema debe manejar:
+
+Acuse
+
+pendiente
+
+recibido
+
+validado
+
+rechazado
+
+Formulario
+
+pendiente
+
+recibido
+
+validado
+
+rechazado
+Ambos procesos deben ser independientes.
+
+
+
+5.7 Regla de validación documental
+No se puede:
+
+validar documento sin archivo
+
+cerrar caso con documentos rechazados
+
+
+
+5.8 Regla de duplicidad
+No permitir:
+
+duplicar afiliado por cédula + corte
+
+asignación simultánea a múltiples responsables
+
+
+
+5.9 Regla de asignación
+
+Todo afiliado debe tener un responsable
+
+No puede pasar a "en ruta" sin responsable
+
+
+
+5.10 Regla de carga masiva
+El sistema debe:
+
+validar datos antes de importar
+
+detectar duplicados
+
+permitir vista previa
+
+generar lote
+
+
+
+6. CONTROL DE TRAZABILIDAD
+El sistema debe registrar:
+
+importación
+
+asignación
+
+reasignación
+
+cambios de estado
+
+carga de documentos
+
+validaciones
+
+reapertura
+
+cierre
+Cada evento debe guardar:
+
+usuario
+
+fecha
+
+hora
+
+acción
+
+valor anterior
+
+valor nuevo
+
+observación
+
+
+
+7. MANEJO DE INCIDENTES
+Tipos:
+
+no localizado
+
+datos incorrectos
+
+rechazo documental
+
+error operativo
+
+duplicidad
+Cada incidencia debe tener:
+
+estado
+
+prioridad
+
+responsable
+
+comentarios
+
+
+
+8. INDICADORES Y MÉTRICAS
+El sistema debe calcular:
+
+
+total
+ por corte
+
+por responsable
+
+por estado
+
+completados
+
+cierre parcial
+
+pendientes
+
+no localizados
+
+tiempo promedio de cierre
+
+productividad por responsable
+
+
+
+9. SLA Y ALERTAS
+Definir tiempos máximos:
+
+contacto: 2 días
+
+entrega: 5 días
+
+recepción de acuse: 5 días
+
+recepción de formulario: 10 días
+Generar:
+
+alertas
+
+indicadores de atraso
+
+semáforo (verde, amarillo, rojo)
+
+
+
+10. SEGURIDAD Y PERMISOS
+Roles:
+
+Administrador
+
+acceso total
+
+Supervisor
+
+asignar
+
+validar
+
+reabrir
+
+Operador
+
+actualizar estado
+
+subir documentos
+
+Consulta
+
+solo lectura
+
+
+
+11. VALIDACIONES CRÍTICAS
+
+no cerrar sin documentos completos
+
+no modificar afiliado completado
+
+no eliminar evidencias sin permisos
+
+no importar sin corte
+
+no avanzar sin estado previo válido
+
+
+
+12. MÓDULOS DEL SISTEMA
+
+autenticación y roles
+
+cortes
+
+afiliados
+
+carga masiva
+
+asignación
+
+seguimiento operativo
+
+recepción documental
+
+evidencias
+
+incidencias
+
+reportes
+
+auditoría
+
+
+
+13. RESULTADO ESPERADO
+El sistema debe:
+
+evitar errores operativos
+
+garantizar control documental
+
+mejorar eficiencia del proceso
+
+proporcionar trazabilidad total
+
+cumplir requerimientos regulatorios
+
+
+
+14. NOTA FINAL
+El sistema NO debe depender de decisiones manuales para cerrar procesos.Debe basarse en reglas automáticas, validaciones estrictas y control de estados.
