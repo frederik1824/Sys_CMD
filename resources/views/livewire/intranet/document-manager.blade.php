@@ -47,7 +47,7 @@
                             <label class="label-sm text-outline-variant uppercase tracking-widest block mb-2">Departamento</label>
                             <select wire:model="department_id" class="w-full bg-surface-container-high border-none rounded-xl text-sm py-3 px-4 focus:ring-2 focus:ring-primary/20 transition-all shadow-sm font-body cursor-pointer">
                                 <option value="">Seleccione Depto.</option>
-                                @foreach(\App\Models\Department::all() as $dept)
+                                @foreach($departments as $dept)
                                     <option value="{{ $dept->id }}">{{ $dept->name }}</option>
                                 @endforeach
                             </select>
@@ -58,7 +58,7 @@
                             <label class="label-sm text-outline-variant uppercase tracking-widest block mb-2">Tipo de Documento</label>
                             <select wire:model="document_type_id" class="w-full bg-surface-container-high border-none rounded-xl text-sm py-3 px-4 focus:ring-2 focus:ring-primary/20 transition-all shadow-sm font-body cursor-pointer">
                                 <option value="">Seleccione Tipo</option>
-                                @foreach(\App\Models\DocumentType::all() as $type)
+                                @foreach($documentTypes as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
                             </select>
@@ -159,7 +159,7 @@
             <label class="text-[0.6rem] font-black text-outline dark:text-outline-variant uppercase tracking-widest mb-3 block italic">Departamento</label>
             <select wire:model.live="filterDepartment" class="w-full bg-slate-50 dark:bg-surface-container border border-outline-variant/5 rounded-2xl text-[0.75rem] font-bold text-on-surface dark:text-white focus:ring-primary/20 py-3.5 px-5 cursor-pointer">
                 <option value="">Cualquier Depto.</option>
-                @foreach(\App\Models\Department::all() as $dept)
+                @foreach($departments as $dept)
                     <option value="{{ $dept->id }}">{{ $dept->name }}</option>
                 @endforeach
             </select>
@@ -169,7 +169,7 @@
             <label class="text-[0.6rem] font-black text-outline dark:text-outline-variant uppercase tracking-widest mb-3 block italic">Estatus</label>
             <select wire:model.live="filterStatus" class="w-full bg-slate-50 dark:bg-surface-container border border-outline-variant/5 rounded-2xl text-[0.75rem] font-bold text-on-surface dark:text-white focus:ring-primary/20 py-3.5 px-5 cursor-pointer">
                 <option value="">Cualquier Estatus</option>
-                @foreach(\App\Models\DocumentStatus::all() as $st)
+                @foreach($documentStatuses as $st)
                     <option value="{{ $st->id }}">{{ $st->name }}</option>
                 @endforeach
             </select>

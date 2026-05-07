@@ -126,7 +126,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <a href="{{ route('empresas.show', $empresa) }}" class="p-2 text-slate-300 hover:text-primary transition-colors">
+                            <a href="{{ route('sistema.empresas.show', $empresa) }}" class="p-2 text-slate-300 hover:text-primary transition-colors">
                                 <span class="material-symbols-outlined">chevron_right</span>
                             </a>
                         </td>

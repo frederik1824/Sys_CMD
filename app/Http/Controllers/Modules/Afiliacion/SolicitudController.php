@@ -226,7 +226,7 @@ class SolicitudController extends Controller
                     \Illuminate\Support\Facades\Notification::send($notificables, new \App\Notifications\Modules\Afiliacion\SolicitudCreada($solicitud));
                 }
 
-                return redirect()->route('solicitudes-afiliacion.index')->with('success', 'Solicitud registrada correctamente.');
+                return redirect()->route('afiliacion.index')->with('success', 'Solicitud registrada correctamente.');
             });
         } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
@@ -241,7 +241,7 @@ class SolicitudController extends Controller
         }
 
         if (!in_array($solicitud->estado, ['Borrador', 'Devuelta'])) {
-            return redirect()->route('solicitudes-afiliacion.show', $solicitud)
+            return redirect()->route('afiliacion.show', $solicitud)
                 ->with('error', 'Esta solicitud no puede ser editada en su estado actual.');
         }
 
@@ -335,7 +335,7 @@ class SolicitudController extends Controller
                     'detalles' => !empty($cambios) ? $cambios : null
                 ]);
 
-                return redirect()->route('solicitudes-afiliacion.index')->with('success', 'Solicitud actualizada correctamente.');
+                return redirect()->route('afiliacion.index')->with('success', 'Solicitud actualizada correctamente.');
             });
         } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
@@ -346,7 +346,13 @@ class SolicitudController extends Controller
     {
         $solicitud->load(['tipoSolicitud', 'solicitante.roles', 'asignado.roles', 'documentos.requerimiento', 'historial.user']);
         $departamentos = Departamento::where('activo', true)->get();
-        return view('modules.afiliacion.show', compact('solicitud', 'departamentos'));
+        
+        // Pre-cargar afiliado maestro para evitar query en Blade
+        $afiliadoMaestro = $solicitud->cedula
+            ? \App\Models\Afiliado::where('cedula', $solicitud->cedula)->first(['id', 'uuid', 'nombre_completo'])
+            : null;
+        
+        return view('modules.afiliacion.show', compact('solicitud', 'departamentos', 'afiliadoMaestro'));
     }
 
     public function assign(SolicitudAfiliacion $solicitud)
@@ -470,7 +476,7 @@ class SolicitudController extends Controller
             'estado_nuevo' => 'Escalada',
         ]);
 
-        return redirect()->route('solicitudes-afiliacion.index')->with('success', "Solicitud escalada a {$deptoDestino->nombre}.");
+        return redirect()->route('afiliacion.index')->with('success', "Solicitud escalada a {$deptoDestino->nombre}.");
     }
 
     public function viewDocumento(DocumentoSolicitudAfiliacion $documento)

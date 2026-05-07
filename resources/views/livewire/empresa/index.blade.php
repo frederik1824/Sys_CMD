@@ -66,7 +66,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-50">
                     @forelse ($empresas as $empresa)
-                        <tr class="hover:bg-slate-50/40 transition-all duration-300 group cursor-pointer" onclick="window.location='{{ route('empresas.show', $empresa) }}'">
+                        <tr class="hover:bg-slate-50/40 transition-all duration-300 group cursor-pointer" onclick="window.location='{{ route('sistema.empresas.show', $empresa) }}'">
                             <td class="px-8 py-7">
                                 <div class="flex items-center gap-5">
                                     <div class="relative">

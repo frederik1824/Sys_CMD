@@ -13,7 +13,7 @@ use App\Traits\FirebaseSyncable;
 
 class Empresa extends Model
 {
-    use Auditable, HasUuids, SoftDeletes, FirebaseSyncable;
+    use Auditable, HasUuids, SoftDeletes, FirebaseSyncable, \App\Traits\NormalizesData, \App\Traits\HasDataQuality;
 
     /**
      * Define the document ID for Firebase (Use UUID for stability)
@@ -61,9 +61,9 @@ class Empresa extends Model
     /**
      * Determina si la empresa requiere atención basada en la última interacción
      */
-    public function getDataQualityAttribute()
+    public function qualityFields(): array
     {
-        $fields = [
+        return [
             'nombre' => 25,
             'rnc' => 15,
             'direccion' => 15,
@@ -73,32 +73,9 @@ class Empresa extends Model
             'latitude' => 7.5,
             'longitude' => 7.5,
         ];
-
-        $score = 0;
-        $missing = [];
-
-        foreach ($fields as $field => $weight) {
-            if (!empty($this->{$field})) {
-                $score += $weight;
-            } else {
-                $missing[] = $field;
-            }
-        }
-
-        $level = 'critical';
-        $color = 'rose';
-        if ($score >= 90) { $level = 'perfect'; $color = 'emerald'; }
-        elseif ($score >= 70) { $level = 'good'; $color = 'blue'; }
-        elseif ($score >= 40) { $level = 'warning'; $color = 'amber'; }
-
-        return (object) [
-            'score' => round($score),
-            'level' => $level,
-            'color' => $color,
-            'missing' => $missing,
-            'is_ready' => $score >= 70
-        ];
     }
+
+    protected $qualityThreshold = 70;
 
     /**
      * Determina si la empresa requiere atención basada en la última interacción

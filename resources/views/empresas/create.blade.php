@@ -5,12 +5,12 @@
     {{-- Header --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="flex items-center gap-5">
-            <a href="{{ route('empresas.index') }}" class="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm">
+            <a href="{{ route('sistema.empresas.index') }}" class="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm">
                 <span class="material-symbols-outlined">arrow_back</span>
             </a>
             <div>
                 <nav class="flex items-center gap-2 mb-1 text-[0.65rem] font-black uppercase tracking-[0.2em] text-slate-400">
-                    <a href="{{ route('empresas.index') }}" class="hover:text-primary transition-colors">Empresas</a>
+                    <a href="{{ route('sistema.empresas.index') }}" class="hover:text-primary transition-colors">Empresas</a>
                     <span class="material-symbols-outlined text-[10px]">chevron_right</span>
                     <span class="text-primary">Registro</span>
                 </nav>
@@ -53,13 +53,13 @@
         {{-- Form Area --}}
         <div class="lg:col-span-3">
             <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 lg:p-12 relative overflow-hidden">
-                <form action="{{ route('empresas.store') }}" method="POST" id="empresaForm">
+                <form action="{{ route('sistema.empresas.store') }}" method="POST" id="empresaForm">
                     @csrf
                     
                     @include('empresas.form')
 
                     <div class="mt-12 flex flex-col md:flex-row justify-end gap-4 border-t border-slate-50 pt-10">
-                        <a href="{{ route('empresas.index') }}" class="px-10 py-4 text-center bg-white border border-slate-200 text-slate-500 rounded-[1.5rem] font-black text-[0.65rem] uppercase tracking-widest hover:bg-slate-50 transition-all">
+                        <a href="{{ route('sistema.empresas.index') }}" class="px-10 py-4 text-center bg-white border border-slate-200 text-slate-500 rounded-[1.5rem] font-black text-[0.65rem] uppercase tracking-widest hover:bg-slate-50 transition-all">
                             Descartar
                         </a>
                         <button type="submit" class="px-12 py-4 bg-slate-900 text-white rounded-[1.5rem] font-black text-[0.65rem] uppercase tracking-[0.2em] hover:bg-primary transition-all hover:shadow-xl shadow-lg hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 group">

@@ -55,7 +55,7 @@ class ResponsableController extends Controller
             }
         }
 
-        return redirect()->route('responsables.index')->with('success', 'Responsable creado exitosamente.');
+        return redirect()->route('sistema.responsables.index')->with('success', 'Responsable creado exitosamente.');
     }
 
     /**
@@ -121,7 +121,7 @@ class ResponsableController extends Controller
             \App\Models\User::where('responsable_id', $responsable->id)->update(['responsable_id' => null]);
         }
 
-        return redirect()->route('responsables.index')->with('success', 'Responsable actualizado exitosamente.');
+        return redirect()->route('sistema.responsables.index')->with('success', 'Responsable actualizado exitosamente.');
     }
 
     /**
@@ -131,6 +131,6 @@ class ResponsableController extends Controller
     {
         $responsable = Responsable::findOrFail($id);
         $responsable->delete();
-        return redirect()->route('responsables.index')->with('success', 'Responsable eliminado exitosamente.');
+        return redirect()->route('sistema.responsables.index')->with('success', 'Responsable eliminado exitosamente.');
     }
 }

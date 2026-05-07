@@ -7,11 +7,23 @@ use App\Services\FirebaseSyncService;
 
 class EmpresaObserver
 {
+    use \App\Traits\NormalizesData;
+
     protected $syncService;
 
     public function __construct(FirebaseSyncService $syncService)
     {
         $this->syncService = $syncService;
+    }
+
+    /**
+     * Handle the Empresa "saving" event.
+     */
+    public function saving(Empresa $empresa): void
+    {
+        if ($empresa->direccion) {
+            $empresa->direccion = $this->normalizeAddressField($empresa->direccion);
+        }
     }
 
     /**

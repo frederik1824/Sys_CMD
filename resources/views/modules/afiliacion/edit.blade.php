@@ -23,7 +23,7 @@
     <!-- HEADER INTEGRADO -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
         <div class="space-y-4">
-            <a href="{{ route('solicitudes-afiliacion.index') }}" 
+            <a href="{{ route('afiliacion.index') }}" 
                class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all text-[10px] font-black uppercase tracking-widest shadow-sm group">
                 <i class="ph-bold ph-arrow-left group-hover:-translate-x-1 transition-transform"></i> 
                 Volver al Panel Principal
@@ -65,7 +65,7 @@
     </div>
     @endif
 
-    <form action="{{ route('solicitudes-afiliacion.update', $solicitud) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
+    <form action="{{ route('afiliacion.update', $solicitud) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
         @csrf
         @method('PATCH')
         
@@ -222,7 +222,7 @@
                                     <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Registrado</p>
                                 </div>
                             </div>
-                            <a href="{{ route('solicitudes-afiliacion.documentos.view', $docPrincipal) }}" target="_blank" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-900 hover:text-white transition-colors">
+                            <a href="{{ route('afiliacion.documentos.view', $docPrincipal) }}" target="_blank" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-900 hover:text-white transition-colors">
                                 <i class="ph-bold ph-eye"></i>
                             </a>
                         </div>
@@ -333,7 +333,7 @@
         
         let cleanValue = this.value.replace(/\D/g, '');
         if (cleanValue.length === 11) {
-            fetch(`{{ route('solicitudes-afiliacion.search-afiliado') }}?cedula=${this.value}`)
+            fetch(`{{ route('afiliacion.search-afiliado') }}?cedula=${this.value}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data) {

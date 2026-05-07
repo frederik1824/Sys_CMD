@@ -7,7 +7,7 @@
         <p class="text-on-surface-variant text-sm mt-1">Actualice la información de {{ $proveedor->nombre }}.</p>
     </div>
 
-    <form action="{{ route('proveedores.update', $proveedor) }}" method="POST" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col gap-6">
+    <form action="{{ route('sistema.proveedores.update', $proveedor) }}" method="POST" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col gap-6">
         @csrf
         @method('PUT')
         
@@ -27,7 +27,7 @@
         </div>
 
         <div class="pt-4 flex gap-4 border-t border-slate-100">
-            <a href="{{ route('proveedores.index') }}" class="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">Cancelar</a>
+            <a href="{{ route('sistema.proveedores.index') }}" class="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">Cancelar</a>
             <button type="submit" class="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-blue-800 transition-colors shadow-lg shadow-primary/20">Actualizar Proveedor</button>
         </div>
     </form>

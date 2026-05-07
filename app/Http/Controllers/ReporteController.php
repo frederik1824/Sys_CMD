@@ -7,6 +7,9 @@ use App\Models\Corte;
 use App\Models\Estado;
 use App\Models\Responsable;
 use App\Models\Empresa;
+use App\Models\Traspaso;
+use App\Models\AgenteTraspaso;
+use App\Models\SupervisorTraspaso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -30,9 +33,10 @@ class ReporteController extends Controller
             'total_afiliados' => $canSeeCmd ? Afiliado::count() : 0,
             'completados' => $canSeeCmd ? Afiliado::whereHas('estado', function($q) { $q->whereIn('nombre', ['Completado', 'Cierre parcial']); })->count() : 0,
             'pendiente_recepcion' => $canSeeCmd ? Afiliado::where('estado_id', 7)->count() : 0,
-            'critico_sla' => $canSeeCmd ? Afiliado::with('estado')->get()
-                            ->filter(fn($a) => $a->sla_status === 'critico')
-                            ->count() : 0,
+            'critico_sla' => $canSeeCmd ? Afiliado::whereDoesntHave('estado', function($q) { $q->where('nombre', 'COMPLETADO'); })
+                                ->whereNotNull('fecha_entrega_proveedor')
+                                ->whereRaw('DATEDIFF(NOW(), fecha_entrega_proveedor) >= 20')
+                                ->count() : 0,
             'por_liquidar' => $canSeeCmd ? Afiliado::whereHas('estado', function($q) { $q->where('nombre', 'COMPLETADO'); })
                             ->where('liquidado', false)
                             ->sum('costo_entrega') : 0,
@@ -99,8 +103,9 @@ class ReporteController extends Controller
         $stats = [
             'ingresos' => $ingresos_count,
             'salidas' => $salidas_count,
-            'critico_sla' => (clone $query)->with('estado')->get()
-                            ->filter(fn($a) => $a->sla_status === 'critico')
+            'critico_sla' => (clone $query)->whereDoesntHave('estado', function($q) { $q->where('nombre', 'COMPLETADO'); })
+                            ->whereNotNull('fecha_entrega_proveedor')
+                            ->whereRaw('DATEDIFF(NOW(), fecha_entrega_proveedor) >= 20')
                             ->count(),
             'por_liquidar' => (clone $query)->whereHas('estado', function($q) { $q->where('nombre', 'COMPLETADO'); })
                             ->where('liquidado', false)
@@ -404,9 +409,18 @@ class ReporteController extends Controller
                 $q->whereIn('nombre', ['COMPLETADO', 'LIQUIDADO']);
             })->count();
             
-            $afiliados_resp = (clone $query)->with('estado')->get();
-            $criticos = $afiliados_resp->filter(fn($a) => $a->sla_status === 'critico')->count();
-            $alertas = $afiliados_resp->filter(fn($a) => $a->sla_status === 'alerta')->count();
+            $criticos = (clone $query)
+                ->whereDoesntHave('estado', function($q) { $q->where('nombre', 'COMPLETADO'); })
+                ->whereNotNull('fecha_entrega_proveedor')
+                ->whereRaw('DATEDIFF(NOW(), fecha_entrega_proveedor) >= 20')
+                ->count();
+                
+            $alertas = (clone $query)
+                ->whereDoesntHave('estado', function($q) { $q->where('nombre', 'COMPLETADO'); })
+                ->whereNotNull('fecha_entrega_proveedor')
+                ->whereRaw('DATEDIFF(NOW(), fecha_entrega_proveedor) >= 15')
+                ->whereRaw('DATEDIFF(NOW(), fecha_entrega_proveedor) < 20')
+                ->count();
             
             $comparisonData[$resp->nombre] = [
                 'id' => $resp->id,
@@ -549,5 +563,80 @@ class ReporteController extends Controller
         });
 
         return view('reportes.pendientes_print', compact('reporteCortes'));
+    }
+
+    /**
+     * Reporte Avanzado de Producción de Traspasos
+     */
+    public function produccionTraspasos(Request $request)
+    {
+        $fecha_desde = $request->input('fecha_desde', now()->subMonths(3)->startOfMonth()->format('Y-m-d'));
+        $fecha_hasta = $request->input('fecha_hasta', now()->format('Y-m-d'));
+        $supervisor_id = $request->input('supervisor_id');
+
+        // 1. Efectividad y Producción (Transaccional)
+        $rankingAgentes = Traspaso::select('agente_id')
+            ->selectRaw('sum(case when fecha_solicitud >= ? and fecha_solicitud <= ? then 1 else 0 end) as total_solicitudes', [$fecha_desde, $fecha_hasta])
+            ->selectRaw('sum(case when fecha_efectivo >= ? and fecha_efectivo <= ? then 1 else 0 end) as efectivos', [$fecha_desde, $fecha_hasta])
+            ->selectRaw('sum(case when fecha_efectivo >= ? and fecha_efectivo <= ? then cantidad_dependientes else 0 end) as dependientes_efectivos', [$fecha_desde, $fecha_hasta])
+            ->selectRaw('sum(case when estado_id = (select id from estado_traspasos where slug = "rechazado" limit 1) and updated_at >= ? and updated_at <= ? then 1 else 0 end) as rechazados', [$fecha_desde, $fecha_hasta])
+            ->selectRaw('sum(case when fecha_efectivo is null and estado_id != (select id from estado_traspasos where slug = "rechazado" limit 1) then 1 else 0 end) as pendientes')
+            ->selectRaw('sum(case when fecha_solicitud >= ? and fecha_solicitud <= ? then cantidad_dependientes else 0 end) as total_dependientes_sol', [$fecha_desde, $fecha_hasta])
+            ->where(function($q) use ($fecha_desde, $fecha_hasta) {
+                $q->whereBetween('fecha_solicitud', [$fecha_desde, $fecha_hasta])
+                  ->orWhereBetween('fecha_efectivo', [$fecha_desde, $fecha_hasta]);
+            })
+            ->when($supervisor_id, function($q) use ($supervisor_id) {
+                $q->whereHas('agenteRel', fn($sq) => $sq->where('supervisor_id', $supervisor_id));
+            })
+            ->groupBy('agente_id')
+            ->with('agenteRel.supervisor')
+            ->get()
+            ->map(function($item) {
+                $item->hit_rate = $item->total_solicitudes > 0 ? round(($item->efectivos / $item->total_solicitudes) * 100, 1) : 0;
+                $item->total_vidas_efectivas = $item->efectivos + $item->dependientes_efectivos;
+                return $item;
+            })
+            ->sortByDesc('efectivos');
+
+        // 3. Resumen Ejecutivo (Los 4 Números Clave)
+        $stats = [
+            'total_efectivos' => $rankingAgentes->sum('efectivos'),
+            'total_dependientes_efectivos' => $rankingAgentes->sum('dependientes_efectivos'),
+            'total_pendientes' => $rankingAgentes->sum('pendientes'),
+            'total_rechazados' => $rankingAgentes->sum('rechazados'),
+            'total_solicitudes' => $rankingAgentes->sum('total_solicitudes'),
+            'hit_rate_promedio' => $rankingAgentes->count() > 0 ? round($rankingAgentes->avg('hit_rate'), 1) : 0
+        ];
+
+        // 2. Tendencia de Producción (Últimos 6 Meses)
+        $tendencia = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $month = $date->month;
+            $year = $date->year;
+            
+            $queryBase = Traspaso::query();
+            if ($supervisor_id) {
+                $queryBase->whereHas('agenteRel', fn($sq) => $sq->where('supervisor_id', $supervisor_id));
+            }
+
+            $total = (clone $queryBase)->whereMonth('fecha_solicitud', $month)->whereYear('fecha_solicitud', $year)->count();
+            $efectivos = (clone $queryBase)->whereMonth('fecha_efectivo', $month)->whereYear('fecha_efectivo', $year)->count();
+
+            $tendencia[] = [
+                'label' => $date->translatedFormat('M Y'),
+                'total' => $total,
+                'efectivos' => $efectivos,
+                'hit_rate' => $total > 0 ? round(($efectivos / $total) * 100, 1) : 0
+            ];
+        }
+
+        $supervisores = SupervisorTraspaso::where('activo', true)->get();
+
+        return view('reportes.produccion_traspasos', compact(
+            'rankingAgentes', 'tendencia', 'stats', 'supervisores',
+            'fecha_desde', 'fecha_hasta', 'supervisor_id'
+        ));
     }
 }

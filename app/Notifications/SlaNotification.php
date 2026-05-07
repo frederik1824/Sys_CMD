@@ -30,7 +30,7 @@ class SlaNotification extends Notification
         return [
             'title' => 'Alerta de SLA Crítico',
             'message' => "Hay {$this->count} afiliados en el corte '{$this->corteName}' que han superado los 20 días de gestión.",
-            'url' => route('afiliados.index', ['status_sla' => 'critico']),
+            'url' => route('carnetizacion.afiliados.index', ['status_sla' => 'critico']),
             'type' => 'warning',
             'icon' => 'warning'
         ];

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\FirebaseSyncable;
 
 class User extends Authenticatable
@@ -91,7 +91,42 @@ class User extends Authenticatable
 
     public function responsable()
     {
-        return $this->belongsTo(Responsable::class);
+        return $this->belongsTo(User::class, 'responsable_id');
+    }
+
+    /**
+     * Matriz de Accesos Centralizada
+     */
+    public function applicationAccess(): HasMany
+    {
+        return $this->hasMany(UserApplicationRole::class, 'user_id');
+    }
+
+    /**
+     * Valida si el usuario tiene un rol específico en una aplicación determinada (Slug)
+     */
+    public function hasRoleInApplication($roleName, $applicationSlug)
+    {
+        if ($this->hasAnyRole(['Admin', 'Super-Admin'])) return true;
+
+        return $this->applicationAccess()
+            ->where('is_active', true)
+            ->whereHas('application', fn($q) => $q->where('slug', $applicationSlug)->where('is_active', true))
+            ->whereHas('role', fn($q) => $q->where('name', $roleName))
+            ->exists();
+    }
+
+    /**
+     * Valida si el usuario tiene permiso activo para entrar a una aplicación (Slug)
+     */
+    public function canAccessApplication($applicationSlug)
+    {
+        if ($this->hasAnyRole(['Admin', 'Super-Admin'])) return true;
+
+        return $this->applicationAccess()
+            ->where('is_active', true)
+            ->whereHas('application', fn($q) => $q->where('slug', $applicationSlug)->where('is_active', true))
+            ->exists();
     }
 
     public function solicitudesAsignadas()
@@ -102,5 +137,15 @@ class User extends Authenticatable
     public function solicitudesCreadas()
     {
         return $this->hasMany(SolicitudAfiliacion::class, 'solicitante_user_id');
+    }
+
+    public function gestionesCallCenter()
+    {
+        return $this->hasMany(CallCenterGestion::class, 'operador_id');
+    }
+
+    public function promocionesCallCenter()
+    {
+        return $this->hasMany(CallCenterBandejaSalida::class, 'enviado_por');
     }
 }

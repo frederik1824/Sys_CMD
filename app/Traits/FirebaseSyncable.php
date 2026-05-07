@@ -11,11 +11,21 @@ use Illuminate\Support\Facades\Log;
 trait FirebaseSyncable
 {
     /**
+     * Flag to globally disable sync during mass operations
+     */
+    public static $isSyncingDisabled = false;
+
+    /**
      * Boot the trait to handle automatic syncing on save
      */
     public static function bootFirebaseSyncable()
     {
         static::saved(function ($model) {
+            // No sincronizar si el flag global está activo (evita desbordamientos en mass pulls)
+            if (static::$isSyncingDisabled) {
+                return;
+            }
+
             if ($model->getFirebaseDocumentId()) {
                 $success = $model->pushToFirebase();
                 
@@ -31,6 +41,19 @@ trait FirebaseSyncable
                 }
             }
         });
+    }
+
+    /**
+     * Pull data from Firebase ONLY if it's stale (older than $hours).
+     * This saves a massive amount of read quota.
+     */
+    public function pullIfStale(int $hours = 2): bool
+    {
+        if ($this->firebase_synced_at && $this->firebase_synced_at->diffInHours(now()) < $hours) {
+            return false; // Already fresh
+        }
+
+        return $this->pullFromFirebase();
     }
 
     /**

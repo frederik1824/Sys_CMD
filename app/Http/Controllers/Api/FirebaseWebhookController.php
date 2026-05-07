@@ -15,38 +15,64 @@ class FirebaseWebhookController extends Controller
      */
     public function handle(Request $request)
     {
-        // 1. Verificación de Seguridad
+        // 1. Verificación de Seguridad Reforzada
         $secret = $request->header('X-Firebase-Secret');
-        if ($secret !== config('services.firebase.webhook_secret')) {
-            Log::warning('Intento de Webhook de Firebase fallido: Secret inválido.');
+        $token = $request->bearerToken();
+        
+        // Validamos que venga el secret y que coincida con la config
+        if (!$secret || $secret !== config('services.firebase.webhook_secret')) {
+            Log::warning('Intento de Webhook de Firebase BLOQUEADO: Secret inválido o ausente.', [
+                'ip' => $request->ip(),
+                'ua' => $request->userAgent()
+            ]);
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $type = $request->input('type'); // 'afiliado' o 'empresa'
-        $uuid = $request->input('uuid');
-        $id   = $request->input('id');   // ID de documento en Firebase
+        // 2. Validación de Payload
+        $request->validate([
+            'type' => 'required|in:afiliado,empresa',
+            'id'   => 'required|string|max:100',
+            'uuid' => 'nullable|uuid'
+        ]);
 
-        Log::info("Webhook recibido para {$type}: {$id}");
+        $type = $request->input('type'); 
+        $uuid = $request->input('uuid');
+        $id   = $request->input('id');   
+
+        Log::info("Webhook validado para {$type}: {$id}");
 
         try {
             if ($type === 'afiliado') {
-                $item = Afiliado::where('id', $id)->orWhere('uuid', $uuid)->orWhere('cedula', $id)->first();
+                // Buscamos con prioridad: UUID -> Cédula -> ID
+                $item = Afiliado::where(function($q) use ($uuid, $id) {
+                    if ($uuid) $q->where('uuid', $uuid);
+                    $q->orWhere('cedula', $id)->orWhere('id', $id);
+                })->first();
+
                 if (!$item) {
-                    // Si no existe, lo creamos para cumplir con el "Firebase-First"
-                    $item = new Afiliado();
-                    $item->cedula = $id;
-                    $item->save();
-                    Log::info("Webhook: Creado nuevo afiliado localmente para concordar con Firebase: {$id}");
+                    // Solo creamos si el ID parece una cédula válida (seguridad extra)
+                    if (preg_match('/^[0-9-]{11,15}$/', $id)) {
+                        $item = new Afiliado();
+                        $item->cedula = $id;
+                        $item->save();
+                        Log::info("Webhook: Creado nuevo registro local para {$id}");
+                    } else {
+                        throw new \Exception("ID de afiliado inválido para creación automática: {$id}");
+                    }
                 }
                 
                 $item->pullFromFirebase();
-                return response()->json(['success' => true, 'message' => 'Afiliado sincronizado (Pull forced)']);
+                return response()->json(['success' => true, 'message' => 'Sincronización exitosa']);
                 
             } elseif ($type === 'empresa') {
-                $item = Empresa::where('id', $id)->orWhere('uuid', $uuid)->first();
+                $item = Empresa::where(function($q) use ($uuid, $id) {
+                    if ($uuid) $q->where('uuid', $uuid);
+                    $q->orWhere('id', $id)->orWhere('rnc', $id);
+                })->first();
+
                 if (!$item) {
                     $item = new Empresa();
-                    $item->nombre = "Importada desde Firebase ($id)"; // Placeholder que se llenará con el pull
+                    $item->nombre = "Pendiente Sincronización ($id)";
                     $item->save();
                 }
                 
@@ -54,11 +80,11 @@ class FirebaseWebhookController extends Controller
                 return response()->json(['success' => true, 'message' => 'Empresa sincronizada']);
             }
 
-            return response()->json(['success' => false, 'message' => 'No se encontró el registro local'], 404);
+            return response()->json(['success' => false, 'message' => 'Tipo no soportado'], 400);
 
         } catch (\Exception $e) {
-            Log::error("Error en Webhook de Firebase: " . $e->getMessage());
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            Log::error("Error Crítico en Webhook: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => false, 'error' => 'Error interno de procesamiento'], 500);
         }
     }
 }

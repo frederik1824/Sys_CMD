@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use App\Enums\SlaStatus;
 
 use App\Traits\Auditable;
 
@@ -14,7 +15,7 @@ use App\Traits\FirebaseSyncable;
 
 class Afiliado extends Model
 {
-    use Auditable, HasUuids, SoftDeletes, FirebaseSyncable;
+    use Auditable, HasUuids, SoftDeletes, FirebaseSyncable, \App\Traits\NormalizesData, \App\Traits\HasDataQuality;
 
     /**
      * Define the document ID for Firebase (Cedula)
@@ -61,18 +62,9 @@ class Afiliado extends Model
     /**
      * Regla de Negocio: Intercepta datos entrantes de Firebase para aplicar el flujo de validación CMD
      */
-    public static function formatCedula($value)
-    {
-        $clean = preg_replace('/[^0-9]/', '', $value);
-        if (strlen($clean) === 11) {
-            return substr($clean, 0, 3) . '-' . substr($clean, 3, 7) . '-' . substr($clean, 10, 1);
-        }
-        return $value;
-    }
-
     public function setCedulaAttribute($value)
     {
-        $this->attributes['cedula'] = self::formatCedula($value);
+        $this->attributes['cedula'] = \App\Traits\NormalizesData::formatCedula($value);
     }
 
     public function applyGatingRule(array $data): array
@@ -109,44 +101,21 @@ class Afiliado extends Model
         };
     }
 
-    public function getDataQualityAttribute()
+    public function qualityFields(): array
     {
-        $fields = [
+        return [
             'nombre_completo' => 20,
             'cedula' => 20,
             'telefono' => 10,
             'direccion' => 15,
-            'provincia' => 10, // Cambiado de provincia_id a provincia para mayor compatibilidad
-            'municipio' => 10, // Cambiado de municipio_id a municipio
+            'provincia' => 10, 
+            'municipio' => 10, 
             'empresa_id' => 10,
             'estado_id' => 5,
         ];
-
-        $score = 0;
-        $missing = [];
-
-        foreach ($fields as $field => $weight) {
-            if (!empty($this->{$field})) {
-                $score += $weight;
-            } else {
-                $missing[] = $field;
-            }
-        }
-
-        $level = 'critical';
-        $color = 'rose';
-        if ($score >= 90) { $level = 'perfect'; $color = 'emerald'; }
-        elseif ($score >= 70) { $level = 'good'; $color = 'blue'; }
-        elseif ($score >= 40) { $level = 'warning'; $color = 'amber'; }
-
-        return (object) [
-            'score' => round($score),
-            'level' => $level,
-            'color' => $color,
-            'missing' => $missing,
-            'is_ready' => $score >= 75 // Afiliados requieren un poco más de rigor
-        ];
     }
+
+    protected $qualityThreshold = 75;
 
     /**
      * Regla Estricta: Asegurar costo base al guardar si está completado
@@ -154,63 +123,7 @@ class Afiliado extends Model
     protected static function boot()
     {
         parent::boot();
-        
         static::addGlobalScope(new \App\Models\Scopes\ResponsableScope);
-        
-        static::saving(function ($afiliado) {
-            // Regla Estricta: Asegurar costo base al guardar si está completado
-            if ($afiliado->estado_id) {
-                $estado = \App\Models\Estado::find($afiliado->estado_id);
-                if ($estado && strtolower($estado->nombre) === 'completado') {
-                    if (is_null($afiliado->costo_entrega) || $afiliado->costo_entrega == 0) {
-                        if ($afiliado->proveedor_id && $afiliado->proveedor?->precio_base > 0) {
-                            $afiliado->costo_entrega = $afiliado->proveedor->precio_base;
-                        } elseif ($afiliado->responsable_id && $afiliado->responsable?->precio_entrega > 0) {
-                            $afiliado->costo_entrega = $afiliado->responsable->precio_entrega;
-                        }
-                    }
-                }
-            }
-
-            // --- SUGERENCIA 1: CALIDAD DE DATOS ---
-            // Normalizar Nombre Completo (Title Case)
-            if ($afiliado->nombre_completo) {
-                $afiliado->nombre_completo = mb_convert_case(mb_strtolower($afiliado->nombre_completo), MB_CASE_TITLE, "UTF-8");
-            }
-
-            // Herencia de datos de Empresa si están vacíos
-            if ($afiliado->empresa_id) {
-                $empresa = $afiliado->empresaModel;
-                if ($empresa) {
-                    $afiliado->telefono = $afiliado->telefono ?: $empresa->telefono;
-                    $afiliado->direccion = $afiliado->direccion ?: $empresa->direccion;
-                    $afiliado->provincia_id = $afiliado->provincia_id ?: $empresa->provincia_id;
-                    $afiliado->municipio_id = $afiliado->municipio_id ?: $empresa->municipio_id;
-                }
-            }
-
-            // Normalizar Dirección (Expandir abreviaturas)
-            $afiliado->normalizeAddress();
-        });
-
-        static::creating(function ($afiliado) {
-            // Auto-asignación de responsable si es nulo (Evita que el registro sea invisible por Scopes)
-            if (!$afiliado->responsable_id && auth()->check()) {
-                $afiliado->responsable_id = auth()->user()->responsable_id;
-            }
-
-            // Auto-asignación geográfica general
-            if (!$afiliado->responsable_id && $afiliado->provincia_id) {
-                $responsableGeo = \Illuminate\Support\Facades\DB::table('provincia_responsable')
-                    ->where('provincia_id', $afiliado->provincia_id)
-                    ->inRandomOrder() 
-                    ->first();
-                
-                if ($responsableGeo) {
-                    $afiliado->responsable_id = $responsableGeo->responsable_id;
-                }
-            }
-        });
     }
 
     /**
@@ -229,15 +142,18 @@ class Afiliado extends Model
     /**
      * Determina el color del semáforo basado en el SLA (20 días según usuario)
      */
-    public function getSlaStatusAttribute()
+    /**
+     * Determina el color del semáforo basado en el SLA (20 días según usuario)
+     */
+    public function getSlaStatusAttribute(): SlaStatus
     {
-        if (strtolower($this->estado?->nombre) === 'completado') return 'completado';
-        if (!$this->fecha_entrega_proveedor) return 'pendiente';
+        if (strtolower($this->estado?->nombre) === 'completado') return SlaStatus::COMPLETADO;
+        if (!$this->fecha_entrega_proveedor) return SlaStatus::PENDIENTE;
 
         $dias = $this->dias_transcurridos;
-        if ($dias >= 20) return 'critico'; // Rojo
-        if ($dias >= 15) return 'alerta';   // Amarillo
-        return 'en_tiempo';                // Verde
+        if ($dias >= 20) return SlaStatus::CRITICO; 
+        if ($dias >= 15) return SlaStatus::ALERTA;   
+        return SlaStatus::EN_TIEMPO;               
     }
     public function getRncEmpresaAttribute($value)
     {
@@ -340,25 +256,7 @@ class Afiliado extends Model
         return $this->municipio_final?->nombre ?? ($this->attributes['municipio'] ?? 'SIN MUNICIPIO');
     }
 
-    /**
-     * Normaliza los campos de dirección eliminando abreviaturas comunes
-     */
-    public function normalizeAddress()
-    {
-        if (!$this->direccion) return;
 
-        $replacements = [
-            '/\bC\/\b/i' => 'Calle ',
-            '/\bNo\.\b/i' => '#',
-            '/\bEsq\.\b/i' => 'Esquina ',
-            '/\bApt\.\b/i' => 'Apartamento ',
-            '/\bRes\.\b/i' => 'Residencial ',
-            '/\bAut\.\b/i' => 'Autopista ',
-        ];
-
-        $this->direccion = preg_replace(array_keys($replacements), array_values($replacements), $this->direccion);
-        $this->direccion = trim(preg_replace('/\s+/', ' ', $this->direccion));
-    }
 
     /**
      * Verifica si existe un historial previo de entrega exitosa para esta cédula

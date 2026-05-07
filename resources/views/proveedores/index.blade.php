@@ -7,7 +7,7 @@
             <h2 class="text-3xl font-bold text-on-surface">Proveedores de Entrega</h2>
             <p class="text-on-surface-variant text-[0.875rem] mt-1">Gestión de empresas o couriers encargados de entregar carnets (ej. SAFESURE).</p>
         </div>
-        <a href="{{ route('proveedores.create') }}" class="bg-primary text-white px-5 py-2.5 rounded-lg text-[0.875rem] font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-blue-800 transition-colors">
+        <a href="{{ route('sistema.proveedores.create') }}" class="bg-primary text-white px-5 py-2.5 rounded-lg text-[0.875rem] font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-blue-800 transition-colors">
             <span class="material-symbols-outlined text-lg">add</span>
             Nuevo Proveedor
         </a>
@@ -38,8 +38,8 @@
                         @endif
                     </td>
                     <td class="px-8 py-5 text-[0.875rem] flex gap-3">
-                        <a href="{{ route('proveedores.edit', $p) }}" class="text-primary font-bold hover:underline">Editar</a>
-                        <form action="{{ route('proveedores.destroy', $p) }}" method="POST" onsubmit="confirmActionForm(event, '¿Eliminar proveedor?', 'Esta acción no se puede deshacer y podría afectar el historial si el proveedor tiene afiliados.');">
+                        <a href="{{ route('sistema.proveedores.edit', $p) }}" class="text-primary font-bold hover:underline">Editar</a>
+                        <form action="{{ route('sistema.proveedores.destroy', $p) }}" method="POST" onsubmit="confirmActionForm(event, '¿Eliminar proveedor?', 'Esta acción no se puede deshacer y podría afectar el historial si el proveedor tiene afiliados.');">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="text-red-500 font-bold hover:underline">Eliminar</button>

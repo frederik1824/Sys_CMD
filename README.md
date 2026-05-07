@@ -82,6 +82,31 @@ Se han segregado las interfaces y la lógica de gestión para los tres pilares d
 
 ---
 
-_Documentación actualizada: 27 de Abril, 2026_
-_Arquitectura: Decentralized Modular Architecture + Role-Based Context_
+## 📅 Actualización: 01 de Mayo, 2026 (Business Intelligence & Sales Analytics)
+
+Esta actualización marca la consolidación de la suite analítica del sistema, optimizando la supervisión de la fuerza de ventas y unificando la identidad corporativa del módulo de Traspasos.
+
+### 📊 Business Intelligence & Production Hub
+Se ha desplegado un nuevo ecosistema de reportes ejecutivos diseñados para la toma de decisiones basada en datos:
+1.  **Análisis de Efectividad (Hit-Rate)**: Monitoreo dinámico del porcentaje de éxito por agente y equipo, contrastando ingresos brutos vs. cierres reales.
+2.  **Métrica de los 5 Pilares**: Un nuevo estándar de reporte transaccional que desglosa:
+    *   **Titulares Efectivos**: Producción neta de contratos cerrados.
+    *   **Dependientes Efectivos**: Volumen de afiliados adicionales incorporados.
+    *   **Vidas Totales**: Impacto real de la gestión comercial (Titulares + Dependientes).
+    *   **Pendientes**: Seguimiento de la cola de trabajo (Backlog) generada en el periodo.
+    *   **Rechazados**: Auditoría de calidad de prospección y casos fallidos.
+3.  **Lógica Transaccional (Real-Time Output)**: El sistema ahora computa la producción basándose en la **Fecha de Efectividad**, permitiendo que los resultados de cierres diarios se reflejen instantáneamente en los KPIs, independientemente de cuándo se originó la solicitud.
+
+### 🔄 Rebranding & UX Continuity
+- **Unificación de Términos**: Eliminación definitiva de terminología heredada ("Vidas"). El sistema ahora opera bajo el estándar de **Traspasos** en todas las interfaces, reportes y procesos de exportación.
+- **SideNavBar Contextual**: El reporte de producción ha sido integrado al contexto operativo de Traspasos. La navegación detecta automáticamente la ruta del informe para mantener la barra lateral y la identidad visual del módulo activa, garantizando una navegación sin interrupciones.
+
+### 🛠️ Estabilidad e Integridad de Datos
+- **Normalización de Consultas**: Se resolvieron errores críticos en el motor de exportación CSV y en las vistas de BI mediante la estandarización de referencias a `estado_id` y `agente_id`, eliminando dependencias de columnas obsoletas.
+- **Relaciones Eloquent**: Optimización de la carga de relaciones (`SupervisorTraspaso`, `AgenteTraspaso`) para garantizar la precisión de los filtros por equipo y la integridad de los reportes masivos.
+
+---
+
+_Documentación actualizada: 01 de Mayo, 2026_
+_Arquitectura: Business Intelligence Driven + Transactional Production Analysis_
 

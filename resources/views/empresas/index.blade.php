@@ -15,18 +15,18 @@
         </div>
         
         <div class="flex items-center gap-3">
-            <a href="{{ route('empresas.enrich') }}" class="inline-flex items-center px-5 py-3 bg-white text-slate-500 rounded-2xl font-bold text-[0.65rem] uppercase tracking-widest border border-slate-200 hover:bg-slate-50 transition-all gap-2 shadow-sm">
+            <a href="{{ route('sistema.empresas.enrich') }}" class="inline-flex items-center px-5 py-3 bg-white text-slate-500 rounded-2xl font-bold text-[0.65rem] uppercase tracking-widest border border-slate-200 hover:bg-slate-50 transition-all gap-2 shadow-sm">
                 <span class="material-symbols-outlined text-base">auto_fix_high</span>
                 Saneamiento
             </a>
-            <form action="{{ route('empresas.sync_firebase') }}" method="POST" class="m-0 p-0">
+            <form action="{{ route('sistema.empresas.sync_firebase') }}" method="POST" class="m-0 p-0">
                 @csrf
                 <button type="submit" class="inline-flex items-center px-5 py-3 bg-white text-primary rounded-2xl font-bold text-[0.65rem] uppercase tracking-widest border border-primary/20 hover:bg-primary/5 transition-all gap-2 shadow-sm">
                     <span class="material-symbols-outlined text-base">sync</span>
                     Sincronizar
                 </button>
             </form>
-            <a href="{{ route('empresas.create') }}" class="inline-flex items-center justify-center px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-[0.65rem] uppercase tracking-widest hover:bg-primary hover:-translate-y-1 transition-all shadow-xl shadow-slate-200 gap-3 group">
+            <a href="{{ route('sistema.empresas.create') }}" class="inline-flex items-center justify-center px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-[0.65rem] uppercase tracking-widest hover:bg-primary hover:-translate-y-1 transition-all shadow-xl shadow-slate-200 gap-3 group">
                 <span class="material-symbols-outlined text-lg group-hover:rotate-90 transition-transform">add_business</span>
                 Nueva Entidad
             </a>
@@ -117,7 +117,7 @@
         let pollInterval = null;
 
         function checkProgress() {
-            fetch('{{ route('afiliados.sync_progress') }}', {
+            fetch('{{ route('carnetizacion.afiliados.sync_progress') }}', {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'

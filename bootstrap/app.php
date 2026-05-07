@@ -15,11 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'firebase/webhook'
         ]);
         
+        $middleware->append(\App\Http\Middleware\MaintenanceLockMiddleware::class);
         $middleware->append(\App\Http\Middleware\SanitizeInput::class);
         $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class,
-            'spatie_role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
+            'access_module' => \App\Http\Middleware\CheckApplicationAccess::class,
+            'app_access' => \App\Http\Middleware\CheckApplicationAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

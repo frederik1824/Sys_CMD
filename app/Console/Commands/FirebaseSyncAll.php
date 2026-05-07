@@ -60,12 +60,12 @@ class FirebaseSyncAll extends Command
                 'afiliados' => ['updated' => 0, 'errors' => 0],
             ];
 
-            // Mark as active
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_active', true, 600);
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_progress', 0);
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_label', 'Iniciando subida a Cloud...');
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_control', 'running', 600);
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_stats', $stats, 600);
+            // Mark as active — TTL largo (2h) para syncs con muchos registros
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_active', true, 7200);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_progress', 0, 7200);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_label', 'Iniciando subida a Cloud...', 7200);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_control', 'running', 7200);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_stats', $stats, 7200);
 
             $syncCompanies = $this->option('companies');
             $syncAffiliates = $this->option('affiliates');
@@ -245,10 +245,12 @@ class FirebaseSyncAll extends Command
 
     private function updateProgress($percentage, $label, $stats = [], $logMsg = null)
     {
-        \Illuminate\Support\Facades\Cache::put('firebase_sync_progress', round($percentage), 600);
-        \Illuminate\Support\Facades\Cache::put('firebase_sync_label', $label, 600);
+        // Renovar TTL del flag activo en cada actualización para evitar expiración durante syncs largas
+        \Illuminate\Support\Facades\Cache::put('firebase_sync_active', true, 7200);
+        \Illuminate\Support\Facades\Cache::put('firebase_sync_progress', round($percentage), 7200);
+        \Illuminate\Support\Facades\Cache::put('firebase_sync_label', $label, 7200);
         if (!empty($stats)) {
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_stats', $stats, 600);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_stats', $stats, 7200);
         }
         if ($logMsg) $this->addToFeed($logMsg, 'cyan');
     }

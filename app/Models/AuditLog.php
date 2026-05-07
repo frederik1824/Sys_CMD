@@ -31,14 +31,17 @@ class AuditLog extends Model
      */
     public function getHumanActionAttribute(): string
     {
-        return match ($this->action) {
+        return match ($this->event) {
             'CREATE_DOCUMENT' => 'Creación de Documento',
             'UPLOAD_VERSION' => 'Nueva Versión Cargada',
             'APPROVE_DOCUMENT' => 'Documento Aprobado',
             'REJECT_DOCUMENT' => 'Documento Rechazado',
             'APPROVE_VERSION' => 'Versión Validada',
             'UPDATE_PROFILE' => 'Perfil Actualizado',
-            default => str_replace('_', ' ', ucfirst(strtolower($this->action))),
+            'BACKUP_CREATED' => 'Generó copia de seguridad',
+            'BACKUP_DOWNLOADED' => 'Descargó copia de seguridad',
+            'BACKUP_DELETED' => 'Eliminó copia de seguridad',
+            default => str_replace('_', ' ', ucfirst(strtolower($this->event ?? ''))),
         };
     }
 
@@ -47,23 +50,27 @@ class AuditLog extends Model
      */
     public function getFormattedDetailsAttribute(): string
     {
-        $details = $this->details;
+        $details = $this->new_values ?? $this->old_values ?? [];
         if (!is_array($details)) return (string) $details;
 
-        if ($this->action === 'CREATE_DOCUMENT') {
+        if ($this->event === 'CREATE_DOCUMENT') {
             return "Se registró '{$details['title']}' con el código {$details['code']}.";
         }
 
-        if ($this->action === 'UPLOAD_VERSION' || $this->action === 'APPROVE_VERSION') {
+        if ($this->event === 'UPLOAD_VERSION' || $this->event === 'APPROVE_VERSION') {
             return "Versión {$details['version']} del documento maestro.";
         }
 
-        if ($this->action === 'REJECT_DOCUMENT') {
+        if ($this->event === 'REJECT_DOCUMENT') {
             return "Motivo: " . ($details['reason'] ?? 'Sin observaciones.');
         }
 
-        if ($this->action === 'APPROVE_DOCUMENT') {
+        if ($this->event === 'APPROVE_DOCUMENT') {
             return "Validación institucional completada.";
+        }
+        
+        if (str_starts_with($this->event, 'BACKUP_')) {
+            return "Archivo: " . ($details['file'] ?? 'Desconocido');
         }
 
         // Default: format JSON keys as text if possible

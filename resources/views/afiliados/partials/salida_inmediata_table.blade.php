@@ -32,7 +32,7 @@
                 </td>
                 <td class="py-4 px-2">
                     <div class="flex flex-col">
-                        <a href="{{ route('afiliados.show', $afiliado) }}" class="flex items-center gap-1 group/name">
+                        <a href="{{ route('carnetizacion.afiliados.show', $afiliado) }}" class="flex items-center gap-1 group/name">
                             <span class="text-sm font-bold text-on-surface group-hover/name:text-primary transition-colors">{{ $afiliado->nombre_completo }}</span>
                             @if($afiliado->sexo)
                                 <span class="material-symbols-outlined text-[14px] {{ $afiliado->sexo === 'M' ? 'text-blue-500' : 'text-pink-500' }}">
@@ -72,7 +72,7 @@
                         </button>
                         @endif
 
-                        <a href="{{ route('afiliados.edit', $afiliado) }}" class="p-2 text-slate-400 hover:text-primary transition-colors" title="Editar"><span class="material-symbols-outlined text-[1.25rem]">edit</span></a>
+                        <a href="{{ route('carnetizacion.afiliados.edit', $afiliado) }}" class="p-2 text-slate-400 hover:text-primary transition-colors" title="Editar"><span class="material-symbols-outlined text-[1.25rem]">edit</span></a>
                     </div>
                 </td>
             </tr>

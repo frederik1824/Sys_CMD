@@ -7,7 +7,7 @@
             <h2 class="text-3xl font-bold text-on-surface">Cortes (Periodos)</h2>
             <p class="text-on-surface-variant text-[0.875rem] mt-1">Gestión de los cortes mensuales de carnetización.</p>
         </div>
-        <a href="{{ route('cortes.create') }}" class="bg-primary text-white px-5 py-2.5 rounded-lg text-[0.875rem] font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-blue-800 transition-colors">
+        <a href="{{ route('sistema.cortes.create') }}" class="bg-primary text-white px-5 py-2.5 rounded-lg text-[0.875rem] font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-blue-800 transition-colors">
             <span class="material-symbols-outlined text-lg">add</span>
             Nuevo Corte
         </a>
@@ -69,7 +69,7 @@
                         @endif
                     </td>
                     <td class="px-6 py-5 text-right">
-                        <a href="{{ route('cortes.edit', $corte) }}" class="text-slate-400 hover:text-primary transition-colors">
+                        <a href="{{ route('sistema.cortes.edit', $corte) }}" class="text-slate-400 hover:text-primary transition-colors">
                             <span class="material-symbols-outlined">edit</span>
                         </a>
                     </td>

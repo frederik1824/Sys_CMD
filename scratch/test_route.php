@@ -11,4 +11,4 @@ echo "ID: " . $afiliado->id . "\n";
 echo "UUID: " . $afiliado->uuid . "\n";
 echo "Route Key Name: " . $afiliado->getRouteKeyName() . "\n";
 echo "Route Key: " . $afiliado->getRouteKey() . "\n";
-echo "Show URL: " . route('afiliados.show', $afiliado) . "\n";
+echo "Show URL: " . route('carnetizacion.afiliados.show', $afiliado) . "\n";

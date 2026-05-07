@@ -11,7 +11,7 @@
         
         <div class="flex flex-wrap items-center gap-4 w-full xl:w-auto">
             @if($isAdmin)
-            <form action="{{ route('solicitudes-afiliacion.reports') }}" method="GET" class="flex items-center gap-3 bg-white p-2 pl-6 rounded-[24px] border border-slate-100 shadow-sm group">
+            <form action="{{ route('afiliacion.reports') }}" method="GET" class="flex items-center gap-3 bg-white p-2 pl-6 rounded-[24px] border border-slate-100 shadow-sm group">
                 <i class="ph-bold ph-funnel text-slate-400 group-focus-within:text-indigo-600 transition-colors"></i>
                 <select name="user_id" onchange="this.form.submit()" 
                     class="bg-transparent border-none focus:ring-0 text-xs font-black uppercase tracking-widest text-slate-700 cursor-pointer min-w-[250px]">
@@ -23,7 +23,7 @@
                     @endforeach
                 </select>
                 @if(request('user_id'))
-                <a href="{{ route('solicitudes-afiliacion.reports') }}" class="w-10 h-10 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
+                <a href="{{ route('afiliacion.reports') }}" class="w-10 h-10 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded-full transition-colors">
                     <i class="ph ph-x-circle text-xl"></i>
                 </a>
                 @endif

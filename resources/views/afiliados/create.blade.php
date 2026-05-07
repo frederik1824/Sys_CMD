@@ -6,7 +6,7 @@
                 <h1 class="text-2xl font-bold tracking-tight text-on-surface">Nuevo Afiliado</h1>
                 <p class="text-on-surface-variant text-sm mt-1">Registrar un nuevo afiliado en el sistema.</p>
             </div>
-            <a href="{{ $segment === 'CMD' ? route('afiliados.cmd') : ($segment === 'Otros' ? route('afiliados.otros') : route('afiliados.index')) }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-semibold">
+            <a href="{{ $segment === 'CMD' ? route('carnetizacion.afiliados.cmd') : ($segment === 'Otros' ? route('carnetizacion.afiliados.otros') : route('carnetizacion.afiliados.index')) }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-semibold">
                 <span class="material-symbols-outlined text-[1.25rem]">arrow_back</span> Volver
             </a>
         </div>
@@ -18,7 +18,7 @@
             </div>
         @endif
 
-        <form action="{{ route('afiliados.store') }}" method="POST" class="bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
+        <form action="{{ route('carnetizacion.afiliados.store') }}" method="POST" class="bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
             @csrf
             <input type="hidden" name="segment" value="{{ $segment }}">
 
@@ -64,7 +64,7 @@
                                 statusIcon.innerHTML = '<span class="material-symbols-outlined text-slate-400 animate-spin">sync</span>';
                                 statusIcon.classList.remove('hidden');
 
-                                fetch(`{{ route('afiliados.check_duplicate') }}?cedula=${cedula}`)
+                                fetch(`{{ route('carnetizacion.afiliados.check_duplicate') }}?cedula=${cedula}`)
                                     .then(response => response.json())
                                     .then(data => {
                                         if (data.exists) {
@@ -212,9 +212,34 @@
                     </div>
                 </div>
 
-                {{-- Dynamic Location Script with Tom Select --}}
+                {{-- Dynamic Location Script & Input Masking (SEMANA 3) --}}
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
+                        // --- Input Masking Logic ---
+                        const maskInput = (input, mask) => {
+                            input.addEventListener('input', (e) => {
+                                let value = e.target.value.replace(/\D/g, '');
+                                let maskedValue = '';
+                                let valueIndex = 0;
+
+                                for (let i = 0; i < mask.length && valueIndex < value.length; i++) {
+                                    if (mask[i] === '0') {
+                                        maskedValue += value[valueIndex++];
+                                    } else {
+                                        maskedValue += mask[i];
+                                    }
+                                }
+                                e.target.value = maskedValue;
+                            });
+                        };
+
+                        const cedulaInput = document.getElementById('cedula_input');
+                        const telefonoInput = document.querySelector('input[name="telefono"]');
+
+                        if (cedulaInput) maskInput(cedulaInput, '000-0000000-0');
+                        if (telefonoInput) maskInput(telefonoInput, '(000) 000-0000');
+
+                        // --- Tom Select Config ---
                         const config = {
                             create: false,
                             sortField: { field: "text", direction: "asc" },
@@ -295,8 +320,11 @@
             </div>
 
             <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-                <a href="{{ $segment === 'CMD' ? route('afiliados.cmd') : ($segment === 'Otros' ? route('afiliados.otros') : route('afiliados.index')) }}" class="px-6 py-3 hover:bg-slate-100 rounded-xl text-slate-600 font-semibold transition-colors">Cancelar</a>
-                <button type="submit" class="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-colors shadow-sm">Crear Afiliado</button>
+                <a href="{{ $segment === 'CMD' ? route('carnetizacion.afiliados.cmd') : ($segment === 'Otros' ? route('carnetizacion.afiliados.otros') : route('carnetizacion.afiliados.index')) }}" class="px-6 py-3 hover:bg-slate-100 rounded-xl text-slate-600 font-semibold transition-colors">Cancelar</a>
+                <button type="submit" name="action" value="save_and_new" class="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[1.2rem]">add_circle</span> Guardar y Crear Otro
+                </button>
+                <button type="submit" name="action" value="save" class="px-6 py-3 bg-blue-700 text-white rounded-xl font-bold hover:bg-blue-800 transition-colors shadow-sm">Guardar y Volver</button>
             </div>
         </form>
     </div>

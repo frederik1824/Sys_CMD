@@ -22,7 +22,7 @@
                         </button>
                     </div>
                 </div>
-                <a href="{{ route('afiliados.export', array_merge(request()->all(), ['segment' => 'SalidaInmediata'])) }}" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-lg hover:bg-slate-800 transition-all flex items-center gap-2">
+                <a href="{{ route('carnetizacion.afiliados.export', array_merge(request()->all(), ['segment' => 'SalidaInmediata'])) }}" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-lg hover:bg-slate-800 transition-all flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">download</span>
                     Exportar XLSX
                 </a>
@@ -30,7 +30,7 @@
         </div>
 
         <!-- Filter Bar -->
-        <form id="filterForm" method="GET" action="{{ route('afiliados.salida_inmediata') }}" class="bg-surface-container-low p-4 rounded-xl flex flex-wrap items-center gap-4">
+        <form id="filterForm" method="GET" action="{{ route('carnetizacion.afiliados.salida_inmediata') }}" class="bg-surface-container-low p-4 rounded-xl flex flex-wrap items-center gap-4">
             <div class="flex-1 min-w-[300px] relative">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por Nombre / Cédula / Expediente" class="w-full appearance-none bg-surface-container-lowest border-none rounded-lg text-xs font-medium px-4 py-2.5 focus:ring-2 ring-blue-500/10 shadow-sm border border-slate-100">
             </div>
@@ -38,7 +38,7 @@
             <div class="w-full md:w-auto min-w-[250px] relative">
                 <select name="empresa_id" id="filter_empresa" class="w-full appearance-none bg-surface-container-lowest border border-slate-100 rounded-lg text-xs font-medium px-4 py-2.5 pr-10 focus:ring-2 ring-blue-500/10 shadow-sm">
                     <option value="">Empresa: Todas</option>
-                    @foreach(\App\Models\Empresa::where('es_verificada', true)->orderBy('nombre')->get() as $e)
+                    @foreach($empresas as $e)
                         <option value="{{ $e->id }}" {{ request('empresa_id') == $e->id ? 'selected' : '' }}>{{ $e->nombre }}</option>
                     @endforeach
                 </select>
@@ -48,7 +48,7 @@
             <div class="w-full md:w-auto min-w-[160px] relative">
                 <select name="estado_id" class="w-full appearance-none bg-surface-container-lowest border border-slate-100 rounded-lg text-xs font-medium px-4 py-2.5 pr-10 focus:ring-2 ring-blue-500/10 shadow-sm">
                     <option value="">Estado: Todos</option>
-                    @foreach(\App\Models\Estado::all() as $est)
+                    @foreach($estados as $est)
                         <option value="{{ $est->id }}" {{ request('estado_id') == $est->id ? 'selected' : '' }}>{{ $est->nombre }}</option>
                     @endforeach
                 </select>
@@ -58,7 +58,7 @@
             <div class="w-full md:w-auto min-w-[150px] relative">
                 <select name="corte_id" class="w-full appearance-none bg-surface-container-lowest border border-slate-100 rounded-lg text-xs font-medium px-4 py-2.5 pr-10 focus:ring-2 ring-blue-500/10 shadow-sm">
                     <option value="">Corte: Todos</option>
-                    @foreach(\App\Models\Corte::all() as $c)
+                    @foreach($cortes as $c)
                         <option value="{{ $c->id }}" {{ request('corte_id') == $c->id ? 'selected' : '' }}>{{ $c->nombre }}</option>
                     @endforeach
                 </select>
@@ -68,7 +68,7 @@
             <button type="submit" class="bg-primary text-white p-2.5 rounded-lg hover:bg-primary-container transition-colors shadow-sm">
                 <span class="material-symbols-outlined text-xl">search</span>
             </button>
-            <a href="{{ route('afiliados.salida_inmediata') }}" class="bg-surface-container-high text-on-surface-variant p-2.5 rounded-lg hover:bg-slate-200 transition-colors shadow-sm border border-slate-200" title="Limpiar Filtros">
+            <a href="{{ route('carnetizacion.afiliados.salida_inmediata') }}" class="bg-surface-container-high text-on-surface-variant p-2.5 rounded-lg hover:bg-slate-200 transition-colors shadow-sm border border-slate-200" title="Limpiar Filtros">
                 <span class="material-symbols-outlined text-xl">clear_all</span>
             </a>
         </form>
@@ -81,7 +81,7 @@
 
     <!-- Modals (Reusing from index for consistency) -->
     <div id="assignModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
-        <form method="POST" action="{{ route('afiliados.bulk_assign') }}" id="assignForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100">
+        <form method="POST" action="{{ route('carnetizacion.afiliados.bulk_assign') }}" id="assignForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100">
             @csrf
             <input type="hidden" name="segment" value="SalidaInmediata">
             <h3 class="text-xl font-bold mb-4 text-on-surface">Asignar Responsable</h3>
@@ -89,7 +89,7 @@
                 <label class="block text-sm font-medium text-slate-700 mb-2">Responsable</label>
                 <select name="responsable_id" required class="w-full bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary p-3 text-sm">
                     <option value="">Seleccione uno...</option>
-                    @foreach(\App\Models\Responsable::all() as $resp)
+                    @foreach($responsables as $resp)
                         <option value="{{ $resp->id }}">{{ $resp->nombre }}</option>
                     @endforeach
                 </select>
@@ -103,7 +103,7 @@
     </div>
 
     <div id="statusModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
-        <form method="POST" action="{{ route('afiliados.bulk_status') }}" id="statusForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100">
+        <form method="POST" action="{{ route('carnetizacion.afiliados.bulk_status') }}" id="statusForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100">
             @csrf
             <input type="hidden" name="segment" value="SalidaInmediata">
             <h3 class="text-xl font-bold mb-4 text-on-surface">Cambiar Estado Masivo</h3>
@@ -111,7 +111,7 @@
                 <label class="block text-sm font-medium text-slate-700 mb-2">Nuevo Estado</label>
                 <select name="estado_id" required class="w-full bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary p-3 text-sm">
                     <option value="">Seleccione uno...</option>
-                    @foreach(\App\Models\Estado::all() as $est)
+                    @foreach($estados as $est)
                         <option value="{{ $est->id }}" {{ $est->id == 9 ? 'selected' : '' }}>{{ $est->nombre }}</option>
                     @endforeach
                 </select>

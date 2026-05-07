@@ -13,12 +13,12 @@
         </div>
         <div class="flex flex-wrap gap-4">
             @can('solicitudes_afiliacion.configurar')
-            <a href="{{ route('solicitudes-afiliacion.config') }}" 
+            <a href="{{ route('afiliacion.config') }}" 
                class="bg-white text-slate-900 border border-slate-200 rounded-[20px] px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-3 shadow-sm group">
                 <i class="ph ph-sliders-horizontal text-xl group-hover:rotate-180 transition-transform duration-500"></i> Parámetros
             </a>
             @endcan
-            <a href="{{ route('solicitudes-afiliacion.create') }}" 
+            <a href="{{ route('afiliacion.create') }}" 
                class="bg-slate-900 text-white rounded-[20px] px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-800 transition-all flex items-center gap-3 shadow-2xl shadow-slate-200 group">
                 <i class="ph ph-plus-circle-fill text-xl group-hover:scale-110 transition-transform"></i> Nueva Solicitud
             </a>
@@ -95,11 +95,11 @@
             <div class="flex flex-col md:flex-row items-center gap-6 w-full xl:w-auto">
                 <!-- SWITCHER DE VISTA -->
                 <div class="flex items-center gap-1 p-1 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                    <a href="{{ route('solicitudes-afiliacion.index', array_merge(request()->all(), ['view' => 'list'])) }}" 
+                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['view' => 'list'])) }}" 
                        class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('view', 'list') == 'list' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600' }}">
                         <i class="ph ph-rows-fill mr-2"></i> Lista
                     </a>
-                    <a href="{{ route('solicitudes-afiliacion.index', array_merge(request()->all(), ['view' => 'kanban'])) }}" 
+                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['view' => 'kanban'])) }}" 
                        class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('view') == 'kanban' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600' }}">
                         <i class="ph ph-kanban-fill mr-2"></i> Tablero
                     </a>
@@ -108,26 +108,26 @@
                 <div class="h-8 w-px bg-slate-200 hidden md:block mx-2"></div>
 
                 <div class="flex items-center gap-3 px-6 py-2 bg-white border border-slate-200 rounded-[24px] shadow-sm overflow-hidden p-1">
-                    <a href="{{ route('solicitudes-afiliacion.index', array_merge(request()->all(), ['estado' => ''])) }}" 
+                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => ''])) }}" 
                        class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ !request('estado') ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600' }}">
                         Todas
                     </a>
-                    <a href="{{ route('solicitudes-afiliacion.index', array_merge(request()->all(), ['estado' => 'Pendiente'])) }}" 
+                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => 'Pendiente'])) }}" 
                        class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('estado') == 'Pendiente' ? 'bg-amber-500 text-white shadow-lg shadow-amber-100' : 'text-slate-400 hover:text-slate-600' }}">
                         Pendientes
                     </a>
-                    <a href="{{ route('solicitudes-afiliacion.index', array_merge(request()->all(), ['estado' => 'En revisión'])) }}" 
+                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => 'En revisión'])) }}" 
                        class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('estado') == 'En revisión' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600' }}">
                         En Revisión
                     </a>
-                    <a href="{{ route('solicitudes-afiliacion.index', array_merge(request()->all(), ['estado' => 'Devuelta'])) }}" 
+                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => 'Devuelta'])) }}" 
                        class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('estado') == 'Devuelta' ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'text-slate-400 hover:text-slate-600' }}">
                         Devueltas
                     </a>
                 </div>
             </div>
             
-            <form action="{{ route('solicitudes-afiliacion.index') }}" method="GET" class="relative w-full xl:w-[500px] group">
+            <form action="{{ route('afiliacion.index') }}" method="GET" class="relative w-full xl:w-[500px] group">
                 <input type="hidden" name="view" value="{{ request('view', 'list') }}">
                 <input type="hidden" name="estado" value="{{ request('estado') }}">
                 <i class="ph-bold ph-magnifying-glass absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 text-xl group-focus-within:text-indigo-600 transition-colors"></i>
@@ -135,7 +135,7 @@
                        placeholder="Buscar por cédula, nombre o folio..." 
                        class="w-full pl-16 pr-8 py-5 bg-white border-2 border-slate-100 rounded-[28px] text-sm font-black text-slate-800 placeholder-slate-300 focus:ring-8 focus:ring-indigo-50 focus:border-indigo-200 focus:bg-white transition-all shadow-sm">
                 @if(request('search') || request('estado'))
-                <a href="{{ route('solicitudes-afiliacion.index') }}" class="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-rose-500 hover:text-rose-600 transition-colors">Limpiar</a>
+                <a href="{{ route('afiliacion.index') }}" class="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-rose-500 hover:text-rose-600 transition-colors">Limpiar</a>
                 @endif
             </form>
         </div>
@@ -193,7 +193,7 @@
                                                 </div>
                                             @endif
                                         </div>
-                                        <a href="{{ route('solicitudes-afiliacion.show', $sol) }}" class="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all">
+                                        <a href="{{ route('afiliacion.show', $sol) }}" class="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all">
                                             <i class="ph ph-arrow-right font-bold"></i>
                                         </a>
                                     </div>
@@ -215,7 +215,7 @@
                         <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Seleccionadas</span>
                     </div>
 
-                    <form action="{{ route('solicitudes-afiliacion.bulk-assign') }}" method="POST" class="flex items-center gap-4">
+                    <form action="{{ route('afiliacion.bulk-assign') }}" method="POST" class="flex items-center gap-4">
                         @csrf
                         <input type="hidden" name="ids" :value="selected.join(',')">
                         <select name="user_id" required class="bg-white/10 border-none rounded-xl text-[10px] font-black uppercase tracking-widest focus:ring-0 px-6 py-3">
@@ -321,15 +321,15 @@
                             <td class="px-6 py-5">
                                 <div class="flex justify-end gap-2 scale-90 origin-right">
                                     @if(in_array($solicitud->estado, ['Borrador', 'Devuelta']) && $solicitud->solicitante_user_id == auth()->id())
-                                    <a href="{{ route('solicitudes-afiliacion.edit', $solicitud) }}" class="w-10 h-10 flex items-center justify-center text-amber-500 hover:text-white hover:bg-amber-500 rounded-xl transition-all">
+                                    <a href="{{ route('afiliacion.edit', $solicitud) }}" class="w-10 h-10 flex items-center justify-center text-amber-500 hover:text-white hover:bg-amber-500 rounded-xl transition-all">
                                         <i class="ph-bold ph-pencil-simple text-xl"></i>
                                     </a>
                                     @endif
-                                    <a href="{{ route('solicitudes-afiliacion.show', $solicitud) }}" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
+                                    <a href="{{ route('afiliacion.show', $solicitud) }}" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
                                         <i class="ph-bold ph-arrow-square-out text-xl"></i>
                                     </a>
                                     @if($solicitud->estado == 'Pendiente' && auth()->user()->can('solicitudes_afiliacion.asignarse'))
-                                    <form action="{{ route('solicitudes-afiliacion.assign', $solicitud) }}" method="POST">
+                                    <form action="{{ route('afiliacion.assign', $solicitud) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="w-10 h-10 flex items-center justify-center text-emerald-500 hover:text-white hover:bg-emerald-500 rounded-xl transition-all">
                                             <i class="ph-bold ph-hand-pointing text-xl"></i>
@@ -349,7 +349,7 @@
                                     <h3 class="text-2xl font-black text-slate-900 tracking-tight mb-3">Sin resultados técnicos</h3>
                                     <p class="text-slate-400 font-medium text-base leading-relaxed">No hemos encontrado expedientes que coincidan con los criterios de búsqueda actuales.</p>
                                     @if(request('search') || request('estado'))
-                                    <a href="{{ route('solicitudes-afiliacion.index') }}" class="mt-8 text-[11px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 underline decoration-indigo-200 underline-offset-8 transition-all">Limpiar todos los filtros</a>
+                                    <a href="{{ route('afiliacion.index') }}" class="mt-8 text-[11px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 underline decoration-indigo-200 underline-offset-8 transition-all">Limpiar todos los filtros</a>
                                     @endif
                                 </div>
                             </td>
@@ -426,7 +426,7 @@
         const checkInterval = 30000; // 30 segundos
 
         setInterval(() => {
-            fetch("{{ route('solicitudes-afiliacion.check-stats') }}")
+            fetch("{{ route('afiliacion.check-stats') }}")
                 .then(response => response.json())
                 .then(data => {
                     if (data.pendientes > currentPendientes) {

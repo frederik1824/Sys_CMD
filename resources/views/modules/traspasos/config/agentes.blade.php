@@ -2,9 +2,19 @@
 
 @section('content')
 <div class="p-8 max-w-[1200px] mx-auto">
-    <div class="mb-10">
-        <h1 class="text-4xl font-extrabold tracking-tighter text-slate-900">Gestión de Agentes y Supervisores</h1>
-        <p class="text-slate-500 font-medium mt-1">Define la jerarquía operativa para el seguimiento de traspasos.</p>
+    <div class="flex justify-between items-end mb-10">
+        <div>
+            <h1 class="text-4xl font-extrabold tracking-tighter text-slate-900">Gestión de Agentes y Supervisores</h1>
+            <p class="text-slate-500 font-medium mt-1">Define la jerarquía operativa para el seguimiento de traspasos.</p>
+        </div>
+        <div class="flex gap-4">
+            <a href="{{ route('traspasos.config.motivos.index') }}" class="bg-blue-50 text-blue-700 border border-blue-100 rounded-2xl px-8 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center gap-2 shadow-sm">
+                <i class="ph-bold ph-list-checks text-lg"></i> Gestionar Motivos
+            </a>
+            <a href="{{ route('traspasos.index') }}" class="bg-white text-slate-900 border border-slate-200 rounded-2xl px-8 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
+                <i class="ph ph-arrow-left text-lg"></i> Volver a la Bandeja
+            </a>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -99,9 +109,7 @@
                                 </td>
                                 <td class="px-8 py-4">
                                     @php
-                                        $meta = \App\Models\MetaTraspaso::where('agente_id', $agente->id)
-                                            ->where('periodo', now()->format('Y-m'))
-                                            ->first();
+                                        $meta = $agente->currentMeta;
                                     @endphp
                                     @if($meta)
                                         <span class="text-xs font-black text-blue-600">{{ $meta->meta_cantidad }} <span class="text-[9px] text-slate-400">/ {{ now()->translatedFormat('M') }}</span></span>

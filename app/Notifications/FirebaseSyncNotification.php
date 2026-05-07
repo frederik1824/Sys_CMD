@@ -24,7 +24,7 @@ class FirebaseSyncNotification extends Notification
         $this->title = $title;
         $this->message = $message;
         $this->icon = $icon;
-        $this->url = $url ?? route('firebase.sync_center');
+        $this->url = $url ?? route('carnetizacion.sync_center.index');
     }
 
     /**

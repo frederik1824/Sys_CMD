@@ -6,12 +6,12 @@
                 <h1 class="text-2xl font-bold tracking-tight text-on-surface">Editar Afiliado</h1>
                 <p class="text-on-surface-variant text-sm mt-1">Actualizar información de {{ $afiliado->nombre_completo }}</p>
             </div>
-            <a href="{{ route('afiliados.index') }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-semibold">
+            <a href="{{ route('carnetizacion.afiliados.index') }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-semibold">
                 <span class="material-symbols-outlined text-[1.25rem]">arrow_back</span> Volver
             </a>
         </div>
 
-        <form action="{{ route('afiliados.update', $afiliado) }}" method="POST" class="bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
+        <form action="{{ route('carnetizacion.afiliados.update', $afiliado) }}" method="POST" class="bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
             @csrf
             @method('PUT')
             <input type="hidden" name="last_updated_at" value="{{ $afiliado->updated_at }}">
@@ -60,7 +60,7 @@
                                 statusIcon.innerHTML = '<span class="material-symbols-outlined text-slate-400 animate-spin">sync</span>';
                                 statusIcon.classList.remove('hidden');
 
-                                fetch(`{{ route('afiliados.check_duplicate') }}?cedula=${cedula}`)
+                                fetch(`{{ route('carnetizacion.afiliados.check_duplicate') }}?cedula=${cedula}`)
                                     .then(response => response.json())
                                     .then(data => {
                                         if (data.exists) {
@@ -309,7 +309,7 @@
             </div>
 
             <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-                <a href="{{ route('afiliados.index') }}" class="px-6 py-3 hover:bg-slate-100 rounded-xl text-slate-600 font-semibold transition-colors">Cancelar</a>
+                <a href="{{ route('carnetizacion.afiliados.index') }}" class="px-6 py-3 hover:bg-slate-100 rounded-xl text-slate-600 font-semibold transition-colors">Cancelar</a>
                 <button type="submit" class="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-colors shadow-sm">Guardar Cambios</button>
             </div>
         </form>

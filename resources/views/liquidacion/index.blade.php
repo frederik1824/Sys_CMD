@@ -140,10 +140,9 @@
                             <td class="py-4 px-4 text-center">
                                 @php
                                     $sla = $afiliado->sla_status;
-                                    $color = $sla === 'critico' ? 'bg-rose-500' : ($sla === 'alerta' ? 'bg-amber-500' : ($sla === 'completado' ? 'bg-emerald-500' : 'bg-blue-500'));
                                 @endphp
                                 <div class="inline-flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-full border border-slate-200">
-                                    <div class="w-2 h-2 rounded-full {{ $color }}"></div>
+                                    <div class="w-2 h-2 rounded-full bg-{{ $sla->color() }}-500"></div>
                                     <span class="text-[0.6rem] font-black uppercase text-slate-600">{{ $afiliado->dias_transcurridos }} Días</span>
                                 </div>
                             </td>

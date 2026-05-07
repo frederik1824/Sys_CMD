@@ -31,25 +31,25 @@
                         </button>
                     </div>
                 </div>
-                <form action="{{ route('afiliados.sanitize') }}" method="POST">
+                <form action="{{ route('carnetizacion.afiliados.sanitize') }}" method="POST">
                     @csrf
                     <button type="submit" class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2" title="Normaliza abreviaturas en direcciones (C/ -> Calle, No. -> #)">
                         <span class="material-symbols-outlined text-sm">cleaning_services</span>
                         Normalizar Direcciones
                     </button>
                 </form>
-                <a href="{{ route('afiliados.export', request()->all()) }}" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-lg hover:bg-slate-800 transition-all flex items-center gap-2">
+                <a href="{{ route('carnetizacion.afiliados.export', request()->all()) }}" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-lg hover:bg-slate-800 transition-all flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">download</span>
                     Exportar XLSX
                 </a>
-                <form action="{{ route('afiliados.sync_firebase') }}" method="POST">
+                <button type="button" onclick="confirmGlobalSync()" class="bg-primary/10 text-primary border border-primary/20 px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-primary hover:text-white transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-lg">sync</span>
+                    Sincronizar
+                </button>
+                <form id="globalSyncForm" action="{{ route('carnetizacion.afiliados.sync_firebase') }}" method="POST" class="hidden">
                     @csrf
-                    <button type="submit" class="bg-primary/10 text-primary border border-primary/20 px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-primary hover:text-white transition-all shadow-sm">
-                        <span class="material-symbols-outlined text-lg">sync</span>
-                        Sincronizar
-                    </button>
                 </form>
-                <a href="{{ route('afiliados.create', ['segment' => $segment]) }}" class="bg-primary text-white px-5 py-2.5 rounded-xl shadow-lg shadow-primary/20 text-sm font-semibold flex items-center gap-2 hover:bg-blue-800 transition-colors">
+                <a href="{{ route('carnetizacion.afiliados.create', ['segment' => $segment]) }}" class="bg-primary text-white px-5 py-2.5 rounded-xl shadow-lg shadow-primary/20 text-sm font-semibold flex items-center gap-2 hover:bg-blue-800 transition-colors">
                     <span class="material-symbols-outlined text-lg">add</span> Nuevo
                 </a>
             </div>
@@ -82,25 +82,24 @@
         </div>
         @endif
 
-        <!-- Progress Bar for Sync -->
-        <div id="sync-progress-container" class="hidden mb-6 animate-in fade-in slide-in-from-top duration-500">
-            <div class="bg-white p-6 rounded-2xl border border-primary/20 shadow-lg shadow-primary/5">
-                <div class="flex justify-between items-center mb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-primary/10 rounded-lg">
-                            <span class="material-symbols-outlined text-primary animate-spin">sync</span>
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-black text-slate-800 tracking-tight">Sincronización en curso</h4>
-                            <p id="sync-label" class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Iniciando...</p>
-                        </div>
-                    </div>
-                    <span id="sync-percentage" class="text-lg font-black text-primary italic">0%</span>
-                </div>
-                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-50">
-                    <div id="sync-progress-bar" class="bg-primary h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_15px_rgba(37,99,235,0.3)]" style="width: 0%"></div>
-                </div>
-            </div>
+        <!-- Quick Filters (NUEVO SEMANA 2) -->
+        <div class="flex items-center gap-2 border-b border-slate-200 pb-px">
+            <a href="{{ route(Route::currentRouteName()) }}" 
+               class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ !request('estado_id') && !request('sla_critical') ? 'border-blue-600 text-blue-700 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
+                Todos
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['estado_id' => 7, 'sla_critical' => null]) }}" 
+               class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ request('estado_id') == 7 ? 'border-amber-500 text-amber-700 bg-amber-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
+                Pendientes Validación
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['estado_id' => null, 'sla_critical' => 1]) }}" 
+               class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ request('sla_critical') == 1 ? 'border-rose-500 text-rose-700 bg-rose-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
+                SLA Crítico
+            </a>
+            <a href="{{ request()->fullUrlWithQuery(['estado_id' => 8, 'sla_critical' => null]) }}" 
+               class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ request('estado_id') == 8 ? 'border-emerald-500 text-emerald-700 bg-emerald-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
+                Completados
+            </a>
         </div>
 
         <!-- Filter Bar -->
@@ -133,7 +132,7 @@
             <div class="flex-1 min-w-[200px] relative">
                 <input type="text" name="rnc_empresa" value="{{ request('rnc_empresa') }}" list="empresas_filter_list" placeholder="Empresa / RNC" class="w-full appearance-none bg-surface-container-lowest border-none rounded-lg text-xs font-medium px-4 py-2.5 focus:ring-2 ring-blue-500/10">
                 <datalist id="empresas_filter_list">
-                    @foreach(\App\Models\Empresa::orderBy('nombre')->get(['nombre', 'rnc']) as $emp)
+                    @foreach($empresas as $emp)
                         <option value="{{ $emp->rnc }}">{{ $emp->nombre }}</option>
                     @endforeach
                 </datalist>
@@ -185,85 +184,75 @@
         </form>
 
         <!-- Table Container -->
-        <div id="tableContainer" class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 transition-opacity duration-300">
+        <div id="tableContainer" class="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 transition-opacity duration-300">
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-surface-container-high dark:bg-slate-800/50">
-                            <th class="py-4 px-6 border-b border-slate-200 dark:border-slate-700">
-                                <input id="selectAll" class="rounded text-primary focus:ring-primary border-slate-300 w-4 h-4 cursor-pointer" type="checkbox"/>
+                        <tr class="bg-slate-50 dark:bg-slate-800/50">
+                            <th class="py-3 px-6 border-b border-slate-200 dark:border-slate-700">
+                                <input id="selectAll" class="rounded text-blue-600 focus:ring-blue-500 border-slate-300 w-4 h-4 cursor-pointer" type="checkbox"/>
                             </th>
-                            <th class="py-4 px-2 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400">
-                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'nombre', 'direction' => request('sort') === 'nombre' && request('direction') === 'asc' ? 'desc' : 'asc']) }}" class="flex items-center gap-1 hover:text-primary transition-colors">
+                            <th class="py-3 px-2 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500">
+                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'nombre', 'direction' => request('sort') === 'nombre' && request('direction') === 'asc' ? 'desc' : 'asc']) }}" class="flex items-center gap-1 hover:text-blue-700 transition-colors">
                                     Afiliado @if(request('sort') === 'nombre') <span class="material-symbols-outlined text-xs">{{ request('direction') === 'asc' ? 'expand_less' : 'expand_more' }}</span> @endif
                                 </a>
                             </th>
-                            <th class="py-4 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400">
-                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'contrato', 'direction' => request('sort') === 'contrato' && request('direction') === 'asc' ? 'desc' : 'asc']) }}" class="flex items-center gap-1 hover:text-primary transition-colors">
-                                    Contrato @if(request('sort') === 'contrato') <span class="material-symbols-outlined text-xs">{{ request('direction') === 'asc' ? 'expand_less' : 'expand_more' }}</span> @endif
-                                </a>
+                            <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500">
+                                Contrato
                             </th>
-                            <th class="py-4 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400 w-32">RNC</th>
-                            <th class="py-4 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400">
-                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'empresa', 'direction' => request('sort') === 'empresa' && request('direction') === 'asc' ? 'desc' : 'asc']) }}" class="flex items-center gap-1 hover:text-primary transition-colors">
-                                    Empresa @if(request('sort') === 'empresa') <span class="material-symbols-outlined text-xs">{{ request('direction') === 'asc' ? 'expand_less' : 'expand_more' }}</span> @endif
-                                </a>
+                            <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500 w-32">RNC</th>
+                            <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500">
+                                Empresa
                             </th>
-                            <th class="py-4 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400">Corte</th>
-                            <th class="py-4 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400">
-                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'responsable', 'direction' => request('sort') === 'responsable' && request('direction') === 'asc' ? 'desc' : 'asc']) }}" class="flex items-center gap-1 hover:text-primary transition-colors">
-                                    Responsable @if(request('sort') === 'responsable') <span class="material-symbols-outlined text-xs">{{ request('direction') === 'asc' ? 'expand_less' : 'expand_more' }}</span> @endif
-                                </a>
+                            <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500">Corte</th>
+                            <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500">
+                                Responsable
                             </th>
-                            <th class="py-4 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400 text-center">
-                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'entrega', 'direction' => request('sort') === 'entrega' && request('direction') === 'asc' ? 'desc' : 'asc']) }}" class="flex items-center justify-center gap-1 hover:text-primary transition-colors">
-                                    Entrega @if(request('sort') === 'entrega') <span class="material-symbols-outlined text-xs">{{ request('direction') === 'asc' ? 'expand_less' : 'expand_more' }}</span> @endif
-                                </a>
+                            <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500 text-center">
+                                Entrega
                             </th>
-                            <th class="py-4 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400 text-center">Docs</th>
-                            <th class="py-4 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400">
-                                <a href="{{ request()->fullUrlWithQuery(['sort' => 'estado', 'direction' => request('sort') === 'estado' && request('direction') === 'asc' ? 'desc' : 'asc']) }}" class="flex items-center gap-1 hover:text-primary transition-colors">
-                                    Estado @if(request('sort') === 'estado') <span class="material-symbols-outlined text-xs">{{ request('direction') === 'asc' ? 'expand_less' : 'expand_more' }}</span> @endif
-                                </a>
+                            <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500 text-center">Docs</th>
+                            <th class="py-3 px-4 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500">
+                                Estado
                             </th>
-                            <th class="py-4 px-6 border-b border-slate-200 dark:border-slate-700 text-[0.6875rem] font-medium tracking-wider uppercase text-on-surface-variant dark:text-slate-400 text-right">Acciones</th>
+                            <th class="py-3 px-6 border-b border-slate-200 dark:border-slate-700 text-[0.65rem] font-bold tracking-wider uppercase text-slate-500 text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-50 dark:divide-slate-800/50 transition-opacity duration-300">
                         <!-- Skeleton Rows (Hidden by default) -->
                         <template id="skeleton-row">
-                            <tr class="animate-pulse">
-                                <td class="py-4 px-6"><div class="w-4 h-4 bg-slate-100 rounded"></div></td>
-                                <td class="py-4 px-2">
-                                    <div class="space-y-2">
-                                        <div class="h-4 bg-slate-100 rounded w-3/4 skeleton"></div>
-                                        <div class="h-3 bg-slate-50 rounded w-1/2 skeleton"></div>
+                            <tr class="animate-pulse border-b border-slate-100">
+                                <td class="py-2 px-6"><div class="w-4 h-4 bg-slate-100 rounded"></div></td>
+                                <td class="py-2 px-2">
+                                    <div class="space-y-1">
+                                        <div class="h-3 bg-slate-100 rounded w-3/4 skeleton"></div>
+                                        <div class="h-2 bg-slate-50 rounded w-1/2 skeleton"></div>
                                     </div>
                                 </td>
-                                <td class="py-4 px-4"><div class="h-4 bg-slate-50 rounded w-2/3 skeleton"></div></td>
-                                <td class="py-4 px-4"><div class="h-4 bg-slate-50 rounded w-24 skeleton"></div></td>
-                                <td class="py-4 px-4"><div class="h-4 bg-slate-50 rounded w-32 skeleton"></div></td>
-                                <td class="py-4 px-4"><div class="h-4 bg-slate-50 rounded w-16 skeleton"></div></td>
-                                <td class="py-4 px-4"><div class="h-8 bg-slate-50 rounded-full w-24 skeleton"></div></td>
-                                <td class="py-4 px-4"><div class="h-4 bg-slate-50 rounded w-20 skeleton"></div></td>
-                                <td class="py-4 px-4"><div class="h-4 bg-slate-50 rounded w-12 skeleton"></div></td>
-                                <td class="py-4 px-4"><div class="h-6 bg-slate-50 rounded-full w-20 skeleton"></div></td>
-                                <td class="py-4 px-6 text-right"><div class="h-8 bg-slate-50 rounded-xl w-16 ml-auto skeleton"></div></td>
+                                <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-2/3 skeleton"></div></td>
+                                <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-24 skeleton"></div></td>
+                                <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-32 skeleton"></div></td>
+                                <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-16 skeleton"></div></td>
+                                <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-24 skeleton"></div></td>
+                                <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-20 skeleton"></div></td>
+                                <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-12 skeleton"></div></td>
+                                <td class="py-2 px-4"><div class="h-5 bg-slate-50 rounded-full w-20 skeleton"></div></td>
+                                <td class="py-2 px-6 text-right"><div class="h-6 bg-slate-50 rounded-lg w-16 ml-auto skeleton"></div></td>
                             </tr>
                         </template>
 
                         @forelse($afiliados as $afiliado)
-                        <tr class="hover:bg-slate-50/80 transition-all group border-b border-slate-100 last:border-0 dark:border-slate-800">
-                            <td class="py-4 px-6">
-                                <input name="selected[]" value="{{ $afiliado->uuid }}" class="rounded text-primary focus:ring-primary border-slate-300 w-4 h-4 cursor-pointer affiliate-checkbox" type="checkbox"/>
+                        <tr class="hover:bg-blue-50/30 transition-all border-b border-slate-100 last:border-0">
+                            <td class="py-2 px-6">
+                                <input name="selected[]" value="{{ $afiliado->uuid }}" class="rounded text-blue-600 focus:ring-blue-500 border-slate-300 w-4 h-4 cursor-pointer affiliate-checkbox" type="checkbox"/>
                             </td>
-                            <td class="py-4 px-2">
+                            <td class="py-2 px-2">
                                 <div class="flex items-center gap-3">
                                     <div class="flex flex-col">
-                                        <a href="{{ route('afiliados.show', $afiliado) }}" class="flex items-center gap-1 group/name">
-                                            <span class="text-sm font-bold text-on-surface group-hover/name:text-primary transition-colors">{{ $afiliado->nombre_completo }}</span>
+                                        <a href="{{ route('carnetizacion.afiliados.show', $afiliado) }}" class="flex items-center gap-1 group/name">
+                                            <span class="text-[0.8rem] font-bold text-slate-800 group-hover:text-blue-700 transition-colors">{{ $afiliado->nombre_completo }}</span>
                                             @if($afiliado->sexo)
-                                                <span class="material-symbols-outlined text-[14px] {{ $afiliado->sexo === 'M' ? 'text-blue-500' : 'text-pink-500' }}" title="{{ $afiliado->sexo === 'M' ? 'Masculino' : 'Femenino' }}">
+                                                <span class="material-symbols-outlined text-[12px] {{ $afiliado->sexo === 'M' ? 'text-blue-500' : 'text-pink-500' }}">
                                                     {{ $afiliado->sexo === 'M' ? 'male' : 'female' }}
                                                 </span>
                                             @endif
@@ -288,62 +277,46 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="py-4 px-4">
-                                <span class="text-xs font-bold text-on-surface dark:text-slate-200">{{ $afiliado->contrato ?? 'N/A' }}</span>
+                            <td class="py-2 px-4">
+                                <span class="text-[0.75rem] font-bold text-slate-800">{{ $afiliado->contrato ?? 'N/A' }}</span>
                             </td>
-                            <td class="py-4 px-4 w-32">
-                                <span class="text-[0.7rem] font-mono font-bold text-slate-600 bg-slate-100/50 px-2 py-1 rounded border border-slate-200/50">{{ $afiliado->rnc_empresa ?? '----------' }}</span>
+                            <td class="py-2 px-4 w-32">
+                                <span class="text-[0.65rem] font-mono font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">{{ $afiliado->rnc_empresa ?? '----------' }}</span>
                             </td>
-                            <td class="py-4 px-4">
+                            <td class="py-2 px-4">
                                 @if($afiliado->empresa_id)
-                                    <a href="{{ route('empresas.show', $afiliado->empresaModel) }}" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                        <i class="fa-solid fa-building text-[10px]"></i>
-                                        {{ $afiliado->empresaModel->nombre ?? $afiliado->empresa }}
-                                        @if($afiliado->empresaModel?->es_verificada)
-                                            <span class="material-symbols-outlined text-blue-500 text-[14px]" title="Empresa Verificada (Salida Inmediata)">verified_user</span>
-                                        @endif
-                                        @if($afiliado->empresaModel?->es_real)
-                                            <span class="material-symbols-outlined text-emerald-500 text-[14px]" title="Ubicación Real Confirmada">verified</span>
-                                        @endif
+                                    <a href="{{ route('sistema.empresas.show', $afiliado->empresaModel) }}" class="text-[0.75rem] font-bold text-blue-700 hover:underline">
+                                        {{ Str::limit($afiliado->empresaModel->nombre ?? $afiliado->empresa, 25) }}
                                     </a>
                                 @else
-                                    <span class="text-xs font-medium text-on-surface dark:text-slate-200">{{ $afiliado->empresa ?? 'N/A' }}</span>
+                                    <span class="text-[0.75rem] font-medium text-slate-600">{{ Str::limit($afiliado->empresa ?? 'N/A', 25) }}</span>
                                 @endif
                             </td>
-                            <td class="py-4 px-4">
-                                <span class="text-xs text-on-surface-variant dark:text-slate-400">{{ $afiliado->corte->nombre ?? 'N/A' }}</span>
+                            <td class="py-2 px-4">
+                                <span class="text-[0.7rem] font-bold text-slate-500">{{ $afiliado->corte->nombre ?? 'N/A' }}</span>
                             </td>
-                            <td class="py-4 px-4">
+                            <td class="py-2 px-4">
                                 <div class="flex items-center gap-2">
-                                    @if($afiliado->responsable)
-                                    <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-700">
-                                        {{ substr($afiliado->responsable->nombre, 0, 2) }}
-                                    </div>
-                                    <span class="text-xs text-on-surface dark:text-slate-300">{{ $afiliado->responsable->nombre }}</span>
-                                    @else
-                                    <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">?</div>
-                                    <span class="text-[0.6875rem] text-slate-400 italic">Sin asignar</span>
-                                    @endif
+                                    <span class="text-[0.7rem] text-slate-600 font-bold">{{ Str::limit($afiliado->responsable->nombre ?? 'Sin asignar', 15) }}</span>
                                 </div>
                             </td>
-                            <td class="py-4 px-4">
+                            <td class="py-2 px-4">
                                 <div class="flex flex-col items-center justify-center">
                                     @if($afiliado->fecha_entrega_safesure)
                                         <div class="flex items-center gap-1.5">
                                             @php
                                                 $sla = $afiliado->sla_status;
-                                                $color = $sla === 'critico' ? 'bg-rose-500' : ($sla === 'alerta' ? 'bg-amber-500' : ($sla === 'completado' ? 'bg-emerald-500' : 'bg-blue-500'));
                                             @endphp
-                                            <div class="w-2.5 h-2.5 rounded-full {{ $color }} animate-pulse"></div>
-                                            <span class="text-[0.7rem] font-bold text-on-surface">{{ $afiliado->fecha_entrega_safesure->format('d/m/y') }}</span>
+                                            <div class="w-2 h-2 rounded-full bg-{{ $sla->color() }}-500"></div>
+                                            <span class="text-[0.7rem] font-bold text-on-surface" title="{{ $sla->label() }}">{{ $afiliado->fecha_entrega_safesure->format('d/m/y') }}</span>
                                         </div>
-                                        <span class="text-[0.6rem] text-slate-500 uppercase font-black tracking-tighter">{{ $afiliado->dias_transcurridos }} Días</span>
+                                        <span class="text-[0.6rem] text-slate-500 uppercase font-bold tracking-tighter">{{ $afiliado->dias_transcurridos }} Días</span>
                                     @else
                                         <span class="text-[0.65rem] text-slate-400 italic">No entregado</span>
                                     @endif
                                 </div>
                             </td>
-                            <td class="py-4 px-4 text-center">
+                            <td class="py-2 px-4 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     @php
                                         $docs = $afiliado->evidenciasAfiliado;
@@ -354,29 +327,24 @@
                                     <span class="material-symbols-outlined text-[1.2rem] {{ $hasForm ? 'text-primary' : 'text-slate-200' }}" title="Formulario">assignment_turned_in</span>
                                 </div>
                             </td>
-                            <td class="py-4 px-4">
+                            <td class="py-2 px-4">
                                 <span class="status-badge px-2.5 py-1 rounded-full text-[0.6875rem] font-bold border {{ $afiliado->status_color_class }} uppercase transition-all">
                                     {{ $afiliado->estado->nombre ?? 'Pendiente' }}
                                 </span>
                             </td>
-                            <td class="py-4 px-6 text-right">
-                                <div class="action-buttons flex items-center justify-end gap-1 transition-opacity">
-                                    <button type="button" onclick="syncSingle('{{ $afiliado->uuid }}', this)" class="p-2 text-slate-400 hover:text-primary transition-all" title="Sincronizar con Firebase" id="sync-btn-{{ $afiliado->uuid }}">
-                                        <span class="material-symbols-outlined text-[1.25rem]">sync</span>
+                            <td class="py-2 px-6 text-right">
+                                <div class="action-buttons flex items-center justify-end gap-1 opacity-20 group-hover:opacity-100 transition-opacity">
+                                    <button type="button" onclick="syncSingle('{{ $afiliado->uuid }}', this)" class="p-1.5 text-slate-400 hover:text-blue-600 transition-all" title="Sincronizar">
+                                        <span class="material-symbols-outlined text-[1.1rem]">sync</span>
                                     </button>
                                     @if(strtolower($afiliado->estado?->nombre) !== 'completado')
-                                    <button type="button" onclick="confirmAcuse('{{ $afiliado->uuid }}', '{{ $afiliado->nombre_completo }}', this)" class="p-2 text-blue-600 hover:text-blue-700 transition-colors bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-center" title="Marcar Acuse de Recibo (Recepción Parcial)">
-                                        <span class="material-symbols-outlined text-[1.25rem]">assignment_late</span>
-                                    </button>
-                                    @endif
-                                    @if($afiliado->estado_id == 7)
-                                    <button type="button" onclick="confirmReceipt('{{ $afiliado->uuid }}', '{{ $afiliado->nombre_completo }}', this)" class="p-2 text-amber-500 hover:text-amber-600 transition-colors animate-pulse" title="Confirmar Recepción (Físico)">
-                                        <span class="material-symbols-outlined text-[1.25rem]">assignment_return</span>
+                                    <button type="button" onclick="confirmAcuse('{{ $afiliado->uuid }}', '{{ $afiliado->nombre_completo }}', this)" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Acuse">
+                                        <span class="material-symbols-outlined text-[1.1rem]">assignment_late</span>
                                     </button>
                                     @endif
                                     @if($afiliado->estado?->nombre !== 'Completado' && $afiliado->estado_id != 7)
-                                    <button type="button" onclick="quickComplete('{{ $afiliado->uuid }}', '{{ $afiliado->nombre_completo }}', this)" class="p-2 text-slate-400 hover:text-emerald-500 transition-colors" title="Marcar Completado">
-                                        <span class="material-symbols-outlined text-[1.25rem]">check_circle</span>
+                                    <button type="button" onclick="quickComplete('{{ $afiliado->uuid }}', '{{ $afiliado->nombre_completo }}', this)" class="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors" title="Completar">
+                                        <span class="material-symbols-outlined text-[1.1rem]">check_circle</span>
                                     </button>
                                     @endif
                                 </div>
@@ -456,7 +424,7 @@
 
     <!-- Modal para Asignar Responsable -->
     <div id="assignModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
-        <form method="POST" action="{{ route('afiliados.bulk_assign') }}" id="assignForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100 dark:border-slate-800">
+        <form method="POST" action="{{ route('carnetizacion.afiliados.bulk_assign') }}" id="assignForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100 dark:border-slate-800">
             @csrf
             @if(isset($segment))
                 <input type="hidden" name="segment" value="{{ $segment }}">
@@ -468,7 +436,7 @@
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Responsable</label>
                 <select name="responsable_id" required class="w-full bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary p-3 text-sm">
                     <option value="">Seleccione uno...</option>
-                    @foreach(\App\Models\Responsable::all() as $resp)
+                    @foreach($responsables as $resp)
                         <option value="{{ $resp->id }}">{{ $resp->nombre }}</option>
                     @endforeach
                 </select>
@@ -486,7 +454,7 @@
 
     <!-- Modal para Cambiar Estado Masivo -->
     <div id="statusModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
-        <form method="POST" action="{{ route('afiliados.bulk_status') }}" id="statusForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100 dark:border-slate-800">
+        <form method="POST" action="{{ route('carnetizacion.afiliados.bulk_status') }}" id="statusForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100 dark:border-slate-800">
             @csrf
             @if(isset($segment))
                 <input type="hidden" name="segment" value="{{ $segment }}">
@@ -498,7 +466,7 @@
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nuevo Estado</label>
                 <select name="estado_id" required class="w-full bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary p-3 text-sm">
                     <option value="">Seleccione uno...</option>
-                    @foreach(\App\Models\Estado::all() as $est)
+                    @foreach($estados as $est)
                         <option value="{{ $est->id }}">{{ $est->nombre }}</option>
                     @endforeach
                 </select>
@@ -528,7 +496,7 @@
 
     <!-- Modal para Asignar Empresa Masivo -->
     <div id="companyModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
-        <form method="POST" action="{{ route('afiliados.bulk_company') }}" id="companyForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100 dark:border-slate-800">
+        <form method="POST" action="{{ route('carnetizacion.afiliados.bulk_company') }}" id="companyForm" class="bg-surface-container-lowest p-6 rounded-2xl shadow-lg w-full max-w-md border border-slate-100 dark:border-slate-800">
             @csrf
             @if(isset($segment))
                 <input type="hidden" name="segment" value="{{ $segment }}">
@@ -540,7 +508,7 @@
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Empresa</label>
                 <select name="empresa_id" id="bulk_empresa_id" required class="w-full bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary p-3 text-sm">
                     <option value="">Seleccione una...</option>
-                    @foreach(\App\Models\Empresa::orderBy('nombre')->get() as $emp)
+                    @foreach($empresas as $emp)
                         <option value="{{ $emp->id }}">{{ $emp->nombre }} (RNC: {{ $emp->rnc }})</option>
                     @endforeach
                 </select>
@@ -594,7 +562,7 @@
             bulkActionsWrapper = document.getElementById('bulk-actions-wrapper');
             let timeout = null;
 
-            const ESTADO_COMPLETADO_ID = {{ \App\Models\Estado::where('nombre', 'Completado')->first()->id ?? 9 }};
+            const ESTADO_COMPLETADO_ID = {{ $estados->where('nombre', 'Completado')->first()->id ?? 9 }};
 
             function showSkeletons() {
                 tableBody.style.opacity = '0';
@@ -767,7 +735,7 @@
                             'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: JSON.stringify({
-                            estado_id: {{ \App\Models\Estado::where('nombre', 'Completado')->first()->id ?? 9 }},
+                            estado_id: {{ $estados->where('nombre', 'Completado')->first()->id ?? 9 }},
                             motivo_rapido: 'Finalizado mediante acción rápida desde el listado.'
                         })
                     })
@@ -956,6 +924,23 @@
             document.getElementById('statusModal').classList.add('hidden');
             document.getElementById('statusModal').classList.remove('flex');
         }
+
+        function confirmGlobalSync() {
+            Swal.fire({
+                title: '¿Iniciar Sincronización?',
+                text: "Esta acción consultará los cambios recientes en Firebase. No es necesaria para búsquedas locales.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sí, Sincronizar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('globalSyncForm').submit();
+                }
+            });
+        }
     </script>
 @endsection
 
@@ -969,7 +954,7 @@
         let pollInterval = null;
 
         function checkProgress() {
-            fetch('{{ route('afiliados.sync_progress') }}')
+            fetch('{{ route('carnetizacion.afiliados.sync_progress') }}')
                 .then(response => response.json())
                 .then(data => {
                     if (data.active) {

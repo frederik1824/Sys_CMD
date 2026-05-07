@@ -12,17 +12,17 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('executive.suite')" :active="request()->routeIs('executive.suite')">
+                    <x-nav-link :href="route('reportes.executive.suite')" :active="request()->routeIs('executive.suite')">
                         {{ __('Suite Ejecutiva') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('afiliados.cmd')" :active="request()->routeIs('afiliados.cmd')">
+                    <x-nav-link :href="route('carnetizacion.afiliados.cmd')" :active="request()->routeIs('afiliados.cmd')">
                         Afiliados CMD
                     </x-nav-link>
-                    <x-nav-link :href="route('afiliados.otros')" :active="request()->routeIs('afiliados.otros')">
+                    <x-nav-link :href="route('carnetizacion.afiliados.otros')" :active="request()->routeIs('afiliados.otros')">
                         Afiliados Otra Empresa
                     </x-nav-link>
                     @if(auth()->user()->hasRole(['Administrador', 'Supervisor']))
-                    <x-nav-link :href="route('empresas.index')" :active="request()->routeIs('empresas.*')">
+                    <x-nav-link :href="route('sistema.empresas.index')" :active="request()->routeIs('sistema.empresas.*')">
                         Empresas
                     </x-nav-link>
                     @endif
@@ -32,7 +32,7 @@
                     <x-nav-link :href="route('lotes.index')" :active="request()->routeIs('lotes.*')">
                         Lotes
                     </x-nav-link>
-                    <x-nav-link :href="route('import.index')" :active="request()->routeIs('import.*')">
+                    <x-nav-link :href="route('carnetizacion.import.index')" :active="request()->routeIs('import.*')">
                         Importar
                     </x-nav-link>
                     <x-nav-link :href="route('reportes.index')" :active="request()->routeIs('reportes.index')">
@@ -40,13 +40,19 @@
                     </x-nav-link>
 
                     @if(auth()->user()->hasAnyRole(['Admin', 'Administrador', 'Supervisor']))
-                    <x-nav-link :href="route('responsables.index')" :active="request()->routeIs('responsables.*')">
+                    <x-nav-link :href="route('sistema.responsables.index')" :active="request()->routeIs('responsables.*')">
                         Responsables
                     </x-nav-link>
-                    <x-nav-link :href="route('firebase.sync_center')" :active="request()->routeIs('firebase.sync_center')">
+                    <x-nav-link :href="route('carnetizacion.sync_center.index')" :active="request()->routeIs('carnetizacion.sync_center.*')">
                         <span class="flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-lg leading-none">cloud_sync</span>
                             Sync Center
+                        </span>
+                    </x-nav-link>
+                    <x-nav-link :href="route('call-center.index')" :active="request()->routeIs('call-center.*')">
+                        <span class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-lg leading-none">headset_mic</span>
+                            Call Center
                         </span>
                     </x-nav-link>
                     @endif
@@ -100,17 +106,17 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('executive.suite')" :active="request()->routeIs('executive.suite')">
+            <x-responsive-nav-link :href="route('reportes.executive.suite')" :active="request()->routeIs('executive.suite')">
                 {{ __('Suite Ejecutiva') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('afiliados.cmd')" :active="request()->routeIs('afiliados.cmd')">
+            <x-responsive-nav-link :href="route('carnetizacion.afiliados.cmd')" :active="request()->routeIs('afiliados.cmd')">
                 Afiliados CMD
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('afiliados.otros')" :active="request()->routeIs('afiliados.otros')">
+            <x-responsive-nav-link :href="route('carnetizacion.afiliados.otros')" :active="request()->routeIs('afiliados.otros')">
                 Afiliados Otra Empresa
             </x-responsive-nav-link>
             @if(auth()->user()->hasRole(['Administrador', 'Supervisor']))
-            <x-responsive-nav-link :href="route('empresas.index')" :active="request()->routeIs('empresas.*')">
+            <x-responsive-nav-link :href="route('sistema.empresas.index')" :active="request()->routeIs('sistema.empresas.*')">
                 Empresas
             </x-responsive-nav-link>
             @endif
@@ -120,7 +126,7 @@
             <x-responsive-nav-link :href="route('lotes.index')" :active="request()->routeIs('lotes.*')">
                 Lotes
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('import.index')" :active="request()->routeIs('import.*')">
+            <x-responsive-nav-link :href="route('carnetizacion.import.index')" :active="request()->routeIs('import.*')">
                 Importar
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('reportes.index')" :active="request()->routeIs('reportes.index')">
@@ -128,19 +134,22 @@
             </x-responsive-nav-link>
 
                     @if(auth()->user()->hasAnyRole(['Admin', 'Administrador', 'Supervisor']))
-                    <x-responsive-nav-link :href="route('responsables.index')" :active="request()->routeIs('responsables.*')">
+                    <x-responsive-nav-link :href="route('sistema.responsables.index')" :active="request()->routeIs('responsables.*')">
                         Responsables
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('firebase.sync_center')" :active="request()->routeIs('firebase.sync_center')">
+                    <x-responsive-nav-link :href="route('carnetizacion.sync_center.index')" :active="request()->routeIs('carnetizacion.sync_center.*')">
                         Sync Center
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('proveedores.index')" :active="request()->routeIs('proveedores.*')">
+                    <x-responsive-nav-link :href="route('call-center.index')" :active="request()->routeIs('call-center.*')">
+                        Call Center
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('sistema.proveedores.index')" :active="request()->routeIs('proveedores.*')">
                         Proveedores
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('cortes.index')" :active="request()->routeIs('cortes.*')">
+                    <x-responsive-nav-link :href="route('sistema.cortes.index')" :active="request()->routeIs('cortes.*')">
                         Cortes
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('estados.index')" :active="request()->routeIs('estados.*')">
+                    <x-responsive-nav-link :href="route('sistema.estados.index')" :active="request()->routeIs('estados.*')">
                         Estados
                     </x-responsive-nav-link>
                     @endif

@@ -21,9 +21,9 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Database\Eloquent\Model::preventLazyLoading(! app()->isProduction());
 
-        // Implicitly grant "Admin" role all permissions
+        // Implicitly grant "Admin" and "Super-Admin" roles all permissions
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
-            if ($user->email === 'admin@arscmd.com' || $user->hasRole('Admin')) {
+            if ($user->email === 'admin@arscmd.com' || $user->hasAnyRole(['Admin', 'Super-Admin'])) {
                 return true;
             }
             return null;

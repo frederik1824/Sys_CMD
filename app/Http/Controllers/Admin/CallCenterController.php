@@ -310,17 +310,24 @@ class CallCenterController extends Controller
 
     public function managementTray(Request $request)
     {
-        $query = Afiliado::whereIn('estado_id', [
-            \App\Models\Estado::where('nombre', 'Cédula Pendiente')->first()?->id,
-            \App\Models\Estado::where('nombre', 'Cédula Recibida')->first()?->id,
-        ])->with('llamadas', 'empresaModel');
+        // Fetch all relevant states once — keyed by name for O(1) lookups in the Blade
+        $estadosCc = \App\Models\Estado::whereIn('nombre', ['Cédula Pendiente', 'Cédula Recibida'])
+            ->get()
+            ->keyBy('nombre');
+
+        $idPendiente = $estadosCc->get('Cédula Pendiente')?->id;
+        $idRecibida  = $estadosCc->get('Cédula Recibida')?->id;
+
+        $query = Afiliado::whereIn('estado_id', array_filter([$idPendiente, $idRecibida]))
+            ->with('estado', 'empresaModel');
 
         if ($request->filled('estado')) {
             $query->where('estado_id', $request->estado);
         }
 
         $afiliados = $query->paginate(20);
-        return view('admin.callcenter.management', compact('afiliados'));
+
+        return view('admin.callcenter.management', compact('afiliados', 'estadosCc'));
     }
 
     public function updateDocumentStatus(Request $request, Afiliado $afiliado)

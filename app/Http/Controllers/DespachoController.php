@@ -51,7 +51,13 @@ class DespachoController extends Controller
             return view('despachos.partials.selection_table', compact('afiliados'))->render();
         }
 
-        return view('despachos.create_batch', compact('mensajeros', 'rutas', 'afiliados'));
+        $provincias = \App\Models\Afiliado::whereNotNull('provincia')
+            ->distinct()
+            ->pluck('provincia')
+            ->sort()
+            ->values();
+
+        return view('despachos.create_batch', compact('mensajeros', 'rutas', 'afiliados', 'provincias'));
     }
 
     public function processBatch(Request $request)

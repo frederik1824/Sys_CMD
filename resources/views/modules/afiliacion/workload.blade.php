@@ -6,7 +6,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
         <div class="space-y-4">
             <div class="flex items-center gap-3">
-                <a href="{{ route('solicitudes-afiliacion.index') }}" 
+                <a href="{{ route('afiliacion.index') }}" 
                    class="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all">
                     <i class="ph-bold ph-arrow-left"></i>
                 </a>
@@ -89,7 +89,7 @@
             </div>
 
             <div class="mt-8">
-                <a href="{{ route('solicitudes-afiliacion.index', ['user_id' => $analista->id, 'estado' => $estadoToWatch]) }}" 
+                <a href="{{ route('afiliacion.index', ['user_id' => $analista->id, 'estado' => $estadoToWatch]) }}" 
                    class="w-full py-4 rounded-2xl bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all flex items-center justify-center gap-2 group/btn">
                     Ver Expedientes
                     <i class="ph-bold ph-arrow-right group-hover/btn:translate-x-1 transition-transform"></i>

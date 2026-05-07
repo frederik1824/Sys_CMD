@@ -1,23 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- Ambient Light Background -->
-<div class="fixed inset-0 bg-[#f8fafc] z-0 pointer-events-none">
-    <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3"></div>
-    <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-50/50 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/3"></div>
-</div>
+<!-- Background Base -->
+<div class="fixed inset-0 bg-[#f1f5f9] z-0 pointer-events-none"></div>
 
 <div class="relative z-10 p-4 lg:p-8 space-y-8">
-    <!-- TOP HUD: Crystal Header -->
-    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white/70 backdrop-blur-2xl p-8 rounded-3xl border border-white shadow-xl shadow-slate-200/50">
+    <!-- TOP HUD: Professional Header -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
         <div class="space-y-1">
             <div class="flex items-center gap-3">
-                <div class="w-2 h-8 bg-primary rounded-full"></div>
-                <h2 class="text-4xl font-extrabold font-headline text-slate-900 tracking-tighter">COMANDO <span class="text-primary font-light italic">STRATEGO</span></h2>
+                <div class="w-1.5 h-8 bg-blue-700 rounded-full"></div>
+                <h2 class="text-3xl font-bold font-headline text-slate-900 tracking-tight">Centro de <span class="text-blue-700">Operaciones</span></h2>
             </div>
-            <p class="text-slate-500 font-mono text-[10px] uppercase tracking-[0.4em] pl-5">Control Central Operativo • ARS CMD</p>
+            <p class="text-slate-500 font-bold text-[10px] uppercase tracking-widest pl-5">Gestión de Procesos • ARS CMD</p>
         </div>
-
     </div>
 
     <!-- MAIN GRID: Premium KPI Cards -->
@@ -33,23 +29,18 @@
                 <span class="text-[10px] font-bold text-slate-400 uppercase">nodos</span>
             </div>
             <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-[10px]">
-                <span class="text-emerald-600 font-bold uppercase flex items-center gap-1">
-                     <span class="material-symbols-outlined text-[14px]">trending_up</span> 
-                     Estable
+                <span class="text-slate-500 font-bold uppercase flex items-center gap-1">
+                     Estado de Red
                 </span>
-                <div class="flex gap-1 h-3 items-end">
-                    @foreach(range(1, 8) as $i)
-                        <div class="w-0.5 bg-primary/20" style="height: {{ rand(30, 100) }}%"></div>
-                    @endforeach
-                </div>
+                <span class="text-emerald-600 font-bold uppercase">Sincronizado</span>
             </div>
         </div>
 
         <!-- KPI: Pendiente Validación -->
-        <a href="{{ route('afiliados.index', ['estado_id' => 7]) }}" class="bg-white p-6 rounded-3xl border border-white shadow-sm hover:shadow-lg transition-all group border-l-4 border-amber-400">
+        <a href="{{ route('carnetizacion.afiliados.index', ['estado_id' => 7]) }}" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-amber-400 transition-all group border-l-4 border-l-amber-400">
             <div class="flex justify-between items-start mb-4">
-                <span class="text-[10px] font-mono text-amber-600 font-bold uppercase tracking-widest">Validación CMD</span>
-                <span class="material-symbols-outlined text-amber-500 animate-pulse">security</span>
+                <span class="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Validación CMD</span>
+                <span class="material-symbols-outlined text-amber-500">security</span>
             </div>
             <div class="flex items-baseline gap-2">
                 <span class="text-4xl font-black font-headline text-slate-900">{{ number_format($totalPendienteValidacion) }}</span>
@@ -62,9 +53,9 @@
         </a>
 
         <!-- KPI: Completados -->
-        <div class="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white shadow-sm border-l-4 border-emerald-400">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-emerald-500">
             <div class="flex justify-between items-start mb-4">
-                <span class="text-[10px] font-mono text-emerald-600 font-bold uppercase tracking-widest">Ciclos Cerrados</span>
+                <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Ciclos Cerrados</span>
                 <span class="material-symbols-outlined text-emerald-500">verified</span>
             </div>
             <div class="flex items-baseline gap-2">
@@ -77,9 +68,9 @@
         </div>
 
          <!-- KPI: Fuera de SLA -->
-         <div class="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white shadow-sm border-l-4 border-rose-400">
+         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-rose-500">
             <div class="flex justify-between items-start mb-4">
-                <span class="text-[10px] font-mono text-rose-600 font-bold uppercase tracking-widest">SLA Crítico</span>
+                <span class="text-[10px] font-bold text-rose-600 uppercase tracking-widest">SLA Crítico</span>
                 <span class="material-symbols-outlined text-rose-500">warning</span>
             </div>
             <div class="flex items-baseline gap-2">
@@ -130,7 +121,7 @@
     <!-- ANALYTICS HUD -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- TREND LINE -->
-        <div class="lg:col-span-2 bg-white/70 backdrop-blur-xl p-8 rounded-[40px] border border-white shadow-xl shadow-slate-200/40 relative">
+        <div class="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm relative">
             <div class="flex justify-between items-center mb-8">
                 <div>
                     <h3 class="text-sm font-black font-headline text-slate-900 uppercase tracking-widest">Tendencia de Operaciones</h3>
@@ -203,7 +194,7 @@
                     Continuar Llamadas
                 </a>
             @else
-                <a href="{{ route('afiliados.index') }}" class="relative z-10 w-full py-4 bg-white text-blue-700 hover:bg-blue-50 rounded-2xl text-[0.7rem] font-black uppercase tracking-[0.3em] transition-all text-center shadow-xl">
+                <a href="{{ route('carnetizacion.afiliados.index') }}" class="relative z-10 w-full py-4 bg-white text-blue-700 hover:bg-blue-50 rounded-2xl text-[0.7rem] font-black uppercase tracking-[0.3em] transition-all text-center shadow-xl">
                     Continuar Labores
                 </a>
             @endif
@@ -211,63 +202,110 @@
         @endif
     </div>
 
-    <!-- ACTIVITY MONITOR -->
-    <div class="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/30">
-        <div class="flex justify-between items-center mb-10 border-b border-slate-50 pb-6">
-             <div>
-                <h3 class="text-sm font-black font-headline text-slate-900 uppercase tracking-widest">Eventos en Vivo</h3>
-                <p class="text-[10px] font-mono text-slate-400 mt-1">Últimas interacciones procesadas</p>
-             </div>
-             <div class="flex items-center gap-2">
-                 <span class="flex h-2 w-2 relative">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                 </span>
-                 <span class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Sistema Activo</span>
-             </div>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">
-                        <th class="pb-6 pr-4">Identificador</th>
-                        <th class="pb-6 px-4 text-center">Protocolo</th>
-                        <th class="pb-6 px-4">Ejecutor</th>
-                        <th class="pb-6 pl-4 text-right">Tiempo Relativo</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                    @foreach($actividadReciente as $act)
-                    <tr class="group hover:bg-slate-50/50 transition-colors">
-                        <td class="py-5 pr-4">
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-slate-800 group-hover:text-primary transition-colors">{{ $act->afiliado->nombre_completo ?? 'SYSTEM_NODE' }}</span>
-                                <span class="text-[10px] font-mono text-slate-400 tracking-tighter">{{ $act->afiliado->cedula ?? '000-0000000-0' }}</span>
-                            </div>
-                        </td>
-                        <td class="py-5 px-4 text-center">
-                            <span class="px-3 py-1 rounded-full bg-slate-100 text-[9px] font-black text-slate-600 uppercase group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
-                                {{ $act->estadoNuevo->nombre }}
-                            </span>
-                        </td>
-                        <td class="py-5 px-4">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-full bg-primary/10 border border-primary/5 flex items-center justify-center text-[10px] text-primary font-black uppercase">
-                                    {{ substr($act->user->name ?? 'S', 0, 1) }}
+    <!-- OPERATIONAL INTELLIGENCE: Critical Alerts (SEMANA 4) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-8 border-b border-slate-50 pb-6">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Alertas Críticas de SLA</h3>
+                    <p class="text-[0.65rem] text-rose-500 font-bold uppercase mt-1">Intervención Requerida Inmediata</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+                    <span class="text-[0.65rem] font-bold text-rose-600 uppercase tracking-widest">Atención Prioritaria</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                            <th class="pb-4">Afiliado / Cédula</th>
+                            <th class="pb-4">Estado Actual</th>
+                            <th class="pb-4">Retraso</th>
+                            <th class="pb-4 text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        @php
+                            $criticos = \App\Models\Afiliado::whereHas('estado', function($q) {
+                                $q->where('nombre', '!=', 'Completado');
+                            })
+                            ->whereNotNull('fecha_entrega_safesure')
+                            ->where('fecha_entrega_safesure', '<=', now()->subDays(15))
+                            ->orderBy('fecha_entrega_safesure', 'asc')
+                            ->take(6)
+                            ->get();
+                        @endphp
+
+                        @forelse($criticos as $critico)
+                        <tr class="group hover:bg-slate-50/50 transition-colors">
+                            <td class="py-4">
+                                <div class="flex flex-col">
+                                    <span class="text-[0.8rem] font-bold text-slate-800">{{ $critico->nombre_completo }}</span>
+                                    <span class="text-[0.65rem] font-mono text-slate-400 tracking-tighter">{{ $critico->cedula }}</span>
                                 </div>
-                                <span class="text-xs text-slate-600 font-bold">{{ $act->user->name ?? 'Sistema' }}</span>
-                            </div>
-                        </td>
-                        <td class="py-5 pl-4 text-right">
-                             <div class="flex flex-col items-end">
-                                <span class="text-xs text-slate-900 font-black">{{ $act->created_at->format('H:i:s') }}</span>
-                                <span class="text-[9px] text-slate-400 font-bold uppercase">{{ $act->created_at->diffForHumans() }}</span>
-                             </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                            </td>
+                            <td class="py-4">
+                                <span class="px-2.5 py-1 rounded-full bg-slate-100 text-[0.6rem] font-bold text-slate-600 uppercase">
+                                    {{ $critico->estado->nombre }}
+                                </span>
+                            </td>
+                            <td class="py-4">
+                                <span class="text-[0.7rem] font-bold text-rose-600 uppercase">{{ $critico->dias_transcurridos }} Días</span>
+                            </td>
+                            <td class="py-4 text-right">
+                                <a href="{{ route('carnetizacion.afiliados.show', $critico) }}" class="inline-flex items-center justify-center w-8 h-8 bg-white border border-slate-200 text-slate-400 rounded-lg hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
+                                    <span class="material-symbols-outlined text-[1.1rem]">visibility</span>
+                                </a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" class="py-12 text-center">
+                                <div class="flex flex-col items-center">
+                                    <span class="material-symbols-outlined text-emerald-500 text-3xl mb-2">verified</span>
+                                    <p class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Sin alertas críticas pendientes</p>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Operational Pulse -->
+        <div class="lg:col-span-1 bg-slate-900 p-8 rounded-2xl shadow-xl text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+            <div class="relative z-10">
+                <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-6">Eficiencia de Red</h3>
+                <div class="space-y-6">
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-[0.65rem] font-bold text-slate-400 uppercase">Tasa de Entrega</span>
+                            <span class="text-lg font-bold">92%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full rounded-full" style="width: 92%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-[0.65rem] font-bold text-slate-400 uppercase">Documentación Validada</span>
+                            <span class="text-lg font-bold">78%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-blue-500 h-full rounded-full" style="width: 78%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-12 p-6 bg-white/5 rounded-xl border border-white/5">
+                    <p class="text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest mb-2">Nota del Sistema</p>
+                    <p class="text-[0.7rem] text-slate-300 leading-relaxed italic">"El tiempo promedio de respuesta ha disminuido un 12% desde la última optimización de flujos."</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

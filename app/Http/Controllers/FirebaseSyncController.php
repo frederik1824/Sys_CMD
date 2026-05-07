@@ -91,42 +91,70 @@ class FirebaseSyncController extends Controller
     public function pull(Request $request)
     {
         $data = $request->isJson() ? $request->all() : $request->all();
-        
+
+        // ── Anti-Ghost Guard ─────────────────────────────────────────────────
+        // Verificar si hay un proceso REAL activo (no solo el caché fantasma).
+        // El caché puede quedar "pegado" si el job murió sin limpiar el flag.
+        if (Cache::get('firebase_sync_active')) {
+            $hasRealRunningLog  = FirebaseSyncLog::where('status', 'running')->exists();
+            $hasJobInQueue      = \DB::table('jobs')->where('payload', 'like', '%FirebaseSyncJob%')->count() > 0;
+
+            if (!$hasRealRunningLog && !$hasJobInQueue) {
+                // El caché está "fantasma" — limpiar automáticamente
+                Cache::forget('firebase_sync_active');
+                Cache::forget('firebase_sync_progress');
+                Cache::forget('firebase_sync_label');
+                Cache::forget('firebase_sync_stats');
+                Cache::put('firebase_sync_control', 'stopped');
+                \Log::info('FirebaseSyncController: Ghost sync state detected and auto-cleaned.');
+            } else {
+                // Hay un proceso REAL corriendo — rechazar
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Ya hay una sincronización activa en progreso. Espera a que finalice o cancélala antes de iniciar una nueva.'
+                ], 409);
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         $log = FirebaseSyncLog::create([
-            'type' => 'Pull',
-            'status' => 'running',
+            'type'       => 'Pull',
+            'status'     => 'running',
             'started_at' => now(),
             'performed_by' => auth()->user()->name ?? 'Manual',
-            'summary' => [
-                'mode' => (isset($data['full']) && $data['full']) ? 'Full' : 'Targeted',
+            'summary'    => [
+                'mode'      => (isset($data['full']) && $data['full']) ? 'Full' : 'Targeted',
                 'intensity' => $data['intensity'] ?? 50,
-                'dry_run' => (bool)($data['simulation'] ?? false),
-                'snapshot' => (bool)($data['snapshot'] ?? true)
+                'dry_run'   => (bool)($data['simulation'] ?? false),
+                'snapshot'  => (bool)($data['snapshot'] ?? true)
             ]
         ]);
 
-        Cache::put('firebase_sync_active', true, 600);
-        Cache::put('firebase_sync_progress', 0);
-        Cache::put('firebase_sync_label', 'Preparando descarga...');
+        Cache::put('firebase_sync_active', true, 7200);
+        Cache::put('firebase_sync_progress', 0, 7200);
+        Cache::put('firebase_sync_label', 'Preparando descarga...', 7200);
 
         $options = [
             '--intensity' => $data['intensity'] ?? 50,
-            '--log-id' => $log->id
+            '--log-id'    => $log->id
         ];
 
         if (isset($data['afiliados']) && $data['afiliados']) $options['--affiliates'] = true;
-        if (isset($data['empresas']) && $data['empresas']) $options['--companies'] = true;
-        if (isset($data['catalogs']) && $data['catalogs']) $options['--catalogs'] = true;
-        if (isset($data['full']) && $data['full']) $options['--full'] = true;
-        if (isset($data['simulation']) && $data['simulation']) $options['--dry-run'] = true;
-        if (isset($data['snapshot']) && $data['snapshot']) $options['--snapshot'] = true;
-        
-        // Si no viene nada específico, por defecto bajamos todo
-        if (empty($options['--affiliates']) && empty($options['--companies']) && empty($options['--catalogs']) && empty($options['--full'])) {
-             $options['--full'] = true;
+        if (isset($data['empresas'])  && $data['empresas'])  $options['--companies']  = true;
+        if (isset($data['catalogs'])  && $data['catalogs'])  $options['--catalogs']   = true;
+        if (isset($data['full'])      && $data['full'])      $options['--full']        = true;
+        if (isset($data['simulation'])&& $data['simulation'])$options['--dry-run']     = true;
+        if (isset($data['snapshot'])  && $data['snapshot'])  $options['--snapshot']    = true;
+
+        // Si no viene nada específico, descargar todo por defecto
+        if (empty($options['--affiliates']) && empty($options['--companies']) &&
+            empty($options['--catalogs'])   && empty($options['--full'])) {
+            $options['--full'] = true;
         }
 
-        \App\Jobs\FirebaseSyncJob::dispatch($options, $log->id, $data['intensity'] ?? 50, 'firebase:pull-all', auth()->id());
+        \App\Jobs\FirebaseSyncJob::dispatch(
+            $options, $log->id, $data['intensity'] ?? 50, 'firebase:pull-all', auth()->id()
+        );
 
         return response()->json(['success' => true, 'log_id' => $log->id]);
     }
@@ -147,9 +175,9 @@ class FirebaseSyncController extends Controller
             ]
         ]);
 
-        Cache::put('firebase_sync_active', true, 600);
-        Cache::put('firebase_sync_progress', 0);
-        Cache::put('firebase_sync_label', 'Iniciando subida...');
+        Cache::put('firebase_sync_active', true, 7200);
+        Cache::put('firebase_sync_progress', 0, 7200);
+        Cache::put('firebase_sync_label', 'Iniciando subida...', 7200);
 
         $options = [
             '--intensity' => $data['intensity'] ?? 50,
@@ -173,11 +201,13 @@ class FirebaseSyncController extends Controller
     {
         $active = (bool) Cache::get('firebase_sync_active', false);
         
-        // Anti-desync: If cache says false but we have a running log, it's active
+        // Anti-desync: Si el caché dice inactivo pero hay un log corriendo, re-activar
         if (!$active) {
-            $active = FirebaseSyncLog::where('status', 'running')->exists();
+            $active = FirebaseSyncLog::where('status', 'running')->exists()
+                   || \DB::table('jobs')->where('payload', 'like', '%FirebaseSyncJob%')->count() > 0;
             if ($active) {
-                Cache::put('firebase_sync_active', true, 600);
+                // Usar 7200 (2h) para no causar otro ghost inmediatamente
+                Cache::put('firebase_sync_active', true, 7200);
             }
         }
 
@@ -341,57 +371,61 @@ class FirebaseSyncController extends Controller
 
     public function healthCheck()
     {
-        $start = microtime(true);
-        $remoteCountAfiliados = $this->syncService->getCollectionCount('afiliados');
-        $remoteCountEmpresas = $this->syncService->getCollectionCount('empresas');
+        $cacheKey = 'firebase_health_audit_result';
         
-        $remoteLatestAfiliado = $this->syncService->getLatestUpdateDate('afiliados');
-        $remoteLatestEmpresa = $this->syncService->getLatestUpdateDate('empresas');
-        
-        $latency = round((microtime(true) - $start) * 1000); 
+        return Cache::remember($cacheKey, 300, function() {
+            $start = microtime(true);
+            $remoteCountAfiliados = $this->syncService->getCollectionCount('afiliados');
+            $remoteCountEmpresas = $this->syncService->getCollectionCount('empresas');
+            
+            $remoteLatestAfiliado = $this->syncService->getLatestUpdateDate('afiliados');
+            $remoteLatestEmpresa = $this->syncService->getLatestUpdateDate('empresas');
+            
+            $latency = round((microtime(true) - $start) * 1000); 
 
-        $localCountAfiliados = Afiliado::count();
-        $localCountEmpresas = Empresa::count();
-        
-        $localLatestAfiliado = Afiliado::max('updated_at');
-        $localLatestEmpresa = Empresa::max('updated_at');
-        
-        $formatDate = function($dateString) {
-            if (!$dateString) return 'Nunca';
-            try {
-                return \Carbon\Carbon::parse($dateString)->diffForHumans();
-            } catch (\Exception $e) { return 'Desconocido'; }
-        };
+            $localCountAfiliados = Afiliado::count();
+            $localCountEmpresas = Empresa::count();
+            
+            $localLatestAfiliado = Afiliado::max('updated_at');
+            $localLatestEmpresa = Empresa::max('updated_at');
+            
+            $formatDate = function($dateString) {
+                if (!$dateString) return 'Nunca';
+                try {
+                    return \Carbon\Carbon::parse($dateString)->diffForHumans();
+                } catch (\Exception $e) { return 'Desconocido'; }
+            };
 
-        $unnormalized = Afiliado::where('cedula', 'NOT REGEXP', '^[0-9]{3}-[0-9]{7}-[0-9]{1}$')->count();
+            $unnormalized = Afiliado::where('cedula', 'NOT REGEXP', '^[0-9]{3}-[0-9]{7}-[0-9]{1}$')->count();
 
-        // Calcular discrepancias críticas (Muestreo rápido)
-        $orphansInLocal = Afiliado::whereNull('firebase_synced_at')->limit(5)->pluck('cedula')->toArray();
+            // Calcular discrepancias críticas (Muestreo rápido)
+            $orphansInLocal = Afiliado::whereNull('firebase_synced_at')->limit(5)->pluck('cedula')->toArray();
 
-        return response()->json([
-            'local' => [
-                'afiliados' => $localCountAfiliados,
-                'empresas' => $localCountEmpresas,
-                'afiliados_updated' => $formatDate($localLatestAfiliado),
-                'empresas_updated' => $formatDate($localLatestEmpresa),
-                'orphans' => $orphansInLocal
-            ],
-            'remote' => [
-                'afiliados' => $remoteCountAfiliados,
-                'empresas' => $remoteCountEmpresas,
-                'afiliados_updated' => $formatDate($remoteLatestAfiliado),
-                'empresas_updated' => $formatDate($remoteLatestEmpresa),
-            ],
-            'diff' => [
-                'afiliados' => $remoteCountAfiliados - $localCountAfiliados,
-                'empresas' => $remoteCountEmpresas - $localCountEmpresas,
-            ],
-            'health' => [
-                'unnormalized' => $unnormalized,
-                'latency' => $latency,
-                'status' => $latency < 500 ? 'optimal' : ($latency < 1000 ? 'degraded' : 'critical')
-            ]
-        ]);
+            return [
+                'local' => [
+                    'afiliados' => $localCountAfiliados,
+                    'empresas' => $localCountEmpresas,
+                    'afiliados_updated' => $formatDate($localLatestAfiliado),
+                    'empresas_updated' => $formatDate($localLatestEmpresa),
+                    'orphans' => $orphansInLocal
+                ],
+                'remote' => [
+                    'afiliados' => $remoteCountAfiliados,
+                    'empresas' => $remoteCountEmpresas,
+                    'afiliados_updated' => $formatDate($remoteLatestAfiliado),
+                    'empresas_updated' => $formatDate($remoteLatestEmpresa),
+                ],
+                'diff' => [
+                    'afiliados' => $remoteCountAfiliados - $localCountAfiliados,
+                    'empresas' => $remoteCountEmpresas - $localCountEmpresas,
+                ],
+                'health' => [
+                    'unnormalized' => $unnormalized,
+                    'latency' => $latency,
+                    'status' => $latency < 500 ? 'optimal' : ($latency < 1000 ? 'degraded' : 'critical')
+                ]
+            ];
+        });
     }
 
     /**

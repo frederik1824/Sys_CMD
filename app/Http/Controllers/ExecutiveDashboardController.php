@@ -34,8 +34,9 @@ class ExecutiveDashboardController extends Controller
                 $q->whereIn('nombre', ['Completado', 'Cierre parcial', 'Entregado']); 
             })->count();
             
-            $criticosSla = Afiliado::with('estado')->get()
-                ->filter(fn($a) => $a->sla_status === 'critico')
+            $criticosSla = Afiliado::whereDoesntHave('estado', function($q) { $q->where('nombre', 'COMPLETADO'); })
+                ->whereNotNull('fecha_entrega_proveedor')
+                ->whereRaw('DATEDIFF(NOW(), fecha_entrega_proveedor) >= 20')
                 ->count();
 
             return [

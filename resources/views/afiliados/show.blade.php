@@ -4,7 +4,7 @@
     <!-- Breadcrumbs & Actions -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <nav class="flex items-center gap-2">
-            <a href="{{ route('afiliados.index') }}" class="text-xs text-slate-500 hover:text-primary transition-colors uppercase tracking-wider font-bold">Afiliados</a>
+            <a href="{{ route('carnetizacion.afiliados.index') }}" class="text-xs text-slate-500 hover:text-primary transition-colors uppercase tracking-wider font-bold">Afiliados</a>
             <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
             <span class="text-xs text-primary uppercase tracking-wider font-extrabold">Detalle de Perfil</span>
         </nav>
@@ -18,7 +18,7 @@
                     <span class="material-symbols-outlined text-lg">person_add</span>
                     Reasignar
                 </button>
-                <a href="{{ route('afiliados.edit', $afiliado) }}" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-xl shadow-lg hover:bg-slate-800 transition-colors flex items-center gap-2">
+                <a href="{{ route('carnetizacion.afiliados.edit', $afiliado) }}" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-xl shadow-lg hover:bg-slate-800 transition-colors flex items-center gap-2">
                     <span class="material-symbols-outlined text-lg">edit</span>
                     Editar Perfil
                 </a>
@@ -134,7 +134,7 @@
                             <p class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Empresa / Cliente</p>
                             <p class="text-sm font-bold text-slate-700 mt-1">
                                 @if($afiliado->empresa_id)
-                                    <a href="{{ route('empresas.show', $afiliado->empresaModel) }}" class="text-primary hover:underline flex items-center gap-1">
+                                    <a href="{{ route('sistema.empresas.show', $afiliado->empresaModel) }}" class="text-primary hover:underline flex items-center gap-1">
                                         <i class="fa-solid fa-building text-xs"></i>
                                         {{ $afiliado->empresaModel->nombre ?? $afiliado->empresa }}
                                     </a>
@@ -277,7 +277,7 @@
                                 @endif
                             </div>
                         @elseif(strtolower($afiliado->estado?->nombre) !== 'completado')
-                            <form action="{{ route('afiliados.upload_evidencia', $afiliado) }}" method="POST" enctype="multipart/form-data" class="w-full flex gap-2 items-center">
+                            <form action="{{ route('carnetizacion.afiliados.upload_evidencia', $afiliado) }}" method="POST" enctype="multipart/form-data" class="w-full flex gap-2 items-center">
                                 @csrf
                                 <input type="hidden" name="tipo_documento" value="acuse_recibo">
                                 <div class="relative flex-1">
@@ -330,7 +330,7 @@
                                 @endif
                             </div>
                         @elseif(strtolower($afiliado->estado?->nombre) !== 'completado')
-                            <form action="{{ route('afiliados.upload_evidencia', $afiliado) }}" method="POST" enctype="multipart/form-data" class="w-full flex gap-2 items-center">
+                            <form action="{{ route('carnetizacion.afiliados.upload_evidencia', $afiliado) }}" method="POST" enctype="multipart/form-data" class="w-full flex gap-2 items-center">
                                 @csrf
                                 <input type="hidden" name="tipo_documento" value="formulario_firmado">
                                 <div class="relative flex-1">
@@ -442,7 +442,7 @@
                                 <p class="text-xs text-slate-500">Los incidentes registrados ayudarán al equipo de soporte.</p>
                             </div>
                         </div>
-                        <form action="{{ route('notas.store') }}" method="POST" class="space-y-4">
+                        <form action="{{ route('carnetizacion.notas.store') }}" method="POST" class="space-y-4">
                             @csrf
                             <input type="hidden" name="afiliado_id" value="{{ $afiliado->id }}">
                             <textarea name="contenido" rows="3" required placeholder="Describe lo que sucedió con este carnet..." 
@@ -464,7 +464,7 @@
 
 <!-- Modal Cambio de Estado Individual -->
 <div id="estadoModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;">
-    <form method="POST" action="{{ route('afiliados.update_status', $afiliado) }}" class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100 scale-100 transition-all">
+    <form method="POST" action="{{ route('carnetizacion.afiliados.update_status', $afiliado) }}" class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100 scale-100 transition-all">
         @csrf
         <div class="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-6">
             <span class="material-symbols-outlined text-2xl">sync</span>
@@ -478,7 +478,7 @@
                 <label class="block text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest mb-2">Nuevo Estado</label>
                 <select name="estado_id" required class="w-full bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary p-3.5 text-sm font-semibold text-slate-700 transition-all outline-none">
                     <option value="">Seleccione el siguiente paso...</option>
-                    @foreach(\App\Models\Estado::all() as $est)
+                    @foreach($estados as $est)
                         @if($est->id != ($afiliado->estado_id ?? 0))
                             <option value="{{ $est->id }}">{{ $est->nombre }}</option>
                         @endif
@@ -510,7 +510,7 @@
 </div>
 <!-- Modal Reapertura -->
 <div id="reopenModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;">
-    <form method="POST" action="{{ route('afiliados.reopen', $afiliado) }}" class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100 scale-100 transition-all">
+    <form method="POST" action="{{ route('carnetizacion.afiliados.reopen', $afiliado) }}" class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100 scale-100 transition-all">
         @csrf
         <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center mb-6">
             <span class="material-symbols-outlined text-2xl">history_toggle_off</span>
@@ -537,7 +537,7 @@
 
 <!-- Modal Reasignar Responsable Individual -->
 <div id="reassignModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;">
-    <form method="POST" action="{{ route('afiliados.reassign', $afiliado) }}" class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-slate-100 scale-100 transition-all">
+    <form method="POST" action="{{ route('carnetizacion.afiliados.reassign', $afiliado) }}" class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-slate-100 scale-100 transition-all">
         @csrf
         <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-6">
             <span class="material-symbols-outlined text-2xl">person_add</span>
@@ -551,7 +551,7 @@
                 <label class="block text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest mb-2">Nuevo Responsable</label>
                 <select name="responsable_id" required class="w-full bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary p-3.5 text-sm font-semibold text-slate-700 transition-all outline-none">
                     <option value="">Seleccione un responsable...</option>
-                    @foreach(\App\Models\Responsable::all() as $resp)
+                    @foreach($responsables as $resp)
                         <option value="{{ $resp->id }}" {{ ($afiliado->responsable_id == $resp->id) ? 'selected' : '' }}>
                             {{ $resp->nombre }}
                         </option>

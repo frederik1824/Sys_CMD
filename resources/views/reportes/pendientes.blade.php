@@ -81,7 +81,7 @@
                     <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
                     <span class="text-[0.65rem] font-bold text-slate-500 uppercase">{{ number_format($c->entregados_count) }} Finalizados</span>
                 </div>
-                <a href="{{ route('afiliados.index', ['corte_id' => $c->id]) }}" class="text-[0.65rem] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1">
+                <a href="{{ route('carnetizacion.afiliados.index', ['corte_id' => $c->id]) }}" class="text-[0.65rem] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1">
                     Ver Detalles <span class="material-symbols-outlined text-[12px]">arrow_forward</span>
                 </a>
             </div>

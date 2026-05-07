@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 use App\Models\SolicitudAfiliacion;
+use App\Models\Application;
 
 class PortalController extends Controller
 {
@@ -15,49 +15,55 @@ class PortalController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
-        $isAdmin = $user->hasRole('Admin');
-        $dept = $user->departamento;
+        $isAdmin = $user->hasRole(['Admin', 'Super-Admin']);
 
-        $stats = [
-            'total_solicitudes' => $isAdmin ? SolicitudAfiliacion::count() : 
-                                   ($dept ? SolicitudAfiliacion::where('departamento_id', $dept->id)->count() : 
-                                   SolicitudAfiliacion::where('solicitante_user_id', $user->id)->count()),
-            
-            'urgentes' => SolicitudAfiliacion::where('prioridad', 'Urgente')
-                            ->whereNotIn('estado', ['Aprobada', 'Rechazada', 'Cerrada', 'Cancelada'])
-                            ->when(!$isAdmin, function($q) use ($user, $dept) {
-                                if ($dept) return $q->where('departamento_id', $dept->id);
-                                return $q->where('solicitante_user_id', $user->id);
-                            })->count(),
-            
-            'pendientes_depto' => SolicitudAfiliacion::where('departamento_id', $user->departamento_id)
-                                    ->whereIn('estado', ['Pendiente', 'Corregida'])
-                                    ->count(),
-            'eficiencia' => 98
-        ];
+        // 1. Obtener aplicaciones autorizadas para el usuario
+        // Si es Admin, ve todas las aplicaciones activas
+        // Si es usuario regular, ve las que tiene asignadas y están activas
+        if ($isAdmin) {
+            $apps = Application::where('is_active', true)
+                        ->orderBy('order_weight')
+                        ->get();
+        } else {
+            $apps = Application::where('is_active', true)
+                        ->whereHas('userAccess', function($q) use ($user) {
+                            $q->where('user_id', $user->id)->where('is_active', true);
+                        })
+                        ->orderBy('order_weight')
+                        ->get();
+        }
 
-        $modules = config('modules.list');
-
-        // Sort by order
-        uasort($modules, function($a, $b) {
-            return ($a['order'] ?? 100) <=> ($b['order'] ?? 100);
-        });
-        // Add additional metadata for display
-        foreach ($modules as $key => &$module) {
-            $hasPermission = isset($module['permission']) ? $user->can($module['permission']) : true;
-            $module['has_access'] = $hasPermission;
-            
-            // Determine if the route is valid/exists
-            $module['url'] = '#';
-            if ($hasPermission && $module['status'] === 'active') {
-                if (Route::has($module['route'])) {
-                    $module['url'] = route($module['route']);
+        $modules = [];
+        foreach ($apps as $app) {
+            // Determinar URL final
+            $url = '#';
+            if ($app->route) {
+                if (Route::has($app->route)) {
+                    $url = route($app->route);
                 } else {
-                    $module['url'] = url($module['route']);
+                    // Fallback para rutas de texto o absolutas
+                    $url = str_starts_with($app->route, 'http') ? $app->route : url($app->route);
                 }
             }
+            
+            $modules[$app->slug] = [
+                'name' => $app->name,
+                'description' => $app->description ?? 'Acceso al módulo ' . $app->name,
+                'icon' => $app->icon ?? 'ph ph-app-window',
+                'color' => $app->color ?? 'blue',
+                'status' => $app->is_active ? 'active' : 'inactive',
+                'has_access' => true, // Ya filtrado arriba
+                'url' => $url,
+                'order' => $app->order_weight
+            ];
         }
+
+        // Estadísticas básicas (CMD context)
+        $stats = [
+            'total_solicitudes' => SolicitudAfiliacion::count(),
+            'urgentes' => SolicitudAfiliacion::where('prioridad', 'Urgente')->whereNotIn('estado', ['Aprobada', 'Cerrada'])->count(),
+            'eficiencia' => 98
+        ];
 
         return view('portal.index', compact('modules', 'user', 'stats'));
     }

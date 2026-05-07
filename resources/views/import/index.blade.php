@@ -117,7 +117,7 @@
                         <span class="material-symbols-outlined text-4xl">cloud_upload</span>
                     </div>
                     
-                    <form id="import-form" action="{{ route('import.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                    <form id="import-form" action="{{ route('carnetizacion.import.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                         @csrf
                         <div>
                             <h3 class="text-xl font-semibold mb-2 text-slate-800">Cargar Archivo de Datos</h3>
@@ -173,7 +173,7 @@
                             <button type="submit" class="w-full bg-gradient-to-br from-primary to-primary-container text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">
                                 <span class="material-symbols-outlined">upload</span> Comenzar Carga
                             </button>
-                            <a href="{{ route('import.template') }}" class="w-full bg-transparent border border-slate-200 py-3 rounded-xl text-primary font-medium flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
+                            <a href="{{ route('carnetizacion.import.template') }}" class="w-full bg-transparent border border-slate-200 py-3 rounded-xl text-primary font-medium flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
                                 <span class="material-symbols-outlined text-[18px]">download</span> Descargar Plantilla Modelo
                             </a>
                         </div>
@@ -422,7 +422,7 @@
         if (!confirm('¿Estás seguro de que deseas eliminar TODAS las tareas pendientes? Se detendrán todas las cargas activas.')) return;
         
         try {
-            const res = await fetch('{{ route("firebase.purge_queue") }}', {
+            const res = await fetch('{{ route("carnetizacion.sync_center.purge_queue") }}', {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
             });

@@ -26,7 +26,7 @@
                     <button @click="editing = true; dept = { nombre: '{{ $d->nombre }}', codigo: '{{ $d->codigo }}', id: {{ $d->id }} }; showModal = true" 
                         class="p-2 text-slate-400 hover:text-blue-600"><i class="ph-bold ph-pencil-simple"></i></button>
                     @if($d->users_count == 0)
-                    <form action="{{ route('departamentos.destroy', $d) }}" method="POST" onsubmit="return confirm('¿Eliminar departamento?')">
+                    <form action="{{ route('sistema.departamentos.destroy', $d) }}" method="POST" onsubmit="return confirm('¿Eliminar departamento?')">
                         @csrf @method('DELETE')
                         <button type="submit" class="p-2 text-slate-400 hover:text-rose-600"><i class="ph-bold ph-trash"></i></button>
                     </form>
@@ -55,7 +55,7 @@
             <h3 class="text-2xl font-black text-slate-900 tracking-tighter mb-2" x-text="editing ? 'Editar Departamento' : 'Nuevo Departamento'"></h3>
             <p class="text-slate-500 font-medium mb-8 text-sm">Define el nombre y código único para la unidad operativa.</p>
             
-            <form :action="editing ? '/departamentos/' + dept.id : '{{ route('departamentos.store') }}'" method="POST">
+            <form :action="editing ? '/sistema/departamentos/' + dept.id : '{{ route('sistema.departamentos.store') }}'" method="POST">
                 @csrf
                 <template x-if="editing">
                     <input type="hidden" name="_method" value="PATCH">

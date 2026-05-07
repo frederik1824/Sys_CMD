@@ -30,10 +30,14 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Filtros Rápidos -->
+        @php
+            $idPendiente = $estadosCc->get('Cédula Pendiente')?->id;
+            $idRecibida  = $estadosCc->get('Cédula Recibida')?->id;
+        @endphp
         <div class="flex items-center gap-4 mb-8">
             <a href="{{ route('callcenter.management') }}" class="px-6 py-3 {{ !request('estado') ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 border border-slate-100' }} rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Todos</a>
-            <a href="{{ route('callcenter.management', ['estado' => \App\Models\Estado::where('nombre', 'Cédula Pendiente')->first()?->id]) }}" class="px-6 py-3 {{ request('estado') == \App\Models\Estado::where('nombre', 'Cédula Pendiente')->first()?->id ? 'bg-amber-500 text-white' : 'bg-white text-slate-500 border border-slate-100' }} rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Solo Pendientes</a>
-            <a href="{{ route('callcenter.management', ['estado' => \App\Models\Estado::where('nombre', 'Cédula Recibida')->first()?->id]) }}" class="px-6 py-3 {{ request('estado') == \App\Models\Estado::where('nombre', 'Cédula Recibida')->first()?->id ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 border border-slate-100' }} rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Solo Recibidas</a>
+            <a href="{{ route('callcenter.management', ['estado' => $idPendiente]) }}" class="px-6 py-3 {{ request('estado') == $idPendiente ? 'bg-amber-500 text-white' : 'bg-white text-slate-500 border border-slate-100' }} rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Solo Pendientes</a>
+            <a href="{{ route('callcenter.management', ['estado' => $idRecibida]) }}" class="px-6 py-3 {{ request('estado') == $idRecibida ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 border border-slate-100' }} rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Solo Recibidas</a>
         </div>
 
         <!-- Lista de Gestión -->

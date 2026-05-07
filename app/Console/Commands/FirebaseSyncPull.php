@@ -54,26 +54,38 @@ class FirebaseSyncPull extends Command
         }
         
         // Determinar qué sincronizar
-        $syncAll = $isFull;
+        $syncAll        = $isFull;
         $syncAffiliates = $isFull || $onlyAffiliates;
-        $syncCompanies = $isFull || $onlyCompanies;
-        $syncCatalogs = $isFull || $onlyCompanies || $this->option('catalogs');
-        $syncAuth = $isFull; // Roles y Usuarios solo en Full
-        
+        $syncCompanies  = $isFull || $onlyCompanies;
+        $syncCatalogs   = $isFull || $onlyCompanies || $this->option('catalogs');
+        $syncAuth       = $isFull; // Roles y Usuarios solo en Full
+
         $lastSync = \App\Models\FirebaseSyncLog::where('type', 'Pull')
             ->where('status', 'success')
             ->orderBy('finished_at', 'desc')
             ->first();
 
         $sinceDate = null;
-        if ($lastSync && !$isFull && !$onlyAffiliates && !$onlyCompanies) {
+
+        if ($isFull) {
+            // --full explícito: siempre descarga todo sin filtro de fecha
+            $this->info("🚀 Modo FULL activo — descargando todos los registros...");
+
+        } elseif ($lastSync) {
+            // Modo INCREMENTAL: aplica a targeted (--affiliates, --companies) Y al modo automático
+            // Descargamos con un margen de 60 min para cubrir solapamientos de red
             $sinceDate = $lastSync->finished_at->subMinutes(60)->toDateTimeString();
-            $this->info("🔄 Incremental Sync mode active (Since: $sinceDate)");
-            $syncAffiliates = true;
-            $syncCompanies = true;
-            $syncAuth = true;
+            $this->info("🔄 Modo Incremental activo — solo cambios desde: {$sinceDate}");
+
+            // Si no hay flags específicos, sincronizar todo en modo incremental
+            if (!$onlyAffiliates && !$onlyCompanies) {
+                $syncAffiliates = true;
+                $syncCompanies  = true;
+                $syncAuth       = true;
+            }
         } else {
-            $this->info("🚀 Targeted Sync mode active...");
+            // Primera vez: sin historial de syncs previos → descargar todo
+            $this->info("🚀 Primera sincronización — descargando todos los registros...");
         }
 
         if ($logId) {
@@ -93,6 +105,11 @@ class FirebaseSyncPull extends Command
             ]);
         }
 
+        // 🛡️ DESACTIVAR TRIGGERS AUTOMÁTICOS 
+        // Durante un PULL masivo, no queremos que el evento saved() de los modelos
+        // dispare un PUSH de vuelta a Firebase. Esto ahorra 50% de cuota.
+        \App\Traits\FirebaseSyncable::$isSyncingDisabled = true;
+
         try {
             $stats = [
                 'roles' => ['created' => 0, 'updated' => 0],
@@ -102,12 +119,18 @@ class FirebaseSyncPull extends Command
                 'catalogs' => ['created' => 0, 'updated' => 0],
             ];
 
-            // Mark as active
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_active', true, 600);
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_progress', 0);
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_label', 'Iniciando...');
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_control', 'running', 600);
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_stats', $stats, 600);
+            // Mark as active — TTL largo (2h) para syncs grandes con muchos registros
+            $modeLabel = $sinceDate
+                ? "🔄 Incremental desde " . \Carbon\Carbon::parse($sinceDate)->format('d/M H:i')
+                : "🚀 Descarga completa iniciando...";
+
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_active', true, 7200);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_progress', 0, 7200);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_label', $modeLabel, 7200);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_control', 'running', 7200);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_stats', $stats, 7200);
+            $this->addToFeed($modeLabel, 'cyan');
+
 
             // 🛡️ SYNC ROLES
             if ($syncAuth) {
@@ -231,29 +254,49 @@ class FirebaseSyncPull extends Command
 
                         if (!isset($mapped['cedula'])) continue;
                     
-                        $isNew = !\App\Models\Afiliado::where('cedula', $mapped['cedula'])->exists();
-                        $afiliado = \App\Models\Afiliado::where('cedula', $mapped['cedula'])->first() ?? new \App\Models\Afiliado();
+                        $isNew = !\App\Models\Afiliado::withoutGlobalScopes()->where('cedula', $mapped['cedula'])->exists();
+                        $afiliado = \App\Models\Afiliado::withoutGlobalScopes()->where('cedula', $mapped['cedula'])->first() ?? new \App\Models\Afiliado();
 
                         if (!$isDryRun) {
                             \App\Models\Afiliado::withoutEvents(function() use ($mapped, $afiliado) {
                                 $dataToUpdate = $afiliado->applyGatingRule($mapped);
 
-                                \App\Models\Afiliado::updateOrCreate(['cedula' => $mapped['cedula']], [
-                                    'nombre_completo' => $dataToUpdate['nombre_completo'] ?? null,
-                                    'telefono' => $dataToUpdate['telefono'] ?? null,
-                                    'direccion' => $dataToUpdate['direccion'] ?? null,
-                                    'poliza' => $dataToUpdate['poliza'] ?? null,
-                                    'contrato' => $dataToUpdate['contrato'] ?? null,
-                                    'empresa' => $dataToUpdate['empresa'] ?? null,
-                                    'rnc_empresa' => $dataToUpdate['rnc_empresa'] ?? null,
-                                    'estado_id' => $dataToUpdate['estado_id'] ?? null,
-                                    'lote_id' => $dataToUpdate['lote_id'] ?? null,
-                                    'proveedor_id' => $dataToUpdate['proveedor_id'] ?? null,
-                                    'responsable_id' => $dataToUpdate['responsable_id'] ?? null,
+                                // ── Validación de FK locales ───────────────────────────────────────
+                                // Firebase puede tener IDs de lotes/proveedores/responsables que no
+                                // existen localmente. Anulamos los IDs inválidos en vez de crashear.
+                                $loteId       = $dataToUpdate['lote_id']       ?? null;
+                                $proveedorId  = $dataToUpdate['proveedor_id']  ?? null;
+                                $responsableId= $dataToUpdate['responsable_id'] ?? null;
+
+                                if ($loteId && !\DB::table('lotes')->where('id', $loteId)->exists()) {
+                                    $loteId = null;
+                                }
+                                if ($proveedorId && !\DB::table('proveedores')->where('id', $proveedorId)->exists()) {
+                                    $proveedorId = null;
+                                }
+                                if ($responsableId && !\DB::table('responsables')->where('id', $responsableId)->exists()) {
+                                    $responsableId = null;
+                                }
+                                // ──────────────────────────────────────────────────────────────────
+
+                                $afiliado->fill([
+                                    'cedula'                  => $mapped['cedula'],
+                                    'nombre_completo'         => $dataToUpdate['nombre_completo'] ?? null,
+                                    'telefono'                => $dataToUpdate['telefono'] ?? null,
+                                    'direccion'               => $dataToUpdate['direccion'] ?? null,
+                                    'poliza'                  => $dataToUpdate['poliza'] ?? null,
+                                    'contrato'                => $dataToUpdate['contrato'] ?? null,
+                                    'empresa'                 => $dataToUpdate['empresa'] ?? null,
+                                    'rnc_empresa'             => $dataToUpdate['rnc_empresa'] ?? null,
+                                    'estado_id'               => $dataToUpdate['estado_id'] ?? null,
+                                    'lote_id'                 => $loteId,
+                                    'proveedor_id'            => $proveedorId,
+                                    'responsable_id'          => $responsableId,
+                                    'corte_id'                => $dataToUpdate['corte_id'] ?? null,
                                     'fecha_entrega_proveedor' => $dataToUpdate['fecha_entrega_proveedor'] ?? null,
-                                    'costo_entrega' => $dataToUpdate['costo_entrega'] ?? 0,
-                                    'firebase_synced_at' => now()
-                                ]);
+                                    'costo_entrega'           => $dataToUpdate['costo_entrega'] ?? 0,
+                                    'firebase_synced_at'      => now()
+                                ])->save();
                             });
                         }
                     
@@ -305,6 +348,9 @@ class FirebaseSyncPull extends Command
             $this->updateProgress(0, "❌ $errorMsg", $stats ?? []);
             if ($e->getMessage() !== 'CANCELLED') throw $e;
         } finally {
+            // 🛡️ RE-ACTIVAR TRIGGERS AUTOMÁTICOS
+            \App\Traits\FirebaseSyncable::$isSyncingDisabled = false;
+
             \Illuminate\Support\Facades\Cache::put('firebase_sync_active', false);
             \Illuminate\Support\Facades\Cache::put('firebase_sync_control', 'stopped');
         }
@@ -329,10 +375,12 @@ class FirebaseSyncPull extends Command
 
     private function updateProgress($percentage, $label, $stats = [], $logMsg = null)
     {
-        \Illuminate\Support\Facades\Cache::put('firebase_sync_progress', round($percentage), 600);
-        \Illuminate\Support\Facades\Cache::put('firebase_sync_label', $label, 600);
+        // Renovar TTL del flag activo en cada actualización para evitar expiración durante syncs largas
+        \Illuminate\Support\Facades\Cache::put('firebase_sync_active', true, 7200);
+        \Illuminate\Support\Facades\Cache::put('firebase_sync_progress', round($percentage), 7200);
+        \Illuminate\Support\Facades\Cache::put('firebase_sync_label', $label, 7200);
         if (!empty($stats)) {
-            \Illuminate\Support\Facades\Cache::put('firebase_sync_stats', $stats, 600);
+            \Illuminate\Support\Facades\Cache::put('firebase_sync_stats', $stats, 7200);
         }
         if ($logMsg) $this->addToFeed($logMsg, 'cyan');
     }

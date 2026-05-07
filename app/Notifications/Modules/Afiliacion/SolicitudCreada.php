@@ -45,7 +45,7 @@ class SolicitudCreada extends Notification
             'tipo' => 'afiliacion',
             'icon' => 'ph-file-plus',
             'color' => 'indigo',
-            'url' => route('solicitudes-afiliacion.show', $this->solicitud->id),
+            'url' => route('afiliacion.show', $this->solicitud->id),
         ];
     }
 }

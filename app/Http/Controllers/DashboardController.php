@@ -67,8 +67,8 @@ class DashboardController extends Controller
         $fueraSlaCount = \Illuminate\Support\Facades\Cache::remember($cachePrefix . 'dashboard_fueraSlaCount', $ttl, function() {
             return Afiliado::whereNotNull('fecha_entrega_proveedor')
                 ->where('liquidado', false)
-                ->get() 
-                ->filter(fn($a) => $a->sla_status === 'critico')
+                ->whereDoesntHave('estado', function($q) { $q->where('nombre', 'COMPLETADO'); })
+                ->whereRaw('DATEDIFF(NOW(), fecha_entrega_proveedor) >= 20')
                 ->count();
         });
 
@@ -118,17 +118,14 @@ class DashboardController extends Controller
 
         // Breakdown por Responsable
         $productividadResponsables = \Illuminate\Support\Facades\Cache::remember($cachePrefix . 'dashboard_productividadResponsables', $ttl, function() {
-            return Afiliado::select('responsable_id', DB::raw('count(*) as total_asignados'))
-                ->whereNotNull('responsable_id')
-                ->groupBy('responsable_id')
+            return Afiliado::select('afiliados.responsable_id', DB::raw('count(afiliados.id) as total_asignados'))
+                ->leftJoin('estados', 'afiliados.estado_id', '=', 'estados.id')
+                ->selectRaw("SUM(CASE WHEN estados.nombre IN ('Carnet entregado', 'Cierre parcial', 'Completado', 'Pendiente de recepción') THEN 1 ELSE 0 END) as entregados")
+                ->whereNotNull('afiliados.responsable_id')
+                ->groupBy('afiliados.responsable_id')
                 ->with('responsable')
                 ->get()->map(function($item) {
-                    $entregados = Afiliado::where('responsable_id', $item->responsable_id)
-                        ->whereHas('estado', function($q) {
-                            $q->whereIn('nombre', ['Carnet entregado', 'Cierre parcial', 'Completado', 'Pendiente de recepción']);
-                        })->count();
-                    $item->entregados = $entregados;
-                    $item->porcentaje = $item->total_asignados > 0 ? round(($entregados / $item->total_asignados) * 100) : 0;
+                    $item->porcentaje = $item->total_asignados > 0 ? round(($item->entregados / $item->total_asignados) * 100) : 0;
                     return $item;
                 });
         });

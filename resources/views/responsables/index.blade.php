@@ -7,7 +7,7 @@
             <h2 class="text-3xl font-bold text-on-surface">Responsables</h2>
             <p class="text-on-surface-variant text-[0.875rem] mt-1">Gestión de las empresas operadoras.</p>
         </div>
-        <a href="{{ route('responsables.create') }}" class="bg-primary text-white px-5 py-2.5 rounded-lg text-[0.875rem] font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-blue-800 transition-colors">
+        <a href="{{ route('sistema.responsables.create') }}" class="bg-primary text-white px-5 py-2.5 rounded-lg text-[0.875rem] font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-blue-800 transition-colors">
             <span class="material-symbols-outlined text-lg">add</span>
             Nuevo Responsable
         </a>
@@ -46,7 +46,7 @@
                         @endif
                     </td>
                     <td class="px-8 py-5 text-[0.875rem]">
-                        <a href="{{ route('responsables.edit', $resp) }}" class="text-primary font-bold hover:underline">Editar</a>
+                        <a href="{{ route('sistema.responsables.edit', $resp) }}" class="text-primary font-bold hover:underline">Editar</a>
                     </td>
                 </tr>
                 @empty

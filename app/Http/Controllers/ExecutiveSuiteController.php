@@ -45,7 +45,10 @@ class ExecutiveSuiteController extends Controller
                 'completados' => Afiliado::whereHas('estado', function($q) { 
                     $q->whereIn('nombre', ['Completado', 'Entregado']); 
                 })->count(),
-                'criticos' => Afiliado::with('estado')->get()->filter(fn($a) => $a->sla_status === 'critico')->count(),
+                'criticos' => Afiliado::whereDoesntHave('estado', function($q) { $q->where('nombre', 'COMPLETADO'); })
+                                ->whereNotNull('fecha_entrega_proveedor')
+                                ->whereRaw('DATEDIFF(NOW(), fecha_entrega_proveedor) >= 20')
+                                ->count(),
                 'monto' => Afiliado::whereHas('estado', function($q) { $q->where('nombre', 'Completado'); })
                                     ->where('liquidado', false)->sum('costo_entrega')
             ];

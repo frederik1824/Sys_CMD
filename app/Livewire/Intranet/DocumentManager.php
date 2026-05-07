@@ -283,9 +283,10 @@ class DocumentManager extends Component
         }
 
         return view('livewire.document-manager', [
-            'documents' => $query->latest()->paginate(10),
-            'departments' => Department::all(),
-            'documentTypes' => DocumentType::all(),
+            'documents'       => $query->latest()->paginate(10),
+            'departments'     => Department::all(),
+            'documentTypes'   => DocumentType::all(),
+            'documentStatuses' => DocumentStatus::all(),
         ])->layout('components.layouts.app');
     }
 }

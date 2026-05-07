@@ -23,7 +23,7 @@
     <!-- HEADER INTEGRADO -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
         <div class="space-y-4">
-            <a href="{{ route('solicitudes-afiliacion.index') }}" 
+            <a href="{{ route('afiliacion.index') }}" 
                class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all text-[10px] font-black uppercase tracking-widest shadow-sm group">
                 <i class="ph-bold ph-arrow-left group-hover:-translate-x-1 transition-transform"></i> 
                 Volver al Panel Principal
@@ -50,7 +50,7 @@
         </div>
     </div>
 
-    <form action="{{ route('solicitudes-afiliacion.store') }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
+    <form action="{{ route('afiliacion.store') }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
         @csrf
         
         <!-- IZQUIERDA: FORMULARIO PRINCIPAL (8 COL) -->
@@ -328,7 +328,7 @@
         let cleanValue = this.value.replace(/\D/g, '');
         if (cleanValue.length === 11) {
             // Intentar autocompletar si la cédula está completa
-            fetch(`{{ route('solicitudes-afiliacion.search-afiliado') }}?cedula=${this.value}`)
+            fetch(`{{ route('afiliacion.search-afiliado') }}?cedula=${this.value}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data) {

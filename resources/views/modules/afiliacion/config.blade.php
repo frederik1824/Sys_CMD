@@ -47,7 +47,7 @@
                             <div class="w-2 h-2 rounded-full {{ $doc->obligatorio ? 'bg-rose-500' : 'bg-slate-300' }}"></div>
                             <span class="text-xs font-bold text-slate-700">{{ $doc->nombre_documento }}</span>
                         </div>
-                        <form action="{{ route('solicitudes-afiliacion.config.documentos.delete', $doc) }}" method="POST" onsubmit="return confirm('¿Eliminar este requisito?')">
+                        <form action="{{ route('afiliacion.config.documentos.delete', $doc) }}" method="POST" onsubmit="return confirm('¿Eliminar este requisito?')">
                             @csrf @method('DELETE')
                             <button type="submit" class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
                                 <i class="ph ph-trash"></i>
@@ -69,7 +69,7 @@
             <h3 class="text-2xl font-black text-slate-900 tracking-tighter mb-2" x-text="editingTipo ? 'Editar Proceso' : 'Nuevo Proceso'"></h3>
             <p class="text-slate-500 font-medium mb-8 text-sm">Define el nombre y el tiempo de respuesta esperado (SLA).</p>
             
-            <form :action="editingTipo ? `/solicitudes-afiliacion/configuracion/tipos/${editingTipo.id}` : '{{ route('solicitudes-afiliacion.config.tipos.store') }}'" method="POST">
+            <form :action="editingTipo ? `/solicitudes-afiliacion/configuracion/tipos/${editingTipo.id}` : '{{ route('afiliacion.config.tipos.store') }}'" method="POST">
                 @csrf
                 <template x-if="editingTipo"><input type="hidden" name="_method" value="PATCH"></template>
                 
@@ -107,7 +107,7 @@
             <h3 class="text-2xl font-black text-slate-900 tracking-tighter mb-2">Añadir Requisito</h3>
             <p class="text-slate-500 font-medium mb-8 text-sm">El documento aparecerá automáticamente en el formulario de creación.</p>
             
-            <form action="{{ route('solicitudes-afiliacion.config.documentos.store') }}" method="POST">
+            <form action="{{ route('afiliacion.config.documentos.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="tipo_solicitud_id" :value="selectedTipo">
                 

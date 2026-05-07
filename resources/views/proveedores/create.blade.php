@@ -7,7 +7,7 @@
         <p class="text-on-surface-variant text-sm mt-1">Añada una nueva empresa encargada de despacho o courier.</p>
     </div>
 
-    <form action="{{ route('proveedores.store') }}" method="POST" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col gap-6">
+    <form action="{{ route('sistema.proveedores.store') }}" method="POST" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col gap-6">
         @csrf
         <div>
             <label class="block text-sm font-bold text-slate-700 mb-2">Nombre del Proveedor</label>
@@ -26,7 +26,7 @@
         </div>
 
         <div class="pt-4 flex gap-4 border-t border-slate-100">
-            <a href="{{ route('proveedores.index') }}" class="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">Cancelar</a>
+            <a href="{{ route('sistema.proveedores.index') }}" class="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">Cancelar</a>
             <button type="submit" class="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-blue-800 transition-colors shadow-lg shadow-primary/20">Guardar Proveedor</button>
         </div>
     </form>

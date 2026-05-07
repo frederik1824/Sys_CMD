@@ -87,7 +87,7 @@
                 
                 <select x-model="filterProvince" class="bg-slate-50 border-none rounded-xl px-6 py-3 text-sm font-bold text-slate-600 focus:ring-4 focus:ring-primary/5 h-[46px]">
                     <option value="">Todas las Provincias</option>
-                    @foreach(\App\Models\Afiliado::whereNotNull('provincia')->pluck('provincia')->unique() as $prov)
+                    @foreach($provincias as $prov)
                         <option value="{{ $prov }}">{{ $prov }}</option>
                     @endforeach
                 </select>

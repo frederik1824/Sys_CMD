@@ -14,6 +14,7 @@
     <!-- Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     @livewireStyles
     
     <!-- Tom Select CSS -->
@@ -101,8 +102,8 @@
         }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8f9fa;
-            color: #191c1d;
+            background-color: #f1f5f9; /* Slate-100 for better contrast with cards */
+            color: #1e293b; /* Slate-800 */
         }
         h1, h2, h3, .font-headline {
             font-family: 'Space Grotesk', 'Manrope', sans-serif;
@@ -114,43 +115,40 @@
             background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #e1e3e4;
+            background: #cbd5e1;
             border-radius: 10px;
         }
 
-        /* --- Transitions & Animations --- */
+        /* --- Transitions & Animations (Saneadas) --- */
         @keyframes shimmer {
             0% { background-position: -200% 0; }
             100% { background-position: 200% 0; }
         }
         .skeleton {
-            background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite linear;
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         .page-transition {
-            animation: fadeIn 0.4s ease-out forwards;
+            animation: fadeIn 0.3s ease-out forwards;
         }
+
+        /* Sombras simplificadas para evitar fatiga */
+        .shadow-sm { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+        .shadow-md { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); }
+        .shadow-xl { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.03), 0 4px 6px -4px rgb(0 0 0 / 0.03); }
 
         .hover-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
         .hover-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -10px rgba(0, 52, 111, 0.15);
-        }
-
-        @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-            animation: spin-slow 8s linear infinite;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05);
         }
 
         @media print {
@@ -169,7 +167,7 @@
             <span class="material-symbols-outlined text-[14px] animate-pulse">security</span>
             MODO IMPERSONACIÓN ACTIVO: Estás navegando como {{ auth()->user()->name }}
         </span>
-        <a href="{{ route('usuarios.stop_impersonating') }}" class="bg-white text-rose-600 px-3 py-1 rounded-full font-bold hover:bg-rose-50 transition-all flex items-center gap-1 shadow-sm">
+        <a href="{{ route('admin.access.stop_impersonating') }}" class="bg-white text-rose-600 px-3 py-1 rounded-full font-bold hover:bg-rose-50 transition-all flex items-center gap-1 shadow-sm">
             <span class="material-symbols-outlined text-[14px]">logout</span>
             VOLVER A MI SESIÓN
         </a>
@@ -177,26 +175,33 @@
     @endif
 
     @php
-        $isTraspasos = request()->is('traspasos*');
-        $isAfiliacion = request()->is('solicitudes-afiliacion*');
-        $isExecutive = request()->routeIs('executive.suite', 'reportes.executive') || request()->query('context') === 'executive';
-        $isCMD = request()->routeIs('dashboard', 'afiliados.*', 'callcenter.*', 'import.*', 'lotes.*', 'cierre.*', 'mensajeros.*', 'rutas.*', 'despachos.*', 'evidencias.*', 'liquidacion.*', 'reportes.*', 'empresas.*', 'proveedores.*', 'catalogo.*', 'admin.audit.index', 'usuarios.*') && !$isExecutive;
+        $isTraspasos = request()->is('traspasos*') || request()->routeIs('traspasos.*', 'reportes.produccion_traspasos');
+        $isAfiliacion = request()->is('solicitudes-afiliacion*') || request()->routeIs('afiliacion.*');
+        $isExecutive = request()->routeIs('reportes.executive.suite', 'reportes.executive') || request()->query('context') === 'executive';
+        $isAccessControl = request()->is('admin/control-accesos*') || request()->routeIs('admin.access.*');
+        $isCallCenter = request()->is('call-center*') || request()->routeIs('call-center.*');
+        $isUpdateManager = request()->is('admin/updates*') || request()->routeIs('admin.updates.*');
+        $isDispersion = request()->is('admin/dispersion*') || request()->routeIs('dispersion.*');
+        
+        // CMD is the default operational context for general system, carnetizacion and global reports
+        $isCMD = !$isTraspasos && !$isAfiliacion && !$isExecutive && !$isAccessControl && !$isCallCenter && !$isUpdateManager && !$isDispersion;
     @endphp
 
     <!-- SideNavBar Component -->
-    <aside class="no-print h-screen w-80 fixed left-0 top-0 border-r border-slate-200 bg-white flex flex-col py-8 z-50 shadow-2xl shadow-slate-200/50">
+    <aside class="no-print h-screen w-72 fixed left-0 top-0 border-r border-slate-200 bg-white flex flex-col py-8 z-50">
         @php /** @var \App\Models\User $user */ $user = Auth::user(); @endphp
         <div class="px-8 mb-10 w-full">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-gradient-to-br {{ $isTraspasos ? 'from-amber-500 to-amber-700 shadow-amber-500/30' : ($isAfiliacion ? 'from-indigo-500 to-indigo-700 shadow-indigo-500/30' : 'from-blue-500 to-blue-700 shadow-blue-500/30') }} rounded-2xl flex items-center justify-center text-white shadow-lg">
-                    <i class="{{ $isTraspasos ? 'ph-fill ph-swap' : ($isAfiliacion ? 'ph-fill ph-user-plus' : 'ph-fill ph-shield-check') }} text-2xl"></i>
+                <div class="h-10 flex items-center">
+                    <img src="{{ asset('img/Logo.png') }}" alt="Logo CMD" class="h-full w-auto">
                 </div>
+                <div class="w-px h-6 bg-slate-200"></div>
                 <div>
-                    <h1 class="text-2xl font-black tracking-tighter text-slate-800 leading-none">
-                        {{ $isTraspasos ? 'Traspasos' : ($isAfiliacion ? 'Afiliación' : 'Servicios') }}
+                    <h1 class="text-sm font-black tracking-tight text-slate-900 leading-none">
+                        {{ $isTraspasos ? 'Traspasos' : ($isAfiliacion ? 'Afiliación' : ($isExecutive ? 'Intelligence' : ($isAccessControl ? 'Seguridad' : ($isCallCenter ? 'Call Center' : ($isUpdateManager ? 'Update Manager' : ($isDispersion ? 'Dispersión' : 'Servicios')))))) }}
                     </h1>
-                    <p class="text-[0.65rem] font-bold uppercase tracking-[0.2em] {{ $isTraspasos ? 'text-amber-600' : ($isAfiliacion ? 'text-indigo-600' : 'text-blue-600') }} mt-1">
-                        {{ $isTraspasos ? 'Módulo Operativo' : ($isAfiliacion ? 'Gestión Interna' : 'Gestión Operativa') }}
+                    <p class="text-[0.6rem] font-bold uppercase tracking-wider {{ $isTraspasos ? 'text-amber-600' : ($isAfiliacion ? 'text-indigo-600' : ($isExecutive ? 'text-rose-600' : ($isAccessControl ? 'text-slate-900' : ($isCallCenter ? 'text-emerald-600' : ($isUpdateManager ? 'text-blue-600' : ($isDispersion ? 'text-emerald-600' : 'text-blue-600')))))) }} mt-0.5">
+                        {{ $isTraspasos ? 'Operativo' : ($isAfiliacion ? 'Interno' : ($isExecutive ? 'Ejecutivo' : ($isAccessControl ? 'Administración' : ($isCallCenter ? 'Gestión CRM' : ($isUpdateManager ? 'Release Hub' : ($isDispersion ? 'PDSS & Bajas' : 'CMD')))))) }}
                     </p>
                 </div>
             </div>
@@ -204,30 +209,37 @@
 
         <nav class="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar" x-data="{ 
             activeGroup: '{{ 
-                request()->routeIs('import.*', 'afiliados.cmd', 'afiliados.otros', 'afiliados.salida_inmediata') ? 'admision' : (
-                request()->routeIs('solicitudes-afiliacion.*') ? 'afiliacion' : (
-                request()->routeIs('callcenter.*') ? 'callcenter' : (
-                request()->routeIs('afiliados.index', 'lotes.*', 'cierre.*', 'mensajeros.*', 'rutas.*', 'despachos.*') ? 'logistica' : (
-                request()->routeIs('evidencias.*', 'liquidacion.*', 'pagos.*') ? 'gestion' : (
+                request()->routeIs('carnetizacion.import.*', 'carnetizacion.afiliados.cmd', 'carnetizacion.afiliados.otros', 'carnetizacion.afiliados.salida_inmediata', 'carnetizacion.afiliados.call_center') ? 'admision' : (
+                request()->routeIs('afiliacion.*') ? 'afiliacion' : (
+                request()->routeIs('call-center.*') ? 'callcenter' : (
+                request()->routeIs('carnetizacion.afiliados.index', 'lotes.*', 'cierre.*', 'mensajeros.*', 'rutas.*', 'despachos.*') ? 'logistica' : (
+                request()->routeIs('evidencias.*', 'liquidacion.*') ? 'gestion' : (
                 request()->routeIs('reportes.*') ? 'reportes' : (
-                request()->routeIs('empresas.*', 'proveedores.*', 'catalogo.*', 'admin.audit.index', 'usuarios.*') ? 'sistema' : ''
+                request()->routeIs('sistema.*', 'intranet.catalogo.index') ? 'sistema' : ''
             )))))) }}' 
         }">
-            <!-- Portal Return Button (NUEVO) -->
+            <!-- Portal Return Button (SANEADO) -->
             <div class="px-2 mb-6">
-                <a href="{{ route('portal') }}" class="flex items-center gap-4 px-6 py-4 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 group overflow-hidden relative">
-                    <div class="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <i class="ph-fill ph-circles-four text-[22px] text-blue-400 group-hover:scale-110 transition-transform relative z-10"></i>
-                    <div class="flex flex-col relative z-10">
-                        <span class="text-[9px] font-black uppercase tracking-[0.2em] text-blue-300 mb-0.5">Volver al</span>
-                        <span class="text-[11px] font-black uppercase tracking-widest text-white leading-none">Centro de Apps</span>
+                <a href="{{ route('portal') }}" class="flex items-center gap-3 px-5 py-3 bg-slate-800 text-white rounded-xl hover:bg-slate-900 transition-all group overflow-hidden relative">
+                    <i class="ph ph-circles-four text-lg text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                    <div class="flex flex-col">
+                        <span class="text-[0.65rem] font-bold uppercase tracking-wider text-white leading-none">Centro de Aplicaciones</span>
                     </div>
-                    <i class="ph ph-arrow-right text-xs ml-auto text-slate-500 group-hover:text-white group-hover:translate-x-1 transition-all relative z-10"></i>
                 </a>
             </div>
 
             @if($isTraspasos)
                 <!-- MENU: TRASPASOS -->
+                <a href="{{ route('traspasos.dashboard') }}" class="flex items-center gap-4 px-6 py-3 rounded-r-xl transition-all {{ request()->routeIs('traspasos.dashboard') ? 'text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-700 hover:bg-slate-50 group/link' }} mb-2">
+                    <i class="ph ph-chart-line-up text-[22px] {{ request()->routeIs('traspasos.dashboard') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Executive Hub</span>
+                </a>
+
+                <a href="{{ route('reportes.produccion_traspasos') }}" class="flex items-center gap-4 px-6 py-3 rounded-r-xl transition-all {{ request()->routeIs('reportes.produccion_traspasos') ? 'text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-700 hover:bg-slate-50 group/link' }} mb-2">
+                    <i class="ph ph-presentation-chart text-[22px] {{ request()->routeIs('reportes.produccion_traspasos') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reporte Producción</span>
+                </a>
+                
                 <a class="{{ request()->routeIs('traspasos.index') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.index') }}">
                     <i class="ph ph-list-bullets text-[22px] {{ request()->routeIs('traspasos.index') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
                     <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Bandeja Global</span>
@@ -242,43 +254,51 @@
                     <i class="ph ph-lightning text-[22px] {{ request()->routeIs('traspasos.bulk.effective') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
                     <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Efectividad Masiva</span>
                 </a>
-
                 @hasanyrole('Admin|Supervisor de Traspasos')
-                <div class="pt-4 mt-4 border-t border-slate-100">
-                    <p class="px-6 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Administración</p>
-                    <a class="{{ request()->routeIs('traspasos.usuarios.*') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.usuarios.index') }}">
-                        <i class="ph ph-users text-[22px] {{ request()->routeIs('traspasos.usuarios.*') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Gestión de Personal</span>
-                    </a>
+                    <div class="px-6 pt-6 pb-2">
+                        <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Administración</p>
+                    </div>
+
+
                     <a class="{{ request()->routeIs('traspasos.departamentos.*') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.departamentos.index') }}">
                         <i class="ph ph-buildings text-[22px] {{ request()->routeIs('traspasos.departamentos.*') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
                         <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Estructura / Dptos</span>
                     </a>
+
+                    <a class="{{ request()->routeIs('traspasos.config.afiliacion-procesos.*') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.config.afiliacion-procesos.index') }}">
+                        <i class="ph ph-notebook text-[22px] {{ request()->routeIs('traspasos.config.afiliacion-procesos.*') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Requisitos Afiliación</span>
+                    </a>
+
+                    <a class="{{ request()->routeIs('traspasos.config.motivos.*') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.config.motivos.index') }}">
+                        <i class="ph ph-list-checks text-[22px] {{ request()->routeIs('traspasos.config.motivos.*') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Catálogo de Motivos</span>
+                    </a>
+
                     <a class="{{ request()->routeIs('traspasos.config.agentes') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.config.agentes') }}">
                         <i class="ph ph-users-three text-[22px] {{ request()->routeIs('traspasos.config.agentes') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Agentes</span>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Agentes y Equipos</span>
                     </a>
-                </div>
                 @endhasanyrole
             @elseif($isAfiliacion)
                 <!-- MENU: AFILIACIÓN -->
-                <a class="{{ request()->routeIs('solicitudes-afiliacion.index') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('solicitudes-afiliacion.index') }}">
+                <a class="{{ request()->routeIs('solicitudes-afiliacion.index') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.index') }}">
                     <i class="ph ph-list-checks text-[22px] {{ request()->routeIs('solicitudes-afiliacion.index') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
                     <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Bandeja Operativa</span>
                 </a>
                 
-                <a class="{{ request()->routeIs('solicitudes-afiliacion.create') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('solicitudes-afiliacion.create') }}">
+                <a class="{{ request()->routeIs('solicitudes-afiliacion.create') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.create') }}">
                     <i class="ph ph-plus-circle text-[22px] {{ request()->routeIs('solicitudes-afiliacion.create') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
                     <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Nueva Solicitud</span>
                 </a>
 
-                <a class="{{ request()->routeIs('solicitudes-afiliacion.reports') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('solicitudes-afiliacion.reports') }}">
+                <a class="{{ request()->routeIs('solicitudes-afiliacion.reports') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.reports') }}">
                     <i class="ph ph-chart-pie-slice text-[22px] {{ request()->routeIs('solicitudes-afiliacion.reports') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
                     <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reportes y KPIs</span>
                 </a>
 
                 @hasanyrole('Admin|Supervisor|Supervisor de Afiliación|Supervisor de Autorizaciones|Supervisor de Cuentas Médicas|Supervisor de Servicio al Cliente')
-                <a class="{{ request()->routeIs('solicitudes-afiliacion.workload') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('solicitudes-afiliacion.workload') }}">
+                <a class="{{ request()->routeIs('solicitudes-afiliacion.workload') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.workload') }}">
                     <i class="ph ph-chart-bar text-[22px] {{ request()->routeIs('solicitudes-afiliacion.workload') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
                     <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Balanceo de Carga</span>
                 </a>
@@ -287,20 +307,83 @@
                 @hasanyrole('Admin|Supervisor|Supervisor de Afiliación|Supervisor de Autorizaciones|Supervisor de Cuentas Médicas|Supervisor de Servicio al Cliente')
                 <div class="pt-4 mt-4 border-t border-slate-100">
                     <p class="px-6 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Administración</p>
-                    <a class="{{ request()->routeIs('solicitudes-afiliacion.usuarios.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('solicitudes-afiliacion.usuarios.index') }}">
+                    <a class="{{ request()->routeIs('solicitudes-afiliacion.usuarios.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.usuarios.index') }}">
                         <i class="ph ph-users text-[22px] {{ request()->routeIs('solicitudes-afiliacion.usuarios.*') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
                         <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Gestión de Personal</span>
                     </a>
-                    <a class="{{ request()->routeIs('solicitudes-afiliacion.departamentos.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('solicitudes-afiliacion.departamentos.index') }}">
+                    <a class="{{ request()->routeIs('solicitudes-afiliacion.departamentos.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.departamentos.index') }}">
                         <i class="ph ph-buildings text-[22px] {{ request()->routeIs('solicitudes-afiliacion.departamentos.*') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
                         <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Estructura / Dptos</span>
                     </a>
-                    <a class="{{ request()->routeIs('solicitudes-afiliacion.config') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('solicitudes-afiliacion.config') }}">
+                    <a class="{{ request()->routeIs('solicitudes-afiliacion.config') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.config') }}">
                         <i class="ph ph-gear text-[22px] {{ request()->routeIs('solicitudes-afiliacion.config') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
                         <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Configuración</span>
                     </a>
                 </div>
                 @endhasanyrole
+            @elseif($isCallCenter)
+                <!-- MENU: CALL CENTER V2 -->
+                <a class="{{ request()->routeIs('call-center.worklist') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('call-center.worklist') }}">
+                    <i class="ph ph-headset text-[22px] {{ request()->routeIs('call-center.worklist') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Mi Bandeja de Trabajo</span>
+                </a>
+
+                <a class="{{ request()->routeIs('call-center.import') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('call-center.import') }}">
+                    <i class="ph ph-upload-simple text-[22px] {{ request()->routeIs('call-center.import') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Importar Prospectos</span>
+                </a>
+
+                <a class="{{ request()->routeIs('call-center.index') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('call-center.index') }}">
+                    <i class="ph ph-list-numbers text-[22px] {{ request()->routeIs('call-center.index') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Histórico de Cargas</span>
+                </a>
+
+                <a class="{{ request()->routeIs('call-center.stats') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('call-center.stats') }}">
+                    <i class="ph ph-chart-pie-slice text-[22px] {{ request()->routeIs('call-center.stats') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Estadísticas y KPIs</span>
+                </a>
+            @elseif($isUpdateManager)
+                <!-- MENU: UPDATE MANAGER -->
+                <a class="{{ request()->routeIs('admin.updates.index') && !request()->has('anchor') ? 'flex items-center gap-4 px-6 py-3 text-blue-700 font-black bg-blue-50/50 border-l-[3px] border-blue-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.updates.index') }}">
+                    <i class="ph ph-rocket-launch text-[22px] {{ request()->routeIs('admin.updates.index') ? 'text-blue-600' : 'group-hover/link:text-blue-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Historial de Releases</span>
+                </a>
+
+                <a class="flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link mb-2" href="{{ route('admin.updates.index') }}#health">
+                    <i class="ph ph-activity text-[22px] group-hover/link:text-blue-700 text-slate-400"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Monitor de Salud</span>
+                </a>
+
+                <a class="flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link mb-2" href="{{ route('admin.updates.index') }}#backups">
+                    <i class="ph ph-database text-[22px] group-hover/link:text-blue-700 text-slate-400"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Snapshots & Backups</span>
+                </a>
+
+                <a class="flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link mb-2" href="{{ route('admin.updates.index') }}#packer">
+                    <i class="ph ph-package text-[22px] group-hover/link:text-blue-700 text-slate-400"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Generador de Patches</span>
+                </a>
+            @elseif($isDispersion)
+                <!-- MENU: DISPERSION -->
+                <a class="{{ request()->routeIs('dispersion.index') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('dispersion.index') }}">
+                    <i class="ph ph-chart-pie-slice text-[22px] {{ request()->routeIs('dispersion.index') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Dashboard Mensual</span>
+                </a>
+
+                <a class="{{ request()->routeIs('dispersion.history') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('dispersion.history') }}">
+                    <i class="ph ph-calendar-check text-[22px] {{ request()->routeIs('dispersion.history') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Histórico de Periodos</span>
+                </a>
+
+                <a class="{{ request()->routeIs('dispersion.reports') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('dispersion.reports') }}">
+                    <i class="ph ph-file-pdf text-[22px] {{ request()->routeIs('dispersion.reports') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reportes Ejecutivos</span>
+                </a>
+
+                <a class="{{ request()->routeIs('dispersion.config') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('dispersion.config') }}">
+                    <i class="ph ph-gear-six text-[22px] {{ request()->routeIs('dispersion.config') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Configuración</span>
+                </a>
             @else
                 @if($isCMD)
                     {{-- GRUPO: ADMISIÓN --}}
@@ -316,10 +399,11 @@
                             <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'admision' ? 'rotate-180' : ''"></i>
                         </button>
                         <div x-show="activeGroup === 'admision'" x-collapse class="pl-4 space-y-1">
-                            <x-nav-link route="import.index" icon="ph ph-upload-simple" label="Importar Excel" />
-                            <x-nav-link route="afiliados.cmd" icon="ph ph-identification-card" label="CMD (Paso 1)" />
-                            <x-nav-link route="afiliados.otros" icon="ph ph-users" label="Otros (Paso 1)" />
-                            <x-nav-link route="afiliados.salida_inmediata" icon="ph ph-lightning" label="Salida Inmediata" />
+                            <x-nav-link route="carnetizacion.import.index" icon="ph ph-upload-simple" label="Importar Excel" />
+                            <x-nav-link route="carnetizacion.afiliados.cmd" icon="ph ph-identification-card" label="CMD (Paso 1)" />
+                            <x-nav-link route="carnetizacion.afiliados.call_center" icon="ph ph-headset" label="Entrada Call Center" />
+                            <x-nav-link route="carnetizacion.afiliados.otros" icon="ph ph-users" label="Otros (Paso 1)" />
+                            <x-nav-link route="carnetizacion.afiliados.salida_inmediata" icon="ph ph-lightning" label="Salida Inmediata" />
                         </div>
                     </div>
                     @endcan
@@ -356,7 +440,7 @@
                             <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'logistica' ? 'rotate-180' : ''"></i>
                         </button>
                         <div x-show="activeGroup === 'logistica'" x-collapse class="pl-4 space-y-1">
-                            <x-nav-link route="afiliados.index" icon="ph ph-users-four" label="Expedientes (Carnets)" />
+                            <x-nav-link route="carnetizacion.afiliados.index" icon="ph ph-users-four" label="Expedientes (Carnets)" />
                             <x-nav-link route="lotes.index" icon="ph ph-package" label="Control de Lotes" />
                             <x-nav-link route="cierre.index" icon="ph ph-lock-key" label="Cierre de Cortes" />
                             <x-nav-link route="mensajeros.index" icon="ph ph-moped" label="Mensajeros" />
@@ -399,7 +483,9 @@
                         </button>
                         <div x-show="activeGroup === 'reportes'" x-collapse class="pl-4 space-y-1">
                             <x-nav-link route="reportes.index" icon="ph ph-chart-line-up" label="Estadísticas" />
+                            <x-nav-link route="reportes.produccion_traspasos" icon="ph ph-chart-bar" label="Producción Traspasos" />
                             <x-nav-link route="reportes.supervision" icon="ph ph-eye" label="Supervisión" />
+                            <x-nav-link route="reportes.export_center" icon="ph ph-file-csv" label="Centro de Exportación" />
                             <x-nav-link route="reportes.heatmap" icon="ph ph-globe-hemisphere-west" label="Mapa Global" />
                         </div>
                     </div>
@@ -418,17 +504,45 @@
                             <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'sistema' ? 'rotate-180' : ''"></i>
                         </button>
                         <div x-show="activeGroup === 'sistema'" x-collapse class="pl-4 space-y-1">
-                            <x-nav-link route="empresas.index" icon="ph ph-buildings" label="Empresas" />
-                            <x-nav-link route="proveedores.index" icon="ph ph-truck" label="Proveedores" />
-                            <x-nav-link route="catalogo.index" icon="ph ph-books" label="Catálogo" />
-                            <x-nav-link route="admin.audit.index" icon="ph ph-clock-counter-clockwise" label="Auditoría" />
-                            <x-nav-link route="usuarios.index" icon="ph ph-users-three" label="Usuarios y Roles" />
+                            <x-nav-link route="sistema.empresas.index" icon="ph ph-buildings" label="Empresas" />
+                            <x-nav-link route="sistema.proveedores.index" icon="ph ph-truck" label="Proveedores" />
+                            <x-nav-link route="intranet.catalogo.index" icon="ph ph-books" label="Catálogo" />
+                            <x-nav-link route="admin.access.audit" icon="ph ph-clock-counter-clockwise" label="Auditoría" />
+                            <x-nav-link route="carnetizacion.sync_center.index" icon="ph ph-arrows-clockwise" label="Sync Center" />
+                            <x-nav-link route="sistema.backups.index" icon="ph ph-database" label="Copias de Seguridad" />
+                            <x-nav-link route="admin.updates.index" icon="ph ph-rocket-launch" label="Update Manager" />
+                            <x-nav-link route="admin.access.index" icon="ph ph-shield-checkered" label="Matriz de Accesos" />
                         </div>
                     </div>
                     @endcan
+                @elseif($isAccessControl)
+                    <!-- MENU: SEGURIDAD / ACCESOS -->
+                    <div class="px-6 pt-2 pb-2">
+                        <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Control Maestro</p>
+                    </div>
+
+                    <a class="{{ request()->routeIs('admin.access.users*') ? 'flex items-center gap-4 px-6 py-3 text-slate-900 font-black bg-slate-100 border-l-[3px] border-slate-900 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.access.users') }}">
+                        <i class="ph ph-users-three text-[22px] {{ request()->routeIs('admin.access.users*') ? 'text-slate-900' : 'group-hover/link:text-slate-900 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Gestión de Nómina</span>
+                    </a>
+
+                    <a class="{{ request()->routeIs('admin.access.apps*') ? 'flex items-center gap-4 px-6 py-3 text-slate-900 font-black bg-slate-100 border-l-[3px] border-slate-900 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.access.apps') }}">
+                        <i class="ph ph-squares-four text-[22px] {{ request()->routeIs('admin.access.apps*') ? 'text-slate-900' : 'group-hover/link:text-slate-900 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Módulos Instalados</span>
+                    </a>
+
+                    <a class="{{ request()->routeIs('admin.access.roles*') ? 'flex items-center gap-4 px-6 py-3 text-slate-900 font-black bg-slate-100 border-l-[3px] border-slate-900 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.access.roles') }}">
+                        <i class="ph ph-shield-star text-[22px] {{ request()->routeIs('admin.access.roles*') ? 'text-slate-900' : 'group-hover/link:text-slate-900 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Diccionario de Roles</span>
+                    </a>
+
+                    <a class="{{ request()->routeIs('admin.access.index') ? 'flex items-center gap-4 px-6 py-3 text-slate-900 font-black bg-slate-100 border-l-[3px] border-slate-900 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.access.index') }}">
+                        <i class="ph ph-shield-checkered text-[22px] {{ request()->routeIs('admin.access.index') ? 'text-slate-900' : 'group-hover/link:text-slate-900 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Matriz de Accesos</span>
+                    </a>
                 @else
                     <!-- Navigation Links (Suite Ejecutiva / Otros) -->
-                    <a class="{{ request()->routeIs('executive.suite') ? 'flex items-center gap-4 px-6 py-3 text-blue-700 font-black bg-blue-50/50 border-l-[3px] border-blue-600 shadow-sm rounded-r-xl transition-all relative overflow-hidden' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-4 mt-0.5" href="{{ route('executive.suite') }}">
+                    <a class="{{ request()->routeIs('executive.suite') ? 'flex items-center gap-4 px-6 py-3 text-blue-700 font-black bg-blue-50/50 border-l-[3px] border-blue-600 shadow-sm rounded-r-xl transition-all relative overflow-hidden' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-4 mt-0.5" href="{{ route('reportes.executive.suite') }}">
                         @if(request()->routeIs('executive.suite'))
                             <div class="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent"></div>
                         @endif
@@ -463,7 +577,7 @@
     </aside>
 
     <!-- Main Canvas -->
-    <main class="ml-80 print:ml-0 min-h-screen">
+    <main class="ml-72 print:ml-0 min-h-screen">
         <!-- TopNavBar Component -->
         @if($isCMD)
         <header class="no-print sticky top-0 z-40 bg-white/80 backdrop-blur-md h-16 px-8 flex justify-between items-center shadow-sm border-b border-slate-100">
@@ -495,15 +609,17 @@
                         Operación CMD
                     </a>
                     @can('manage_affiliates')
-                    <a class="{{ request()->routeIs('afiliados.cmd') ? 'text-blue-600 font-bold border-b-[3px] border-blue-600 pb-[1.4rem] pt-6' : 'text-slate-500 font-medium hover:text-blue-600 border-b-[3px] border-transparent pb-[1.4rem] pt-6 transition-colors' }} text-[0.875rem]" href="{{ route('afiliados.cmd') }}">Afiliados</a>
+                    <a class="{{ request()->routeIs('afiliados.cmd') ? 'text-blue-600 font-bold border-b-[3px] border-blue-600 pb-[1.4rem] pt-6' : 'text-slate-500 font-medium hover:text-blue-600 border-b-[3px] border-transparent pb-[1.4rem] pt-6 transition-colors' }} text-[0.875rem]" href="{{ route('carnetizacion.afiliados.cmd') }}">Afiliados</a>
                     @endcan
                     @can('manage_companies')
-                    <a class="{{ request()->routeIs('empresas.*') ? 'text-blue-600 font-bold border-b-[3px] border-blue-600 pb-[1.4rem] pt-6' : 'text-slate-500 font-medium hover:text-blue-600 border-b-[3px] border-transparent pb-[1.4rem] pt-6 transition-colors' }} text-[0.875rem]" href="{{ route('empresas.index') }}">Empresas</a>
+                    <a class="{{ request()->routeIs('sistema.empresas.*') ? 'text-blue-600 font-bold border-b-[3px] border-blue-600 pb-[1.4rem] pt-6' : 'text-slate-500 font-medium hover:text-blue-600 border-b-[3px] border-transparent pb-[1.4rem] pt-6 transition-colors' }} text-[0.875rem]" href="{{ route('sistema.empresas.index') }}">Empresas</a>
                     @endcan
                 </nav>
             </div>
             
             <div class="flex items-center gap-4">
+                @livewire('call-center.follow-up-reminder')
+                
                 <!-- Background Jobs Monitor -->
                 @unless(auth()->user()->hasRole('Operador'))
                 <div id="queue-monitor" class="relative hidden" x-data="{ open: false, imports: [] }">
@@ -552,19 +668,179 @@
                         </span>
                         @endif
                     </button>
+
+                    <!-- Notifications Dropdown -->
+                    <div x-show="open" @click.outside="open = false" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95 translate-y-[-10px]"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         class="absolute right-0 mt-3 w-80 bg-white rounded-[32px] shadow-2xl border border-slate-100 z-50 overflow-hidden" x-cloak>
+                        <div class="p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest">Notificaciones</h3>
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-[9px] font-black rounded-lg">RECIBIDAS</span>
+                        </div>
+                        <div class="max-h-80 overflow-y-auto custom-scrollbar">
+                            @forelse(auth()->user()->notifications->take(10) as $notification)
+                                <div class="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors flex gap-4 {{ $notification->read_at ? 'opacity-60' : '' }}">
+                                    <div class="w-10 h-10 rounded-xl bg-{{ $notification->data['icon_color'] ?? 'blue' }}-50 flex items-center justify-center shrink-0">
+                                        <i class="ph-fill ph-{{ $notification->data['icon'] ?? 'bell' }} text-{{ $notification->data['icon_color'] ?? 'blue' }}-600"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[0.7rem] font-bold text-slate-800 leading-tight">{{ $notification->data['title'] ?? 'Notificación' }}</p>
+                                        <p class="text-[0.65rem] text-slate-500 mt-1 leading-relaxed">{{ $notification->data['message'] ?? '' }}</p>
+                                        <p class="text-[0.6rem] text-slate-400 mt-2 font-medium">{{ $notification->created_at->diffForHumans() }}</p>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="py-12 text-center">
+                                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="ph ph-bell-slash text-2xl text-slate-300"></i>
+                                    </div>
+                                    <p class="text-[0.7rem] text-slate-400 font-bold uppercase tracking-widest">Bandeja Vacía</p>
+                                </div>
+                            @endforelse
+                        </div>
+                        <div class="p-4 bg-slate-50/50">
+                            <form method="POST" action="{{ route('notifications.markAllAsRead') }}">
+                                @csrf
+                                <button type="submit" class="w-full py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all">
+                                    Marcar todo como leído
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
                 
                 <!-- User Profile -->
-                <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" class="flex items-center gap-3 p-1 pr-4 bg-white hover:bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-full shadow-sm hover:shadow transition-all duration-200">
                         <img src="{{ $user->avatar_url }}" class="w-8 h-8 rounded-full object-cover border border-slate-200" alt="User">
                         <div class="hidden md:flex flex-col text-left">
                             <span class="text-[0.75rem] font-black text-slate-800 leading-tight">{{ $user->name }}</span>
                             <span class="text-[0.6rem] font-bold text-blue-600 uppercase tracking-tighter">{{ $user->getRoleNames()->first() ?? 'Usuario' }}</span>
                         </div>
+                        <i class="ph ph-caret-down text-[10px] text-slate-400 ml-1"></i>
                     </button>
+
+                    <!-- User Dropdown -->
+                    <div x-show="open" @click.outside="open = false" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95 translate-y-[-10px]"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         class="absolute right-0 mt-3 w-56 bg-white rounded-[32px] shadow-2xl border border-slate-100 z-50 overflow-hidden" x-cloak>
+                        <div class="p-6 border-b border-slate-50 bg-slate-50/50">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Sesión Activa</p>
+                            <p class="text-xs font-black text-slate-800 truncate">{{ $user->email }}</p>
+                        </div>
+                        <div class="p-2">
+                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 p-4 text-[0.75rem] font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-colors">
+                                <i class="ph ph-user-circle text-lg"></i> Perfil Personal
+                            </a>
+                            <div class="h-[1px] bg-slate-50 my-1"></div>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="w-full flex items-center gap-3 p-4 text-[0.75rem] font-black text-rose-500 hover:bg-rose-50 rounded-2xl transition-colors">
+                                    <i class="ph ph-power text-lg"></i> Cerrar Sesión
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        @elseif($isUpdateManager)
+        <header class="no-print sticky top-0 z-40 bg-white/80 backdrop-blur-md h-16 px-8 flex justify-between items-center shadow-sm border-b border-slate-100">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 px-4 py-2 bg-slate-900 text-white rounded-2xl shadow-lg">
+                    <i class="ph-duotone ph-rocket-launch text-xl text-blue-400"></i>
+                    <span class="text-xs font-black uppercase tracking-widest">Release Manager & On-Premise Suite</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="text-right mr-4 hidden md:block">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Entorno Local</p>
+                    <p class="text-[11px] font-bold text-blue-600 flex items-center justify-end gap-1">
+                        <i class="ph ph-shield-check"></i>
+                        Infraestructura Protegida
+                    </p>
+                </div>
+                
+                <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+                
+                @php $user = Auth::user(); @endphp
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="flex items-center gap-3 p-1 pr-4 bg-white hover:bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-full shadow-sm hover:shadow transition-all duration-200">
+                        <img src="{{ $user->avatar_url }}" class="w-8 h-8 rounded-full object-cover border border-slate-200" alt="User">
+                        <div class="hidden md:flex flex-col text-left">
+                            <span class="text-[0.75rem] font-black text-slate-800 leading-tight">{{ $user->name }}</span>
+                            <span class="text-[0.6rem] font-bold text-blue-600 uppercase tracking-tighter">{{ $user->getRoleNames()->first() ?? 'Usuario' }}</span>
+                        </div>
+                        <i class="ph ph-caret-down text-[10px] text-slate-400 ml-1"></i>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" class="absolute right-0 mt-3 w-56 bg-white rounded-[32px] shadow-2xl border border-slate-100 z-50 overflow-hidden" x-cloak>
+                        <div class="p-2">
+                            <a href="{{ route('portal') }}" class="flex items-center gap-3 p-4 text-[0.75rem] font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-colors">
+                                <i class="ph ph-circles-four text-lg"></i> Volver al Portal
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="w-full flex items-center gap-3 p-4 text-[0.75rem] font-black text-rose-500 hover:bg-rose-50 rounded-2xl transition-colors">
+                                    <i class="ph ph-power text-lg"></i> Cerrar Sesión
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        @elseif($isAccessControl)
+        <header class="no-print sticky top-0 z-40 bg-white/80 backdrop-blur-md h-16 px-8 flex justify-between items-center shadow-sm border-b border-slate-100">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 px-4 py-2 bg-slate-900 text-white rounded-2xl shadow-lg">
+                    <i class="ph-duotone ph-shield-checkered text-xl text-blue-400"></i>
+                    <span class="text-xs font-black uppercase tracking-widest">Consola de Seguridad Centralizada</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="text-right mr-4 hidden md:block">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Estado de la Matriz</p>
+                    <p class="text-[11px] font-bold text-emerald-600 flex items-center justify-end gap-1">
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                        Protección Activa
+                    </p>
+                </div>
+                
+                <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+                
+                <!-- User Profile (Same as CMD for consistency) -->
+                @php $user = Auth::user(); @endphp
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="flex items-center gap-3 p-1 pr-4 bg-white hover:bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-full shadow-sm hover:shadow transition-all duration-200">
+                        <img src="{{ $user->avatar_url }}" class="w-8 h-8 rounded-full object-cover border border-slate-200" alt="User">
+                        <div class="hidden md:flex flex-col text-left">
+                            <span class="text-[0.75rem] font-black text-slate-800 leading-tight">{{ $user->name }}</span>
+                            <span class="text-[0.6rem] font-bold text-blue-600 uppercase tracking-tighter">{{ $user->getRoleNames()->first() ?? 'Usuario' }}</span>
+                        </div>
+                        <i class="ph ph-caret-down text-[10px] text-slate-400 ml-1"></i>
+                    </button>
+                    <!-- User Dropdown (Simplified for Admin) -->
+                    <div x-show="open" @click.outside="open = false" class="absolute right-0 mt-3 w-56 bg-white rounded-[32px] shadow-2xl border border-slate-100 z-50 overflow-hidden" x-cloak>
+                        <div class="p-2">
+                            <a href="{{ route('portal') }}" class="flex items-center gap-3 p-4 text-[0.75rem] font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-colors">
+                                <i class="ph ph-circles-four text-lg"></i> Volver al Portal
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="w-full flex items-center gap-3 p-4 text-[0.75rem] font-black text-rose-500 hover:bg-rose-50 rounded-2xl transition-colors">
+                                    <i class="ph ph-power text-lg"></i> Cerrar Sesión
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
@@ -670,29 +946,131 @@
             const searchEmpty = document.getElementById('search-empty');
             let searchTimeout;
 
-            searchInput.addEventListener('input', (e) => {
-                const query = e.target.value.trim();
-                clearTimeout(searchTimeout);
+            if (searchInput && searchResults) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.trim();
+                    clearTimeout(searchTimeout);
 
-                if (query.length < 3) {
-                    searchResults.classList.add('hidden');
-                    return;
-                }
+                    if (query.length < 3) {
+                        searchResults.classList.add('hidden');
+                        return;
+                    }
 
-                searchTimeout = setTimeout(() => {
-                    const quickActions = [
-                        { nombre: 'Nueva Empresa', url: '{{ route("empresas.create") }}', icon: 'add_business', keywords: ['nueva', 'crear', 'empresa'] },
-                        { nombre: 'Importar Excel', url: '{{ route("import.index") }}', icon: 'upload_file', keywords: ['importar', 'excel', 'subir'] },
-                        { nombre: 'Ver Auditoría', url: '{{ route("admin.audit.index") }}', icon: 'history', keywords: ['auditoria', 'logs', 'historial'] },
-                        { nombre: 'Reporte Supervisión', url: '{{ route("reportes.supervision") }}', icon: 'monitoring', keywords: ['reporte', 'supervision', 'graficos'] }
-                    ];
+                    searchTimeout = setTimeout(() => {
+                        const quickActions = [
+                            { nombre: 'Nueva Empresa', url: '{{ route("sistema.empresas.create") }}', icon: 'add_business', keywords: ['nueva', 'crear', 'empresa'] },
+                            { nombre: 'Importar Excel', url: '{{ route("carnetizacion.import.index") }}', icon: 'upload_file', keywords: ['importar', 'excel', 'subir'] },
+                            { nombre: 'Ver Auditoría', url: '{{ route("admin.access.audit") }}', icon: 'history', keywords: ['auditoria', 'logs', 'historial'] },
+                            { nombre: 'Reporte Supervisión', url: '{{ route("reportes.supervision") }}', icon: 'monitoring', keywords: ['reporte', 'supervision', 'graficos'] }
+                        ];
 
-                    const filteredActions = quickActions.filter(a => 
-                        a.keywords.some(k => k.includes(query.toLowerCase())) || 
-                        a.nombre.toLowerCase().includes(query.toLowerCase())
-                    );
+                        const filteredActions = quickActions.filter(a => 
+                            a.keywords.some(k => k.includes(query.toLowerCase())) || 
+                            a.nombre.toLowerCase().includes(query.toLowerCase())
+                        );
 
-                    fetch(`{{ route('afiliados.search_ajax') }}?q=${encodeURIComponent(query)}`, {
+                        fetch(`{{ route('carnetizacion.afiliados.search_ajax') }}?q=${encodeURIComponent(query)}`, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                searchResults.classList.remove('hidden');
+                                resultsContainer.innerHTML = '';
+                                
+                                if (data.length === 0 && filteredActions.length === 0) {
+                                    searchEmpty.classList.remove('hidden');
+                                    resultsContainer.classList.add('hidden');
+                                } else {
+                                    searchEmpty.classList.add('hidden');
+                                    resultsContainer.classList.remove('hidden');
+                                    
+                                    // Render Actions First
+                                    if (filteredActions.length > 0) {
+                                        const actionHeader = document.createElement('div');
+                                        actionHeader.className = 'p-3 bg-slate-50/50 border-b border-slate-50';
+                                        actionHeader.innerHTML = '<span class="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Acciones Rápidas</span>';
+                                        resultsContainer.appendChild(actionHeader);
+
+                                        filteredActions.forEach(action => {
+                                            const row = document.createElement('a');
+                                            row.href = action.url;
+                                            row.className = 'flex items-center gap-4 p-4 hover:bg-primary/5 transition-colors group cursor-pointer border-l-4 border-transparent hover:border-primary';
+                                            row.innerHTML = `
+                                                <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
+                                                    <span class="material-symbols-outlined text-xl">${action.icon}</span>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-bold text-slate-800">${action.nombre}</p>
+                                                    <p class="text-[0.65rem] font-medium text-slate-400">Acceso directo al módulo</p>
+                                                </div>
+                                                <span class="material-symbols-outlined text-slate-300 text-sm group-hover:translate-x-1 transition-transform">chevron_right</span>
+                                            `;
+                                            resultsContainer.appendChild(row);
+                                        });
+                                    }
+
+                                    // Render Affiliates
+                                    if (data.length > 0) {
+                                        const affiliateHeader = document.createElement('div');
+                                        affiliateHeader.className = 'p-3 bg-slate-50/50 border-y border-slate-50';
+                                        affiliateHeader.innerHTML = `<span class="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Expedientes (${data.length})</span>`;
+                                        resultsContainer.appendChild(affiliateHeader);
+
+                                        data.forEach(item => {
+                                            const row = document.createElement('a');
+                                            row.href = item.url;
+                                            row.className = 'flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors group cursor-pointer';
+                                            row.innerHTML = `
+                                                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                                    <span class="material-symbols-outlined text-xl">person</span>
+                                                </div>
+                                                <div class="flex-1 overflow-hidden">
+                                                    <div class="flex justify-between items-center mb-0.5">
+                                                        <p class="text-sm font-bold text-slate-800 truncate">${item.nombre}</p>
+                                                        <span class="text-[0.6rem] font-black uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">${item.estado}</span>
+                                                    </div>
+                                                    <div class="flex items-center gap-3">
+                                                        <span class="text-[0.7rem] font-medium text-slate-400">ID: ${item.cedula}</span>
+                                                        <span class="w-1 h-1 bg-slate-200 rounded-full"></span>
+                                                        <span class="text-[0.7rem] font-medium text-slate-400">Póliza: ${item.poliza}</span>
+                                                    </div>
+                                                </div>
+                                            `;
+                                            resultsContainer.appendChild(row);
+                                        });
+                                    }
+                                }
+                            });
+                    }, 300);
+                });
+
+                // Close search when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                        searchResults.classList.add('hidden');
+                    }
+                });
+
+                // Command Palette (Ctrl+K)
+                document.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                        e.preventDefault();
+                        searchInput.focus();
+                    }
+                });
+            }
+
+            // --- Queue Monitor Logic ---
+            const queueMonitor = document.getElementById('queue-monitor');
+            const queueCount = document.getElementById('queue-count');
+            const queueDetailsList = document.getElementById('queue-details-list');
+            
+            if (queueMonitor) {
+                function updateQueueStatus() {
+                    fetch('{{ route("api.queue_status") }}', {
                         headers: {
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
@@ -700,143 +1078,33 @@
                     })
                         .then(res => res.json())
                         .then(data => {
-                            searchResults.classList.remove('hidden');
-                            resultsContainer.innerHTML = '';
-                            
-                            if (data.length === 0 && filteredActions.length === 0) {
-                                searchEmpty.classList.remove('hidden');
-                                resultsContainer.classList.add('hidden');
-                            } else {
-                                searchEmpty.classList.add('hidden');
-                                resultsContainer.classList.remove('hidden');
+                            if (data.count > 0 || data.active_imports.length > 0) {
+                                queueMonitor.classList.remove('hidden');
+                                if (queueCount) queueCount.textContent = `Procesando (${data.count})`;
                                 
-                                // Render Actions First
-                                if (filteredActions.length > 0) {
-                                    const actionHeader = document.createElement('div');
-                                    actionHeader.className = 'p-3 bg-slate-50/50 border-b border-slate-50';
-                                    actionHeader.innerHTML = '<span class="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Acciones Rápidas</span>';
-                                    resultsContainer.appendChild(actionHeader);
-
-                                    filteredActions.forEach(action => {
-                                        const row = document.createElement('a');
-                                        row.href = action.url;
-                                        row.className = 'flex items-center gap-4 p-4 hover:bg-primary/5 transition-colors group cursor-pointer border-l-4 border-transparent hover:border-primary';
-                                        row.innerHTML = `
-                                            <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
-                                                <span class="material-symbols-outlined text-xl">${action.icon}</span>
+                                if (queueDetailsList && data.active_imports.length > 0) {
+                                    queueDetailsList.innerHTML = data.active_imports.map(imp => `
+                                        <div class="space-y-1.5">
+                                            <div class="flex justify-between items-center text-[0.65rem]">
+                                                <span class="font-bold text-slate-700 truncate max-w-[140px]">${imp.nombre}</span>
+                                                <span class="font-black text-blue-600">${imp.progress}%</span>
                                             </div>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-bold text-slate-800">${action.nombre}</p>
-                                                <p class="text-[0.65rem] font-medium text-slate-400">Acceso directo al módulo</p>
+                                            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                <div class="h-full bg-blue-500 transition-all duration-500" style="width: ${imp.progress}%"></div>
                                             </div>
-                                            <span class="material-symbols-outlined text-slate-300 text-sm group-hover:translate-x-1 transition-transform">chevron_right</span>
-                                        `;
-                                        resultsContainer.appendChild(row);
-                                    });
+                                        </div>
+                                    `).join('');
                                 }
-
-                                // Render Affiliates
-                                if (data.length > 0) {
-                                    const affiliateHeader = document.createElement('div');
-                                    affiliateHeader.className = 'p-3 bg-slate-50/50 border-y border-slate-50';
-                                    affiliateHeader.innerHTML = `<span class="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Expedientes (${data.length})</span>`;
-                                    resultsContainer.appendChild(affiliateHeader);
-
-                                    data.forEach(item => {
-                                        const row = document.createElement('a');
-                                        row.href = item.url;
-                                        row.className = 'flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors group cursor-pointer';
-                                        row.innerHTML = `
-                                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                                <span class="material-symbols-outlined text-xl">person</span>
-                                            </div>
-                                            <div class="flex-1 overflow-hidden">
-                                                <div class="flex justify-between items-center mb-0.5">
-                                                    <p class="text-sm font-bold text-slate-800 truncate">${item.nombre}</p>
-                                                    <span class="text-[0.6rem] font-black uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">${item.estado}</span>
-                                                </div>
-                                                <div class="flex items-center gap-3">
-                                                    <span class="text-[0.7rem] font-medium text-slate-400">ID: ${item.cedula}</span>
-                                                    <span class="w-1 h-1 bg-slate-200 rounded-full"></span>
-                                                    <span class="text-[0.7rem] font-medium text-slate-400">Póliza: ${item.poliza}</span>
-                                                </div>
-                                            </div>
-                                        `;
-                                        resultsContainer.appendChild(row);
-                                    });
-                                }
-                            }
-                        });
-                }, 300);
-            });
-
-            // --- Command Palette (Ctrl+K) ---
-            document.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                    e.preventDefault();
-                    searchInput.focus();
-                }
-            });
-
-            // --- Queue Monitor Logic (Mejorada) ---
-            const queueMonitor = document.getElementById('queue-monitor');
-            const queueCount = document.getElementById('queue-count');
-            const queueDetailsList = document.getElementById('queue-details-list');
-            
-            function updateQueueStatus() {
-                fetch('{{ route("api.queue_status") }}', {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.count > 0 || data.active_imports.length > 0) {
-                            queueMonitor.classList.remove('hidden');
-                            queueCount.textContent = `Procesando (${data.count})`;
-                            
-                            // Actualizar lista de detalles
-                            if (data.active_imports.length > 0) {
-                                queueDetailsList.innerHTML = data.active_imports.map(imp => `
-                                    <div class="space-y-1.5">
-                                        <div class="flex justify-between items-center text-[0.65rem]">
-                                            <span class="font-bold text-slate-700 truncate max-w-[140px]">${imp.nombre}</span>
-                                            <span class="font-black text-blue-600">${imp.progress}%</span>
-                                        </div>
-                                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                            <div class="h-full bg-blue-500 transition-all duration-500" style="width: ${imp.progress}%"></div>
-                                        </div>
-                                        <div class="text-[0.6rem] text-slate-400 flex justify-between">
-                                            <span>${imp.current} de ${imp.total} registros</span>
-                                            <span class="italic truncate max-w-[100px]">${imp.logs.length > 0 ? imp.logs[0] : ''}</span>
-                                        </div>
-                                    </div>
-                                `).join('');
                             } else {
-                                queueDetailsList.innerHTML = `
-                                    <div class="py-2 text-center">
-                                        <p class="text-[0.7rem] text-slate-500">Preparando datos...</p>
-                                        <p class="text-[0.6rem] text-slate-400 mt-1">El archivo se está leyendo.</p>
-                                    </div>
-                                `;
+                                queueMonitor.classList.add('hidden');
                             }
-                        } else {
-                            queueMonitor.classList.add('hidden');
-                        }
-                    })
-                    .catch(() => {});
-            }
-
-            setInterval(updateQueueStatus, 10000); // Cada 10 segundos
-            updateQueueStatus();
-
-            // Close search when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.classList.add('hidden');
+                        })
+                        .catch(() => {});
                 }
-            });
+
+                setInterval(updateQueueStatus, 10000);
+                updateQueueStatus();
+            }
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>

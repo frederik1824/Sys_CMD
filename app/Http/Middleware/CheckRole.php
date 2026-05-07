@@ -19,11 +19,19 @@ class CheckRole
             return redirect('login');
         }
 
-        $userRole = auth()->user()->rol->nombre ?? '';
+        $user = auth()->user();
 
-        if (!in_array($userRole, $roles)) {
-            abort(403, 'No tienes permiso para acceder a esta sección.');
+        // Bypass total para administradores
+        if ($user->hasAnyRole(['Admin', 'Super-Admin'])) {
+            return $next($request);
         }
+
+        // Verificación de roles requeridos mediante Spatie
+        if ($user->hasAnyRole($roles)) {
+            return $next($request);
+        }
+
+        abort(403, 'No tienes permiso para acceder a esta sección.');
 
         return $next($request);
     }

@@ -6,7 +6,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
             <nav class="flex items-center gap-2 mb-2 text-[0.65rem] font-black uppercase tracking-[0.2em] text-slate-400">
-                <a href="{{ route('empresas.index') }}" class="hover:text-primary transition-colors">Empresas</a>
+                <a href="{{ route('sistema.empresas.index') }}" class="hover:text-primary transition-colors">Empresas</a>
                 <span class="material-symbols-outlined text-[10px]">chevron_right</span>
                 <span class="text-primary">{{ $empresa->nombre }}</span>
             </nav>
@@ -21,7 +21,7 @@
         </div>
         
         <div class="flex items-center gap-3">
-            <a href="{{ route('empresas.edit', $empresa) }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all hover:shadow-lg shadow-sm">
+            <a href="{{ route('sistema.empresas.edit', $empresa) }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all hover:shadow-lg shadow-sm">
                 <span class="material-symbols-outlined text-sm">edit_note</span>
                 Editar Perfil
             </a>
@@ -232,7 +232,7 @@
                         {{-- Background Decoration --}}
                         <div class="absolute right-0 top-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                         
-                        <form action="{{ route('empresas.interaction', $empresa) }}" method="POST" class="relative z-10 flex flex-col md:flex-row gap-4 items-end">
+                        <form action="{{ route('sistema.empresas.interaction', $empresa) }}" method="POST" class="relative z-10 flex flex-col md:flex-row gap-4 items-end">
                             @csrf
                             <div class="flex-1 w-full">
                                 <label class="block text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mb-2 pl-1 italic">Agregar Nueva Nota de Gestión</label>
@@ -359,7 +359,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-50">
                             @forelse($afiliados as $afiliado)
-                                <tr class="hover:bg-slate-50/50 transition-colors cursor-pointer group/row" onclick="window.location='{{ route('afiliados.show', $afiliado) }}'">
+                                <tr class="hover:bg-slate-50/50 transition-colors cursor-pointer group/row" onclick="window.location='{{ route('carnetizacion.afiliados.show', $afiliado) }}'">
                                     <td class="px-8 py-6">
                                         <div class="flex items-center gap-4">
                                             <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold group-hover/row:bg-primary group-hover/row:text-white transition-all">

@@ -26,7 +26,7 @@ class EstadoController extends Controller
         ]);
 
         Estado::create($validated);
-        return redirect()->route('estados.index')->with('success', 'Estado creado exitosamente.');
+        return redirect()->route('sistema.estados.index')->with('success', 'Estado creado exitosamente.');
     }
 
     public function edit(Estado $estado)
@@ -42,12 +42,12 @@ class EstadoController extends Controller
         ]);
 
         $estado->update($validated);
-        return redirect()->route('estados.index')->with('success', 'Estado actualizado exitosamente.');
+        return redirect()->route('sistema.estados.index')->with('success', 'Estado actualizado exitosamente.');
     }
 
     public function destroy(Estado $estado)
     {
         $estado->delete();
-        return redirect()->route('estados.index')->with('success', 'Estado eliminado.');
+        return redirect()->route('sistema.estados.index')->with('success', 'Estado eliminado.');
     }
 }

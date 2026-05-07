@@ -65,7 +65,7 @@
     <!-- HEADER INMERSIVO -->
     <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 mb-12">
         <div class="space-y-4">
-            <a href="{{ route('solicitudes-afiliacion.index') }}" 
+            <a href="{{ route('afiliacion.index') }}" 
                class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all text-[10px] font-black uppercase tracking-widest shadow-sm group">
                 <i class="ph-bold ph-arrow-left group-hover:-translate-x-1 transition-transform"></i> 
                 Volver a la Bandeja Operativa
@@ -91,13 +91,11 @@
                 {{ $solicitud->nombre_completo }} <span class="text-slate-400 font-bold ml-2">[{{ $solicitud->cedula }}]</span>
             </p>
             
-            @php
-                $afiliadoMaestro = \App\Models\Afiliado::where('cedula', $solicitud->cedula)->first();
-            @endphp
+            {{-- $afiliadoMaestro pre-cargado en el controlador --}}
 
             @if($afiliadoMaestro)
             <div class="pt-2">
-                <a href="{{ route('afiliados.show', $afiliadoMaestro) }}" target="_blank"
+                <a href="{{ route('carnetizacion.afiliados.show', $afiliadoMaestro) }}" target="_blank"
                     class="inline-flex items-center gap-3 px-6 py-3 bg-emerald-50 border border-emerald-100 rounded-[18px] text-[10px] font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100 transition-all shadow-sm group">
                     <i class="ph ph-user-focus text-xl"></i>
                     Ver Historial Maestro del Afiliado
@@ -109,7 +107,7 @@
 
         <div class="flex flex-wrap gap-4 items-center">
             @if($solicitud->estado == 'Pendiente' && auth()->user()->can('solicitudes_afiliacion.asignarse'))
-            <form action="{{ route('solicitudes-afiliacion.assign', $solicitud) }}" method="POST">
+            <form action="{{ route('afiliacion.assign', $solicitud) }}" method="POST">
                 @csrf
                 <button type="submit" class="bg-indigo-600 text-white rounded-[24px] px-10 py-6 text-xs font-black uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all flex items-center gap-4 shadow-xl shadow-indigo-200">
                     <i class="ph-fill ph-hand-pointing text-2xl"></i> Asignarme este Expediente
@@ -131,7 +129,7 @@
                 </button>
                 @endcan
                 <div class="w-px h-10 bg-slate-100 mx-2 hidden md:block"></div>
-                <form action="{{ route('solicitudes-afiliacion.approve', $solicitud) }}" method="POST" @submit="confirmApprove($event)">
+                <form action="{{ route('afiliacion.approve', $solicitud) }}" method="POST" @submit="confirmApprove($event)">
                     @csrf
                     <button type="submit" class="bg-emerald-600 text-white rounded-2xl px-10 py-4 text-xs font-black uppercase tracking-[0.15em] hover:bg-emerald-700 transition-all flex items-center gap-3 shadow-lg shadow-emerald-100">
                         <i class="ph-bold ph-check-circle text-xl"></i> Aprobar Expediente
@@ -281,11 +279,11 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <button @click="openVisor('{{ route('solicitudes-afiliacion.documentos.view', $doc) }}', {{ $doc->id }})" 
+                                <button @click="openVisor('{{ route('afiliacion.documentos.view', $doc) }}', {{ $doc->id }})" 
                                         class="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center hover:scale-110 transition-all shadow-lg shadow-slate-200">
                                      <i class="ph-bold ph-eye text-xl"></i>
                                 </button>
-                                <a href="{{ route('solicitudes-afiliacion.documentos.view', $doc) }}" target="_blank" 
+                                <a href="{{ route('afiliacion.documentos.view', $doc) }}" target="_blank" 
                                    class="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">
                                     <i class="ph-bold ph-arrow-square-out text-xl"></i>
                                 </a>
@@ -407,7 +405,7 @@
             <h3 class="text-3xl font-black text-slate-900 tracking-tighter mb-2">Rechazo Definitivo</h3>
             <p class="text-slate-500 font-medium mb-10 text-base leading-relaxed">¿Estás seguro de cerrar este caso con un rechazo? Por favor, provee una justificación técnica clara para el solicitante.</p>
             
-            <form action="{{ route('solicitudes-afiliacion.reject', $solicitud) }}" method="POST">
+            <form action="{{ route('afiliacion.reject', $solicitud) }}" method="POST">
                 @csrf
                 <textarea name="motivo" rows="5" required placeholder="Describe la causa técnica del rechazo..." 
                     class="w-full bg-slate-50 border-2 border-transparent focus:border-rose-500 focus:bg-white rounded-[32px] p-8 text-base font-bold text-slate-800 transition-all mb-8 shadow-sm resize-none"></textarea>
@@ -430,7 +428,7 @@
             <h3 class="text-3xl font-black text-slate-900 tracking-tighter mb-2">Devolver para Enmienda</h3>
             <p class="text-slate-500 font-medium mb-10 text-base leading-relaxed">Indica al representante qué campos o documentos requieren corrección para que el caso pueda re-procesarse.</p>
             
-            <form action="{{ route('solicitudes-afiliacion.return', $solicitud) }}" method="POST">
+            <form action="{{ route('afiliacion.return', $solicitud) }}" method="POST">
                 @csrf
                 <div class="mb-6">
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 mb-2 block">Respuestas Rápidas</label>
@@ -465,7 +463,7 @@
             <h3 class="text-3xl font-black text-slate-900 tracking-tighter mb-2">Escalar Expediente</h3>
             <p class="text-slate-500 font-medium mb-10 text-base leading-relaxed">Transfiere este caso a una unidad especializada para su resolución técnica.</p>
             
-            <form action="{{ route('solicitudes-afiliacion.escalate', $solicitud) }}" method="POST">
+            <form action="{{ route('afiliacion.escalate', $solicitud) }}" method="POST">
                 @csrf
                 <div class="space-y-8 mb-10">
                     <div class="space-y-3">

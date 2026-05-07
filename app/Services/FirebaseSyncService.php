@@ -100,7 +100,9 @@ class FirebaseSyncService
             $baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
             
             do {
-                $query = $pageToken ? "?pageToken={$pageToken}" : "";
+                // Forzamos pageSize a 500 (el máximo permitido por REST) para reducir peticiones HTTP
+                $query = "?pageSize=500" . ($pageToken ? "&pageToken={$pageToken}" : "");
+                
                 $response = $this->client->get("{$baseUrl}/{$collectionName}{$query}", [
                     'headers' => ['Authorization' => "Bearer {$token}"]
                 ]);

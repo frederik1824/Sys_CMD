@@ -17,6 +17,13 @@ if (!function_exists('generateSparkPath')) {
 }
 @endphp
 
+@push('styles')
+    <!-- Alpine Plugins -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine Core -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+@endpush
+
 @section('content')
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
@@ -338,370 +345,345 @@ if (!function_exists('generateSparkPath')) {
                 </div>
             </div>
         </div>
-    </header>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        
-        <!-- Main Hub Area -->
-        <div class="lg:col-span-8 space-y-10">
-            
-            <!-- System Stats Grid -->
-            <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="glass-panel p-8 bg-white/50">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Empresas</p>
-                    <h3 class="text-4xl font-black text-slate-900">{{ number_format($stats['local']['empresas'] ?? 0) }}</h3>
-                    <div class="mt-5 flex items-center gap-2">
-                        <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                        <span class="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">Nodo Maestro</span>
-                    </div>
-                </div>
-                <div class="glass-panel p-8 bg-white/50">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Afiliados</p>
-                    <h3 class="text-4xl font-black text-slate-900">{{ number_format($stats['local']['afiliados'] ?? 0) }}</h3>
-                    <div class="mt-5 flex items-center gap-2">
-                        <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
-                        <span class="text-[10px] font-bold text-purple-600 uppercase tracking-tighter">Data Pool</span>
-                    </div>
-                </div>
-                <div class="lg:col-span-2 glass-panel p-8 border-l-8 border-l-blue-600 bg-gradient-to-br from-blue-50/40 to-white/30">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status de Sincronización</p>
-                            <h3 class="text-2xl font-black text-slate-800 mt-1" id="sync-title">Esperando Instrucción</h3>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <span id="sync-eta" class="hidden px-3 py-1 bg-blue-600 text-white rounded-lg text-[9px] font-black animate-pulse">ETA: --</span>
-                            <div id="sync-percentage" class="text-4xl font-black text-blue-600 drop-shadow-sm">0%</div>
-                        </div>
-                    </div>
-                    <div class="w-full bg-slate-200/40 h-3 rounded-full mt-6 overflow-hidden p-0.5 border border-slate-100">
-                        <div id="sync-progress-bar" class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 h-full rounded-full transition-all duration-1000 shadow-lg shadow-blue-600/30" style="width: 0%"></div>
-                    </div>
-                    <p id="sync-label" class="text-[11px] font-extrabold text-slate-500 uppercase mt-4 tracking-widest flex items-center gap-2">
-                        <span class="material-symbols-outlined text-sm">terminal</span> Ready for command sequence
-                    </p>
-                </div>
-            </section>
-
-            <!-- Visual Data Engine -->
-            <section class="glass-panel p-20 flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden bg-white/40">
-                <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cpath d=\"M0 40L40 0H20L0 20M40 40V20L20 40\" fill=\"%23000\" fill-opacity=\"1\" fill-rule=\"evenodd\"/%3E%3C/svg%3E');"></div>
-                
-                <div class="flex items-center justify-between w-full relative z-10 gap-16">
-                    <!-- Source Node -->
-                    <div class="flex flex-col items-center gap-8 group">
-                        <div class="relative">
-                            <div class="absolute -inset-6 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-1000"></div>
-                            <div class="w-36 h-36 bg-white rounded-[48px] shadow-2xl flex items-center justify-center border border-slate-100 group-hover:border-blue-300 transition-all transform group-hover:rotate-6 duration-500">
-                                <span class="material-symbols-outlined text-7xl text-slate-200 group-hover:text-blue-500 transition-colors" style="font-variation-settings: 'FILL' 1;">storage</span>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <span class="badge-premium bg-slate-900 text-white px-4 py-1.5 mb-3 inline-block shadow-lg">Local DB</span>
-                            <h4 class="font-extrabold text-slate-800 text-xs tracking-[0.2em] uppercase">Core Infrastructure</h4>
-                        </div>
-                    </div>
-
-                    <!-- The Neural Link -->
-                    <div class="flex-1 space-y-12">
-                        <div class="energy-path shadow-inner">
-                            <div id="particle-push" class="energy-bolt"></div>
-                        </div>
-                        <div class="relative h-16">
-                            <div id="sync-direction-badge" class="absolute inset-0 flex items-center justify-center hidden">
-                                <div class="px-8 py-3 bg-white rounded-3xl shadow-2xl border border-slate-100 animate-bounce flex items-center gap-3">
-                                    <div class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
-                                    <span id="sync-direction-text" class="text-[11px] font-black text-blue-600 uppercase tracking-widest">Sincronizando...</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="energy-path shadow-inner" style="transform: scaleX(-1);">
-                            <div id="particle-pull" class="energy-bolt"></div>
-                        </div>
-                    </div>
-
-                    <!-- Firebase Hub Node -->
-                    <div class="flex flex-col items-center gap-8 group">
-                        <div class="hub-container transform group-hover:scale-105 transition-all duration-700">
-                            <div class="hub-aura"></div>
-                            <div class="hub-ring ring-outer"></div>
-                            <div class="hub-ring ring-middle"></div>
-                            <div class="hub-ring ring-inner"></div>
-                            <div class="hub-center">
-                                <span id="hub-icon-main" class="material-symbols-outlined text-6xl text-blue-600" style="font-variation-settings: 'FILL' 1;">cloud</span>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <span class="badge-premium bg-blue-600 text-white px-4 py-1.5 mb-3 inline-block shadow-lg shadow-blue-600/20">Firebase Nube</span>
-                            <h4 class="font-extrabold text-slate-800 text-xs tracking-[0.2em] uppercase">Cloud Ecosystem</h4>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Process HUD Overlay -->
-                <div id="process-hud" class="mt-20 w-full max-w-2xl hidden transform animate-fade-in">
-                    <div class="glass-card-sm p-6 border-l-8 border-l-emerald-500 flex items-center justify-between shadow-2xl">
-                        <div class="flex items-center gap-6">
-                            <div class="relative">
-                                <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-emerald-500 text-3xl animate-spin">cyclone</span>
-                                </div>
-                                <div class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Live Processing Stream</p>
-                                <p id="hud-status" class="text-lg font-black text-slate-800">Transfiriendo paquetes de datos...</p>
-                            </div>
-                        </div>
-                        <div class="text-right px-6 border-l border-slate-100">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Performance</p>
-                            <p id="hud-intensity" class="text-lg font-black text-blue-600 tracking-tighter">STABLE MODE</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Console Terminal 2.0 -->
-            <section class="terminal-window">
-                <div class="terminal-header">
-                    <div class="terminal-dot bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></div>
-                    <div class="terminal-dot bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
-                    <div class="terminal-dot bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.4em] ml-6 opacity-60">System Data Stream Feed</span>
-                </div>
-                <div id="terminal-feed" class="terminal-body scroll-smooth">
-                    <div class="flex gap-3 mb-2">
-                        <span class="text-blue-500 font-bold">>>></span>
-                        <span class="text-slate-400 italic">Inicializando protocolos de comunicación...</span>
-                    </div>
-                    <div class="flex gap-3 mb-2">
-                        <span class="text-blue-500 font-bold">>>></span>
-                        <span class="text-slate-400 italic">Conexión con Firestore establecida [Ready]</span>
-                    </div>
-                </div>
-            </section>
+    </header>    <div x-data="{ intuitiveMode: true, advancedSettings: false }">
+        <!-- Dashboard Toggle -->
+        <div class="flex justify-center mb-10">
+            <div class="bg-white p-1.5 rounded-3xl shadow-lg border border-slate-100 flex gap-2">
+                <button @click="intuitiveMode = true" :class="intuitiveMode ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'" class="px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                    Modo Intuitivo
+                </button>
+                <button @click="intuitiveMode = false" :class="!intuitiveMode ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'" class="px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                    Panel Técnico
+                </button>
+            </div>
         </div>
 
-        <!-- Right Command Sidebar -->
-        <aside class="lg:col-span-4 space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
             
-            <section class="glass-panel p-10 space-y-10 bg-white/60">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-8">
-                    <h3 class="text-sm font-black uppercase tracking-[0.4em] text-slate-800">Configuración</h3>
-                    <button onclick="runHealthCheck()" title="Health Audit" class="w-12 h-12 flex items-center justify-center bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm">
-                        <span class="material-symbols-outlined text-2xl">security</span>
-                    </button>
-                </div>
-
-                <!-- Security Operative Hub -->
-                <div class="space-y-6">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Seguridad Operativa</p>
-                    
-                    <div class="grid grid-cols-1 gap-4">
-                        <!-- Simulation Mode Card -->
-                        <div class="relative group">
-                            <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-orange-600 rounded-[2.5rem] blur opacity-0 group-hover:opacity-20 transition duration-500" id="sim-glow"></div>
-                            <label class="relative flex items-center justify-between p-6 bg-white border border-slate-100 rounded-[2.5rem] cursor-pointer hover:border-amber-400 transition-all shadow-sm">
-                                <div class="flex items-center gap-5">
-                                    <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:rotate-12 transition-transform">
-                                        <span class="material-symbols-outlined text-3xl font-black">science</span>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-xs font-black text-slate-800 uppercase tracking-tight">Modo Simulación</h3>
-                                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">Ejecución sin impacto real</p>
-                                    </div>
-                                </div>
-                                <div class="relative inline-flex items-center">
-                                    <input type="checkbox" id="sim-mode" class="sr-only peer" onchange="updateSafetyToggle('sim', this.checked)">
-                                    <div class="w-14 h-7 bg-slate-100 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-amber-500 shadow-inner"></div>
-                                </div>
-                            </label>
-                        </div>
-
-                        <!-- Snapshots Mode Card -->
-                        <div class="relative group">
-                            <label class="relative flex items-center justify-between p-6 bg-white border border-slate-100 rounded-[2.5rem] cursor-pointer hover:border-blue-400 transition-all shadow-sm">
-                                <div class="flex items-center gap-5">
-                                    <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:rotate-12 transition-transform">
-                                        <span class="material-symbols-outlined text-3xl font-black">history</span>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-xs font-black text-slate-800 uppercase tracking-tight">Auto Snapshots</h3>
-                                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">Respaldo antes de descarga</p>
-                                    </div>
-                                </div>
-                                <div class="relative inline-flex items-center">
-                                    <input type="checkbox" id="auto-snap" checked class="sr-only peer" onchange="updateSafetyToggle('snap', this.checked)">
-                                    <div class="w-14 h-7 bg-slate-100 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Execution Speed -->
-                <div class="p-8 bg-slate-900 rounded-[40px] text-white shadow-2xl relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                        <span class="material-symbols-outlined text-6xl">bolt</span>
-                    </div>
-                    <div class="relative z-10">
-                        <div class="flex justify-between items-center mb-8">
-                            <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Intensidad de Carga</p>
-                            <span id="intensity-label" class="px-4 py-1.5 bg-blue-600 rounded-xl text-[10px] font-extrabold shadow-lg">NORMAL</span>
-                        </div>
-                        <input type="range" id="sync-intensity" min="10" max="500" step="10" value="50" class="w-full" oninput="updateIntensity(this.value)">
-                        <p class="text-[10px] text-slate-500 mt-6 leading-relaxed italic font-medium">Controla la carga de peticiones por segundo para balancear velocidad y límites de cuota de Google.</p>
-                    </div>
-                </div>
-
-                <!-- Selective Modules -->
-                <div class="space-y-6">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Data Selectors</p>
-                    <div class="grid grid-cols-1 gap-4">
-                        <label class="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-3xl cursor-pointer hover:bg-blue-50/50 hover:border-blue-400 transition-all shadow-sm">
-                            <div class="flex items-center gap-5">
-                                <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-blue-600 text-2xl">person_search</span>
-                                </div>
-                                <span class="text-xs font-black text-slate-800 uppercase tracking-[0.1em]">Afiliados</span>
+            <!-- Main Content Area -->
+            <div class="lg:col-span-8 space-y-10">
+                
+                <!-- Simple Action Hub (Intuitive Mode) -->
+                <template x-if="intuitiveMode">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10 animate-in fade-in zoom-in duration-500">
+                        <!-- Pull Card -->
+                        <div class="glass-panel p-10 flex flex-col items-center text-center group hover:bg-emerald-50/50 transition-all">
+                            <div class="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[32px] flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/10">
+                                <span class="material-symbols-outlined text-5xl">cloud_download</span>
                             </div>
-                            <input type="checkbox" id="sync_afiliados_ui" checked class="w-6 h-6 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500">
-                        </label>
-                        <label class="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-3xl cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-400 transition-all shadow-sm">
-                            <div class="flex items-center gap-5">
-                                <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-indigo-600 text-2xl">domain</span>
-                                </div>
-                                <span class="text-xs font-black text-slate-800 uppercase tracking-[0.1em]">Empresas</span>
-                            </div>
-                            <input type="checkbox" id="sync_empresas_ui" checked class="w-6 h-6 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500">
-                        </label>
-                    </div>
-                </div>
-
-                <!-- System Maintenance -->
-                <div class="glass-panel p-8 rounded-[40px] shadow-2xl relative overflow-hidden group" style="background: rgba(15, 23, 42, 0.95) !important; color: white !important;">
-                    <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                        <span class="material-symbols-outlined text-6xl text-white">cleaning_services</span>
-                    </div>
-                    <div class="relative z-10">
-                        <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6">Mantenimiento de Sistema</p>
-                        
-                        <div class="space-y-4">
-                            <button onclick="cleanupSnapshots()" class="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 text-white">
-                                <span class="material-symbols-outlined text-sm text-blue-400">delete_sweep</span> Purgar Snapshots
-                            </button>
-
-                            <button onclick="purgeCache()" class="w-full py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 text-white">
-                                <span class="material-symbols-outlined text-sm text-amber-400">layers_clear</span> Purgar Cache
-                            </button>
-
-                            <button onclick="purgeQueue()" class="w-full py-4 bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/30 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 text-white">
-                                <span class="material-symbols-outlined text-sm text-rose-400">delete_forever</span> Limpiar Cola de Tareas
-                            </button>
-                        </div>
-
-                        <p class="text-[9px] text-slate-500 mt-6 leading-relaxed italic">Herramientas de optimización para liberar espacio y refrescar el motor de sincronización.</p>
-                    </div>
-                </div>
-
-                <!-- Resilience & Audit Modules -->
-                <div class="space-y-6">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Resiliencia & Auditoría</p>
-                    
-                    <!-- Version Comparator -->
-                    <div class="p-8 bg-white/60 backdrop-blur-xl border border-white/80 rounded-[40px] shadow-xl relative overflow-hidden group">
-                        <div class="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
-                        <div class="relative z-10">
-                            <div class="flex items-center gap-4 mb-6">
-                                <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-                                    <span class="material-symbols-outlined font-black">difference</span>
-                                </div>
-                                <div>
-                                    <h3 class="text-xs font-black text-slate-800 uppercase tracking-tight">Comparador V2</h3>
-                                    <p class="text-[9px] font-bold text-slate-400 uppercase">Deltas en tiempo real</p>
-                                </div>
-                            </div>
+                            <h3 class="text-2xl font-black text-slate-900 mb-4 tracking-tighter">Actualizar mi Sistema</h3>
+                            <p class="text-xs text-slate-500 mb-8 leading-relaxed px-4">Descarga los últimos registros de la nube Firebase. Úsalo para traer afiliados nuevos creados en otros dispositivos.</p>
                             
-                            <div class="space-y-4">
-                                <input type="text" id="compare-id" placeholder="Cédula o RNC..." class="w-full px-5 py-4 bg-white border border-slate-100 rounded-2xl text-[10px] font-bold focus:ring-2 focus:ring-blue-500 shadow-inner">
-                                
-                                <div class="flex gap-2">
-                                    <label class="flex-1 cursor-pointer group/opt">
-                                        <input type="radio" name="comp-type" value="afiliado" checked class="hidden peer">
-                                        <div class="py-3 text-center rounded-xl bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 peer-checked:bg-blue-600 peer-checked:text-white transition-all">Afiliado</div>
-                                    </label>
-                                    <label class="flex-1 cursor-pointer group/opt">
-                                        <input type="radio" name="comp-type" value="empresa" class="hidden peer">
-                                        <div class="py-3 text-center rounded-xl bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 peer-checked:bg-blue-600 peer-checked:text-white transition-all">Empresa</div>
-                                    </label>
-                                </div>
-
-                                <button onclick="runComparison()" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/10 flex items-center justify-center gap-2">
-                                    <span class="material-symbols-outlined text-sm">find_replace</span> Ejecutar Prueba de Auditoría
+                            <div class="flex flex-col gap-4 w-full">
+                                <button onclick="triggerSelectiveSync('pull', 'afiliados')" class="py-5 bg-emerald-500 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-3">
+                                    <span class="material-symbols-outlined text-xl">person_search</span> Actualizar Afiliados
+                                </button>
+                                <button onclick="triggerSelectiveSync('pull', 'empresas')" class="py-5 bg-white border border-emerald-100 text-emerald-600 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all flex items-center justify-center gap-3">
+                                    <span class="material-symbols-outlined text-xl">domain</span> Actualizar Empresas
+                                </button>
+                                <button onclick="triggerSelectiveSync('pull', 'full')" class="py-4 text-emerald-700/60 text-[9px] font-black uppercase tracking-[0.2em] hover:text-emerald-700 transition-colors">
+                                    Descarga Completa (Todo)
                                 </button>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Disaster Recovery -->
-                    <div class="p-8 bg-slate-900 rounded-[40px] shadow-2xl relative overflow-hidden group">
-                        <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl"></div>
-                        <div class="relative z-10">
-                            <div class="flex items-center gap-4 mb-6">
-                                <div class="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-slate-900 shadow-lg shadow-rose-500/20">
-                                    <span class="material-symbols-outlined font-black">emergency_home</span>
-                                </div>
-                                <div>
-                                    <h3 class="text-xs font-black text-white uppercase tracking-tight">Recuperación</h3>
-                                    <p class="text-[9px] font-bold text-rose-500/60 uppercase">Snapshots Restore</p>
-                                </div>
+                        <!-- Push Card -->
+                        <div class="glass-panel p-10 flex flex-col items-center text-center group hover:bg-blue-50/50 transition-all">
+                            <div class="w-24 h-24 bg-blue-100 text-blue-600 rounded-[32px] flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/10">
+                                <span class="material-symbols-outlined text-5xl">cloud_upload</span>
                             </div>
+                            <h3 class="text-2xl font-black text-slate-900 mb-4 tracking-tighter">Subir mis Cambios</h3>
+                            <p class="text-xs text-slate-500 mb-8 leading-relaxed px-4">Envía tus registros locales a la nube. Úsalo para que el resto del equipo pueda ver tus actualizaciones.</p>
                             
-                            <button onclick="openDisasterPanel()" class="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-white">
-                                <span class="material-symbols-outlined text-sm">restore</span> Explorar Backups
-                            </button>
+                            <div class="flex flex-col gap-4 w-full">
+                                <button onclick="triggerSelectiveSync('push', 'afiliados')" class="py-5 bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3">
+                                    <span class="material-symbols-outlined text-xl">person_search</span> Subir Afiliados
+                                </button>
+                                <button onclick="triggerSelectiveSync('push', 'empresas')" class="py-5 bg-white border border-blue-100 text-blue-600 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 transition-all flex items-center justify-center gap-3">
+                                    <span class="material-symbols-outlined text-xl">domain</span> Subir Empresas
+                                </button>
+                                <p class="py-4 text-slate-400 text-[9px] font-bold uppercase tracking-[0.1em] italic">
+                                    Se recomienda subir por módulos
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Call to Action -->
-                <div class="space-y-6 pt-6">
-                    <div class="grid grid-cols-1 gap-6">
-                        <button type="button" onclick="triggerSelectiveSync('push')" class="w-full btn-action-main btn-push btn-shine">
-                            <span class="material-symbols-outlined text-2xl">cloud_upload</span> Subir a Firebase
-                        </button>
-
-                        <button type="button" onclick="triggerSelectiveSync('pull')" class="w-full btn-action-main btn-pull btn-shine">
-                            <span class="material-symbols-outlined text-2xl">cloud_download</span> Descargar Nube
-                        </button>
-                    </div>
-                </div>
-
-                    <!-- Process Control (Visible during sync) -->
-                    <div id="active-controls" class="hidden glass-panel p-8 border-2 border-blue-100 bg-blue-50/50 flex flex-col gap-6 animate-pulse mt-6">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600 animate-ping"></span>
-                                <span class="text-[11px] font-black text-blue-700 uppercase tracking-widest">En Ejecución</span>
+                </template>
+                
+                <!-- Advanced Visualization (Technical Mode) -->
+                <div x-show="!intuitiveMode" class="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-500">
+                    <!-- System Stats Grid -->
+                    <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="glass-panel p-8 bg-white/50">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Empresas</p>
+                            <h3 class="text-4xl font-black text-slate-900">{{ number_format($stats['local']['empresas'] ?? 0) }}</h3>
+                            <div class="mt-5 flex items-center gap-2">
+                                <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                <span class="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">Nodo Maestro</span>
                             </div>
-                            <div class="flex gap-3">
-                                <button id="btn-pause" onclick="controlSync('pause')" class="w-12 h-12 bg-white border border-slate-200 rounded-2xl text-amber-600 hover:bg-amber-600 hover:text-white transition-all flex items-center justify-center shadow-md">
+                        </div>
+                        <div class="glass-panel p-8 bg-white/50">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Afiliados</p>
+                            <h3 class="text-4xl font-black text-slate-900">{{ number_format($stats['local']['afiliados'] ?? 0) }}</h3>
+                            <div class="mt-5 flex items-center gap-2">
+                                <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+                                <span class="text-[10px] font-bold text-purple-600 uppercase tracking-tighter">Data Pool</span>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-2 glass-panel p-8 border-l-8 border-l-blue-600 bg-gradient-to-br from-blue-50/40 to-white/30">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status de Sincronización</p>
+                                    <h3 class="text-2xl font-black text-slate-800 mt-1" id="sync-title">Esperando Instrucción</h3>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <span id="sync-eta" class="hidden px-3 py-1 bg-blue-600 text-white rounded-lg text-[9px] font-black animate-pulse">ETA: --</span>
+                                    <div id="sync-percentage" class="text-4xl font-black text-blue-600 drop-shadow-sm">0%</div>
+                                </div>
+                            </div>
+                            <div class="w-full bg-slate-200/40 h-3 rounded-full mt-6 overflow-hidden p-0.5 border border-slate-100">
+                                <div id="sync-progress-bar" class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 h-full rounded-full transition-all duration-1000 shadow-lg shadow-blue-600/30" style="width: 0%"></div>
+                            </div>
+                            <p id="sync-label" class="text-[11px] font-extrabold text-slate-500 uppercase mt-4 tracking-widest flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">terminal</span> Ready for command sequence
+                            </p>
+                        </div>
+                    </section>
+
+                    <!-- Visual Data Engine -->
+                    <section class="glass-panel p-20 flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden bg-white/40">
+                        <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 40L40 0H20L0 20M40 40V20L20 40\' fill=\'%23000\' fill-opacity=\'1\' fill-rule=\'evenodd\'/%3E%3C/svg%3E');"></div>
+                        
+                        <div class="flex items-center justify-between w-full relative z-10 gap-16">
+                            <!-- Source Node -->
+                            <div class="flex flex-col items-center gap-8 group">
+                                <div class="relative">
+                                    <div class="absolute -inset-6 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-1000"></div>
+                                    <div class="w-36 h-36 bg-white rounded-[48px] shadow-2xl flex items-center justify-center border border-slate-100 group-hover:border-blue-300 transition-all transform group-hover:rotate-6 duration-500">
+                                        <span class="material-symbols-outlined text-7xl text-slate-200 group-hover:text-blue-500 transition-colors" style="font-variation-settings: 'FILL' 1;">storage</span>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="badge-premium bg-slate-900 text-white px-4 py-1.5 mb-3 inline-block shadow-lg">Local DB</span>
+                                    <h4 class="font-extrabold text-slate-800 text-xs tracking-[0.2em] uppercase">Core Infrastructure</h4>
+                                </div>
+                            </div>
+
+                            <!-- The Neural Link -->
+                            <div class="flex-1 space-y-12">
+                                <div class="energy-path shadow-inner">
+                                    <div id="particle-push" class="energy-bolt"></div>
+                                </div>
+                                <div class="relative h-16">
+                                    <div id="sync-direction-badge" class="absolute inset-0 flex items-center justify-center hidden">
+                                        <div class="px-8 py-3 bg-white rounded-3xl shadow-2xl border border-slate-100 animate-bounce flex items-center gap-3">
+                                            <div class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
+                                            <span id="sync-direction-text" class="text-[11px] font-black text-blue-600 uppercase tracking-widest">Sincronizando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="energy-path shadow-inner" style="transform: scaleX(-1);">
+                                    <div id="particle-pull" class="energy-bolt"></div>
+                                </div>
+                            </div>
+
+                            <!-- Firebase Hub Node -->
+                            <div class="flex flex-col items-center gap-8 group">
+                                <div class="hub-container transform group-hover:scale-105 transition-all duration-700">
+                                    <div class="hub-aura"></div>
+                                    <div class="hub-ring ring-outer"></div>
+                                    <div class="hub-ring ring-middle"></div>
+                                    <div class="hub-ring ring-inner"></div>
+                                    <div class="hub-center">
+                                        <span id="hub-icon-main" class="material-symbols-outlined text-6xl text-blue-600" style="font-variation-settings: 'FILL' 1;">cloud</span>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="badge-premium bg-blue-600 text-white px-4 py-1.5 mb-3 inline-block shadow-lg shadow-blue-600/20">Firebase Nube</span>
+                                    <h4 class="font-extrabold text-slate-800 text-xs tracking-[0.2em] uppercase">Cloud Ecosystem</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Live Monitoring (Always visible during sync) -->
+                <section id="process-hud" class="hidden animate-in slide-in-from-top-10 duration-700">
+                    <div class="glass-panel p-10 border-l-8 border-l-blue-600 bg-white/60">
+                        <div class="flex items-center justify-between mb-8">
+                            <div class="flex items-center gap-6">
+                                <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-blue-600 text-4xl animate-spin">sync</span>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Operación en Progreso</p>
+                                    <h4 id="hud-status" class="text-2xl font-black text-slate-900 tracking-tighter">Procesando transmisión de datos...</h4>
+                                </div>
+                            </div>
+                            <div id="active-controls" class="flex gap-4">
+                                <button id="btn-pause" onclick="controlSync('pause')" class="w-14 h-14 bg-white border border-slate-100 rounded-2xl text-amber-600 hover:bg-amber-600 hover:text-white transition-all flex items-center justify-center shadow-lg">
                                     <span class="material-symbols-outlined text-2xl">pause</span>
                                 </button>
-                                <button id="btn-resume" onclick="controlSync('resume')" class="hidden w-12 h-12 bg-white border border-slate-200 rounded-2xl text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center shadow-md">
+                                <button id="btn-resume" onclick="controlSync('resume')" class="hidden w-14 h-14 bg-white border border-slate-100 rounded-2xl text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center shadow-lg">
                                     <span class="material-symbols-outlined text-2xl">play_arrow</span>
                                 </button>
-                                <button id="btn-cancel" onclick="controlSync('cancel')" class="w-12 h-12 bg-white border border-slate-200 rounded-2xl text-rose-600 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center shadow-md">
+                                <button id="btn-cancel" onclick="controlSync('cancel')" class="w-14 h-14 bg-white border border-slate-100 rounded-2xl text-rose-600 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center shadow-lg">
                                     <span class="material-symbols-outlined text-2xl">close</span>
                                 </button>
                             </div>
                         </div>
+                        <div class="flex gap-4">
+                            <div class="flex-1 bg-slate-100 rounded-full h-4 p-1">
+                                <div id="sync-progress-bar-hud" class="bg-blue-600 h-full rounded-full transition-all duration-1000 shadow-lg shadow-blue-600/20" style="width: 0%"></div>
+                            </div>
+                            <span id="sync-percentage-hud" class="text-sm font-black text-blue-600 min-w-[50px]">0%</span>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-        </aside>
+                <!-- Console Terminal (Only in technical mode) -->
+                <section x-show="!intuitiveMode" class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-dot bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></div>
+                        <div class="terminal-dot bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
+                        <div class="terminal-dot bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.4em] ml-6 opacity-60">System Data Stream Feed</span>
+                    </div>
+                    <div id="terminal-feed" class="terminal-body scroll-smooth">
+                        <div class="flex gap-3 mb-2">
+                            <span class="text-blue-500 font-bold">>>></span>
+                            <span class="text-slate-400 italic">Inicializando protocolos de comunicación...</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Sidebar (Technical Settings - Collapsible in Intuitive Mode) -->
+            <aside class="lg:col-span-4 space-y-8">
+                
+                <section class="glass-panel p-10 bg-white/60">
+                    <div class="flex items-center justify-between mb-8">
+                        <h3 class="text-sm font-black uppercase tracking-[0.4em] text-slate-800">Ajustes</h3>
+                        <button @click="advancedSettings = !advancedSettings" class="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline transition-all">
+                            <span x-text="advancedSettings ? 'Cerrar Avanzado' : 'Abrir Avanzado'">Abrir Avanzado</span>
+                        </button>
+                    </div>
+
+                    <div x-show="advancedSettings || !intuitiveMode" x-collapse class="space-y-10">
+                        <!-- Security Operative Hub -->
+                        <div class="space-y-6">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Seguridad Operativa</p>
+                            
+                            <div class="grid grid-cols-1 gap-4">
+                                <!-- Simulation Mode Card -->
+                                <div class="relative group">
+                                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-orange-600 rounded-[2.5rem] blur opacity-0 group-hover:opacity-20 transition duration-500" id="sim-glow"></div>
+                                    <label class="relative flex items-center justify-between p-6 bg-white border border-slate-100 rounded-[2.5rem] cursor-pointer hover:border-amber-400 transition-all shadow-sm">
+                                        <div class="flex items-center gap-5">
+                                            <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:rotate-12 transition-transform">
+                                                <span class="material-symbols-outlined text-3xl font-black">science</span>
+                                            </div>
+                                            <div>
+                                                <h3 class="text-xs font-black text-slate-800 uppercase tracking-tight">Simulación</h3>
+                                            </div>
+                                        </div>
+                                        <div class="relative inline-flex items-center">
+                                            <input type="checkbox" id="sim-mode" class="sr-only peer" onchange="updateSafetyToggle('sim', this.checked)">
+                                            <div class="w-14 h-7 bg-slate-100 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-amber-500 shadow-inner"></div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <!-- Snapshots Mode Card -->
+                                <div class="relative group">
+                                    <label class="relative flex items-center justify-between p-6 bg-white border border-slate-100 rounded-[2.5rem] cursor-pointer hover:border-blue-400 transition-all shadow-sm">
+                                        <div class="flex items-center gap-5">
+                                            <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:rotate-12 transition-transform">
+                                                <span class="material-symbols-outlined text-3xl font-black">history</span>
+                                            </div>
+                                            <div>
+                                                <h3 class="text-xs font-black text-slate-800 uppercase tracking-tight">Snapshots</h3>
+                                            </div>
+                                        </div>
+                                        <div class="relative inline-flex items-center">
+                                            <input type="checkbox" id="auto-snap" checked class="sr-only peer" onchange="updateSafetyToggle('snap', this.checked)">
+                                            <div class="w-14 h-7 bg-slate-100 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Execution Speed -->
+                        <div class="p-8 bg-slate-900 rounded-[40px] text-white shadow-2xl relative overflow-hidden group">
+                            <div class="relative z-10">
+                                <div class="flex justify-between items-center mb-8">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Velocidad</p>
+                                    <span id="intensity-label" class="px-4 py-1.5 bg-blue-600 rounded-xl text-[10px] font-extrabold shadow-lg">NORMAL</span>
+                                </div>
+                                <input type="range" id="sync-intensity" min="10" max="500" step="10" value="50" class="w-full" oninput="updateIntensity(this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Maintenance -->
+                        <div class="space-y-4">
+                            <button onclick="cleanupSnapshots()" class="w-full py-4 bg-slate-100 hover:bg-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 text-slate-700">
+                                <span class="material-symbols-outlined text-sm">delete_sweep</span> Limpiar Backups
+                            </button>
+                            <button onclick="purgeCache()" class="w-full py-4 bg-slate-100 hover:bg-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 text-slate-700">
+                                <span class="material-symbols-outlined text-sm">layers_clear</span> Purgar Cache
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Static Selection (Only in Technical Mode) -->
+                    <div x-show="!intuitiveMode" class="pt-8 mt-8 border-t border-slate-100 space-y-6">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2">Selección Manual</p>
+                        <div class="grid grid-cols-1 gap-4">
+                            <label class="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-3xl cursor-pointer hover:bg-blue-50/50 transition-all shadow-sm">
+                                <span class="text-xs font-black text-slate-800 uppercase tracking-[0.1em]">Afiliados</span>
+                                <input type="checkbox" id="sync_afiliados_ui" checked class="w-6 h-6 rounded-lg border-slate-300 text-blue-600">
+                            </label>
+                            <label class="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-3xl cursor-pointer hover:bg-indigo-50/50 transition-all shadow-sm">
+                                <span class="text-xs font-black text-slate-800 uppercase tracking-[0.1em]">Empresas</span>
+                                <input type="checkbox" id="sync_empresas_ui" checked class="w-6 h-6 rounded-lg border-slate-300 text-blue-600">
+                            </label>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 gap-6 pt-6">
+                            <button onclick="triggerSelectiveSync('push')" class="w-full btn-action-main btn-push btn-shine">
+                                <span class="material-symbols-outlined text-2xl">cloud_upload</span> Subir a Firebase
+                            </button>
+                            <button onclick="triggerSelectiveSync('pull')" class="w-full btn-action-main btn-pull btn-shine">
+                                <span class="material-symbols-outlined text-2xl">cloud_download</span> Descargar Nube
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Intuitive Status Card -->
+                    <div x-show="intuitiveMode" class="mt-8 p-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[40px] text-white shadow-2xl relative overflow-hidden">
+                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                        <div class="relative z-10">
+                            <p class="text-[9px] font-black uppercase tracking-[0.3em] text-blue-200 mb-6">Estado del Sistema</p>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center bg-white/10 p-4 rounded-2xl">
+                                    <span class="text-[10px] font-bold">Local</span>
+                                    <span class="text-lg font-black">{{ number_format($stats['local']['afiliados'] + $stats['local']['empresas']) }}</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-white/10 p-4 rounded-2xl border border-white/10">
+                                    <span class="text-[10px] font-bold">Última Sync</span>
+                                    <span class="text-xs font-black">{{ $logs->first() ? $logs->first()->finished_at->diffForHumans() : 'Nunca' }}</span>
+                                </div>
+                            </div>
+                            <button onclick="runHealthCheck()" class="w-full mt-6 py-4 bg-white text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg">
+                                Realizar Auditoría
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>aside>
     </div>
 
     <!-- Enhanced Bitácora -->
@@ -846,7 +828,7 @@ if (!function_exists('generateSparkPath')) {
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
         });
-        fetch("{{ route('firebase.health_check') }}")
+        fetch("{{ route('carnetizacion.sync_center.health_check') }}")
             .then(r => r.json())
             .then(data => {
                 const afGap = data.diff.afiliados;
@@ -928,7 +910,7 @@ if (!function_exists('generateSparkPath')) {
             didOpen: () => { Swal.showLoading(); }
         });
 
-        fetch("{{ route('firebase.reconcile') }}", {
+        fetch("{{ route('carnetizacion.sync_center.reconcile') }}", {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -974,7 +956,7 @@ if (!function_exists('generateSparkPath')) {
     };
 
     function executeControlAction(action) {
-        fetch(`/firebase/${action}`, { 
+        fetch(`/carnetizacion/sync-center/${action}`, { 
             method: 'POST', 
             headers: { 
                 'X-CSRF-TOKEN': '{{ csrf_token() }}', 
@@ -1011,7 +993,7 @@ if (!function_exists('generateSparkPath')) {
         }).then((result) => {
             if (result.isConfirmed) {
                 Swal.fire({ title: 'Limpiando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-                fetch("{{ route('firebase.cleanup_snapshots') }}", { 
+                fetch("{{ route('carnetizacion.sync_center.cleanup_snapshots') }}", { 
                     method: 'POST', 
                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' } 
                 })
@@ -1045,7 +1027,7 @@ if (!function_exists('generateSparkPath')) {
         }).then((result) => {
             if (result.isConfirmed) {
                 Swal.fire({ title: 'Limpiando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-                fetch("{{ route('firebase.purge_cache') }}", { 
+                fetch("{{ route('carnetizacion.sync_center.purge_cache') }}", { 
                     method: 'POST', 
                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' } 
                 })
@@ -1063,11 +1045,13 @@ if (!function_exists('generateSparkPath')) {
         });
     };
 
-    window.triggerSelectiveSync = function(direction) {
-        const afChecked = document.getElementById('sync_afiliados_ui')?.checked || false;
-        const emChecked = document.getElementById('sync_empresas_ui')?.checked || false;
+    window.triggerSelectiveSync = function(direction, module = null) {
+        // En modo intuitivo usamos el parámetro 'module', en modo técnico usamos los checkboxes
+        const afChecked = module === 'afiliados' || module === 'full' || (document.getElementById('sync_afiliados_ui')?.checked || false);
+        const emChecked = module === 'empresas' || module === 'full' || (document.getElementById('sync_empresas_ui')?.checked || false);
+        const fullChecked = module === 'full';
 
-        if (!afChecked && !emChecked) {
+        if (!afChecked && !emChecked && !fullChecked) {
             Swal.fire({ 
                 title: 'Atención', 
                 text: 'Seleccione al menos una entidad (Afiliados o Empresas) para sincronizar.', 
@@ -1081,14 +1065,20 @@ if (!function_exists('generateSparkPath')) {
             'intensity': document.getElementById('sync-intensity')?.value || 50,
             'simulation': document.getElementById('sim-mode')?.checked || false,
             'snapshot': document.getElementById('auto-snap')?.checked || false,
-            'afiliados': document.getElementById('sync_afiliados_ui')?.checked || false,
-            'empresas': document.getElementById('sync_empresas_ui')?.checked || false,
-            'catalogs': false // Pull catalogs is handled in pull all
+            'afiliados': afChecked,
+            'empresas': emChecked,
+            'full': fullChecked,
+            'catalogs': fullChecked
         };
 
-        const route = direction === 'push' ? "{{ route('firebase.sync_push') }}" : "{{ route('firebase.sync_pull') }}";
+        const route = direction === 'push' ? "{{ route('carnetizacion.sync_center.sync_push') }}" : "{{ route('carnetizacion.sync_center.sync_pull') }}";
         
-        Swal.fire({ title: 'Iniciando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        Swal.fire({ 
+            title: 'Iniciando Secuencia...', 
+            html: `Preparando ${direction === 'push' ? 'subida' : 'descarga'} de <b>${module || 'módulos seleccionados'}</b>...`,
+            allowOutsideClick: false, 
+            didOpen: () => { Swal.showLoading(); } 
+        });
 
         fetch(route, {
             method: 'POST',
@@ -1099,6 +1089,16 @@ if (!function_exists('generateSparkPath')) {
         .then(data => {
             if(data.success) {
                 Swal.fire({ title: 'Operación Lanzada', text: 'El motor está calentando motores...', icon: 'success', timer: 1500, showConfirmButton: false });
+                
+                // Mostrar el HUD de monitoreo inmediatamente
+                const hud = document.getElementById('process-hud');
+                if (hud) hud.classList.remove('hidden');
+                
+                // Si estamos en modo intuitivo y hay ajustes abiertos, cerrarlos para enfocar el HUD
+                if (window.Alpine) {
+                    // Nota: Alpine se maneja por el objeto proxy si está disponible, 
+                    // pero aquí lo hacemos vía DOM para mayor seguridad
+                }
             } else {
                 Swal.fire({ title: 'Error', text: data.error || 'Ocurrió un error inesperado.', icon: 'error' });
             }
@@ -1126,14 +1126,16 @@ if (!function_exists('generateSparkPath')) {
         let lastLogHash = '';
         let wasActive = false;
         let lastProgress = 0;
+        let inactiveStreak = 0; // Contador de polls inactivos consecutivos
 
         function poll() {
-            fetch("{{ route('firebase.progress') }}")
+            fetch("{{ route('carnetizacion.sync_center.progress') }}")
                 .then(r => r.json())
                 .then(data => {
                     const playSounds = document.getElementById('toggle-sounds')?.checked || false;
 
                     if (data.active) {
+                        inactiveStreak = 0; // Resetear contador — está activo
                         wasActive = true;
                         if (perc) perc.textContent = data.progress + '%';
                         if (bar) bar.style.width = data.progress + '%';
@@ -1158,8 +1160,8 @@ if (!function_exists('generateSparkPath')) {
                             partPush?.classList.add('bolt-push');
                             partPull?.classList.remove('bolt-pull');
                         } else {
-                            partPull.classList.add('bolt-pull');
-                            partPush.classList.remove('bolt-push');
+                            partPull?.classList.add('bolt-pull');
+                            partPush?.classList.remove('bolt-push');
                         }
 
                         if (data.control === 'paused') {
@@ -1183,15 +1185,23 @@ if (!function_exists('generateSparkPath')) {
                             }
                         }
                     } else {
-                        // Sincronización acaba de terminar
+                        // ── Debounce: esperar 3 polls inactivos antes de declarar idle ──
+                        // Esto evita que un solo timeout de red o cache miss resetee la UI
+                        inactiveStreak++;
+
+                        if (inactiveStreak < 3) {
+                            // Aún en período de gracia — no resetear todavía
+                            return;
+                        }
+
+                        // Confirmado inactivo tras 3 polls consecutivos (~6 segundos)
                         if (wasActive) {
                             if (playSounds) document.getElementById('audio-success').play();
                             wasActive = false;
                             
-                            // Auto-retry logic if progress was not 100 but became inactive (crash)
+                            // Auto-retry si no llegó al 95% (crash)
                             if (document.getElementById('toggle-retry').checked && lastProgress < 95) {
                                 console.log("Auto-retry triggered...");
-                                // Re-lanzar última operación (Simplificado: Pull)
                                 triggerSelectiveSync('pull'); 
                             }
                         }
@@ -1202,13 +1212,18 @@ if (!function_exists('generateSparkPath')) {
                         controls.classList.add('hidden');
                         badge.classList.add('hidden');
                         hud.classList.add('hidden');
-                        partPush.classList.remove('bolt-push');
-                        partPull.classList.remove('bolt-pull');
+                        partPush?.classList.remove('bolt-push');
+                        partPull?.classList.remove('bolt-pull');
                     }
                     lastProgress = data.progress;
+                })
+                .catch(() => {
+                    // Error de red — no resetear UI, simplemente ignorar este poll
+                    inactiveStreak++;
                 });
         }
         setInterval(poll, 2000);
+
 
         // AJAX Pagination for History
         bindHistoryClicks();
@@ -1317,7 +1332,7 @@ if (!function_exists('generateSparkPath')) {
             didOpen: () => { Swal.showLoading(); }
         });
 
-        fetch(`{{ route('firebase.compare') }}?id=${id}&type=${type}`)
+        fetch(`{{ route('carnetizacion.sync_center.compare') }}?id=${id}&type=${type}`)
             .then(r => r.json())
             .then(data => {
                 if (!data.success) {
@@ -1391,7 +1406,7 @@ if (!function_exists('generateSparkPath')) {
             didOpen: () => { Swal.showLoading(); }
         });
 
-        fetch("{{ route('firebase.list_snapshots') }}")
+        fetch("{{ route('carnetizacion.sync_center.list_snapshots') }}")
             .then(r => r.json())
             .then(data => {
                 if (!data.success) {
@@ -1446,7 +1461,7 @@ if (!function_exists('generateSparkPath')) {
             if (result.isConfirmed) {
                 Swal.fire({ title: 'Restaurando Ecosistema...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                 
-                fetch("{{ route('firebase.restore_snapshot') }}", {
+                fetch("{{ route('carnetizacion.sync_center.restore_snapshot') }}", {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ table: table })
@@ -1484,7 +1499,7 @@ if (!function_exists('generateSparkPath')) {
             if (result.isConfirmed) {
                 Swal.fire({ title: 'Limpiando Sistema...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                 
-                fetch("{{ route('firebase.purge_queue') }}", {
+                fetch("{{ route('carnetizacion.sync_center.purge_queue') }}", {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' }
                 })

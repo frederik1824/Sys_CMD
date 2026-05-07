@@ -12,7 +12,7 @@ class AgenteController extends Controller
     public function index()
     {
         $supervisores = SupervisorTraspaso::with('agentes')->get();
-        $agentes = AgenteTraspaso::with('supervisor')->get();
+        $agentes = AgenteTraspaso::with(['supervisor', 'currentMeta'])->get();
         
         return view('modules.traspasos.config.agentes', compact('supervisores', 'agentes'));
     }

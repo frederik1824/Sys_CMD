@@ -32,7 +32,7 @@ class ProveedorController extends Controller
             'activo' => $request->has('activo')
         ]);
 
-        return redirect()->route('proveedores.index')->with('success', 'Proveedor creado exitosamente.');
+        return redirect()->route('sistema.proveedores.index')->with('success', 'Proveedor creado exitosamente.');
     }
 
     public function edit(Proveedor $proveedore)
@@ -54,7 +54,7 @@ class ProveedorController extends Controller
             'activo' => $request->has('activo')
         ]);
 
-        return redirect()->route('proveedores.index')->with('success', 'Proveedor actualizado exitosamente.');
+        return redirect()->route('sistema.proveedores.index')->with('success', 'Proveedor actualizado exitosamente.');
     }
 
     public function destroy(Proveedor $proveedore)

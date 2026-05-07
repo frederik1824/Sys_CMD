@@ -66,7 +66,7 @@ class CorteController extends Controller
         $validated['activo'] = $request->has('activo');
 
         Corte::create($validated);
-        return redirect()->route('cortes.index')->with('success', 'Corte creado exitosamente.');
+        return redirect()->route('sistema.cortes.index')->with('success', 'Corte creado exitosamente.');
     }
 
     /**
@@ -101,7 +101,7 @@ class CorteController extends Controller
         $validated['activo'] = $request->has('activo');
 
         $corte->update($validated);
-        return redirect()->route('cortes.index')->with('success', 'Corte actualizado exitosamente.');
+        return redirect()->route('sistema.cortes.index')->with('success', 'Corte actualizado exitosamente.');
     }
 
     /**
@@ -111,6 +111,6 @@ class CorteController extends Controller
     {
         $corte = Corte::findOrFail($id);
         $corte->delete();
-        return redirect()->route('cortes.index')->with('success', 'Corte eliminado exitosamente.');
+        return redirect()->route('sistema.cortes.index')->with('success', 'Corte eliminado exitosamente.');
     }
 }

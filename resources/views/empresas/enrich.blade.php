@@ -38,13 +38,13 @@
                         <p class="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest">Sin Ubicación</p>
                     </div>
                     <div class="bg-slate-50 p-4 rounded-2xl">
-                        <span class="text-xl font-black text-emerald-600">{{ \App\Models\Empresa::whereNotNull('provincia_id')->count() }}</span>
+                        <span class="text-xl font-black text-emerald-600">{{ $enriched }}</span>
                         <p class="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest">Saneadas</p>
                     </div>
                 </div>
             </div>
 
-            <form action="{{ route('empresas.processEnrich') }}" method="POST" class="pt-6">
+            <form action="{{ route('sistema.empresas.processEnrich') }}" method="POST" class="pt-6">
                 @csrf
                 <button type="submit" class="w-full py-5 bg-primary text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
                     <span class="material-symbols-outlined">magic_button</span>
@@ -53,7 +53,7 @@
             </form>
             
             <div class="text-center">
-                <a href="{{ route('empresas.index') }}" class="text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">
+                <a href="{{ route('sistema.empresas.index') }}" class="text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">
                     Volver al listado de empresas
                 </a>
             </div>

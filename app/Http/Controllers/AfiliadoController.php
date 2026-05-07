@@ -90,6 +90,12 @@ class AfiliadoController extends Controller
         return view('afiliados.index', $this->processIndex($request, 'Otros'));
     }
 
+    public function indexCallCenter(Request $request)
+    {
+        // Nueva vista para trabajar lo que llega desde Call Center
+        return view('afiliados.index', $this->processIndex($request, 'CallCenter'));
+    }
+
     public function indexSalidaInmediata(Request $request)
     {
         $data = $this->processIndex($request, 'SalidaInmediata');
@@ -117,6 +123,10 @@ class AfiliadoController extends Controller
                 $query->whereHas('empresaModel', function($q) {
                     $q->where('es_verificada', true);
                 })->whereNull('fecha_entrega_safesure');
+            } elseif ($segment === 'CallCenter') {
+                $query->whereHas('corte', function($q) {
+                    $q->where('nombre', 'Promociones Call Center');
+                });
             }
         }
 
@@ -226,6 +236,8 @@ class AfiliadoController extends Controller
                         $q->ars()->whereNotNull('responsable_id');
                     } elseif ($segment === 'Otros') {
                         $q->noArs()->whereNotNull('responsable_id');
+                    } elseif ($segment === 'CallCenter') {
+                        $q->whereHas('corte', function($qc) { $qc->where('nombre', 'Promociones Call Center'); });
                     } else {
                         $q->whereNull('responsable_id');
                     }
@@ -235,6 +247,8 @@ class AfiliadoController extends Controller
                         $q->ars()->whereNotNull('responsable_id');
                     } elseif ($segment === 'Otros') {
                         $q->noArs()->whereNotNull('responsable_id');
+                    } elseif ($segment === 'CallCenter') {
+                        $q->whereHas('corte', function($qc) { $qc->where('nombre', 'Promociones Call Center'); });
                     } else {
                         $q->whereNull('responsable_id');
                     }
@@ -254,6 +268,7 @@ class AfiliadoController extends Controller
                 'cortes' => \App\Models\Corte::all(),
                 'lotes' => \App\Models\Lote::orderBy('created_at', 'desc')->take(20)->get(),
                 'responsables' => \App\Models\Responsable::all(),
+                'empresas' => \App\Models\Empresa::orderBy('nombre')->get(['id', 'nombre', 'rnc', 'es_verificada']),
             ];
         });
 
@@ -315,13 +330,16 @@ class AfiliadoController extends Controller
             $afiliado->refresh();
 
             $isSynced = $afiliado->firebase_synced_at && $afiliado->firebase_synced_at->isAfter(now()->subSeconds(10));
-            $route = $request->segment === 'CMD' ? 'afiliados.cmd' : ($request->segment === 'Otros' ? 'afiliados.otros' : 'afiliados.index');
-            
-            if ($isSynced) {
-                return redirect()->route($route)->with('cloud_success', 'Afiliado creado y respaldado en la nube.');
+            $msg = $isSynced ? 'Afiliado creado y respaldado en la nube.' : 'Afiliado creado exitosamente (Local).';
+            $msgType = $isSynced ? 'cloud_success' : 'success';
+
+            // Lógica de Redirección (Semana 3: Flujos Continuos)
+            if ($request->action === 'save_and_new') {
+                return redirect()->route('carnetizacion.afiliados.create', ['segment' => $request->segment])->with($msgType, $msg);
             }
 
-            return redirect()->route($route)->with('success', 'Afiliado creado exitosamente (Local).');
+            $route = $request->segment === 'CMD' ? 'afiliados.cmd' : ($request->segment === 'Otros' ? 'afiliados.otros' : 'afiliados.index');
+            return redirect()->route($route)->with($msgType, $msg);
         } catch (\Exception $e) {
             DB::rollBack();
             $msg = $e->getMessage();
@@ -339,7 +357,11 @@ class AfiliadoController extends Controller
     {
         $this->syncFromFirebase($afiliado, $syncService);
         $afiliado->load(['corte', 'responsable', 'estado', 'empresaModel', 'evidenciasAfiliado', 'historialEstados.user', 'historialEstados.estadoAnterior', 'historialEstados.estadoNuevo', 'notas.user']);
-        return view('afiliados.show', compact('afiliado'));
+        
+        $estados = \App\Models\Estado::all();
+        $responsables = \App\Models\Responsable::all();
+        
+        return view('afiliados.show', compact('afiliado', 'estados', 'responsables'));
     }
 
     /**
@@ -399,10 +421,10 @@ class AfiliadoController extends Controller
             $afiliado->refresh(); // Asegurar que capturamos el firebase_synced_at del observer
 
             if ($afiliado->firebase_synced_at && $afiliado->firebase_synced_at->isAfter(now()->subSeconds(10))) {
-                return redirect()->route('afiliados.show', $afiliado)->with('cloud_success', 'Afiliado actualizado y respaldado en la nube.');
+                return redirect()->route('carnetizacion.afiliados.show', $afiliado)->with('cloud_success', 'Afiliado actualizado y respaldado en la nube.');
             }
 
-            return redirect()->route('afiliados.show', $afiliado)->with('success', 'Afiliado actualizado correctamente (Local).');
+            return redirect()->route('carnetizacion.afiliados.show', $afiliado)->with('success', 'Afiliado actualizado correctamente (Local).');
         } catch (Exception $e) {
             DB::rollBack();
             return back()->with('error', $e->getMessage());
@@ -637,7 +659,7 @@ class AfiliadoController extends Controller
                     'poliza' => $af->poliza ?? 'N/A',
                     'estado' => $af->estado->nombre ?? 'Sin Estado',
                     'responsable' => $af->responsable->nombre ?? 'Sin Asignar',
-                    'url' => route('afiliados.show', $af)
+                    'url' => route('carnetizacion.afiliados.show', $af)
                 ];
             });
 
@@ -755,7 +777,7 @@ class AfiliadoController extends Controller
 
     private function syncFromFirebase($afiliado, $syncService)
     {
-        // Using the new trait for centralized logic
-        $afiliado->pullFromFirebase();
+        // Solo descargar si han pasado más de 2 horas desde la última sync
+        $afiliado->pullIfStale(2);
     }
 }

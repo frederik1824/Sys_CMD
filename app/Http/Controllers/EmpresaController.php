@@ -67,10 +67,10 @@ class EmpresaController extends Controller
         $empresa->refresh();
         
         if ($empresa->firebase_synced_at) {
-            return redirect()->route('empresas.index')->with('cloud_success', 'Empresa creada y sincronizada con la nube exitosamente.');
+            return redirect()->route('sistema.empresas.index')->with('cloud_success', 'Empresa creada y sincronizada con la nube exitosamente.');
         }
 
-        return redirect()->route('empresas.index')->with('success', 'Empresa creada localmente (Sincronización pendiente).');
+        return redirect()->route('sistema.empresas.index')->with('success', 'Empresa creada localmente (Sincronización pendiente).');
     }
 
     /**
@@ -78,7 +78,7 @@ class EmpresaController extends Controller
      */
     public function show(Empresa $empresa)
     {
-        $empresa->pullFromFirebase();
+        $empresa->pullIfStale();
 
         $afiliados = $empresa->afiliados()
             ->with(['estado', 'responsable'])
@@ -114,7 +114,7 @@ class EmpresaController extends Controller
      */
     public function edit(Empresa $empresa)
     {
-        $empresa->pullFromFirebase();
+        $empresa->pullIfStale();
 
         $provincias = \App\Models\Provincia::orderBy('nombre')->get();
         $municipios = $empresa->provincia_id ? \App\Models\Municipio::where('provincia_id', $empresa->provincia_id)->orderBy('nombre')->get() : collect();
@@ -139,10 +139,10 @@ class EmpresaController extends Controller
         $success = $empresa->firebase_synced_at && $empresa->firebase_synced_at->isAfter(now()->subSeconds(10));
 
         if ($success) {
-            return redirect()->route('empresas.show', $empresa)->with('cloud_success', 'Empresa actualizada y respaldada en la nube.');
+            return redirect()->route('sistema.empresas.show', $empresa)->with('cloud_success', 'Empresa actualizada y respaldada en la nube.');
         }
 
-        return redirect()->route('empresas.show', $empresa)->with('success', 'Empresa actualizada localmente.');
+        return redirect()->route('sistema.empresas.show', $empresa)->with('success', 'Empresa actualizada localmente.');
     }
 
     /**
@@ -151,17 +151,18 @@ class EmpresaController extends Controller
     public function destroy(Empresa $empresa)
     {
         if ($empresa->afiliados()->count() > 0) {
-            return redirect()->route('empresas.index')->with('error', 'No se puede eliminar la empresa porque tiene afiliados asociados.');
+            return redirect()->route('sistema.empresas.index')->with('error', 'No se puede eliminar la empresa porque tiene afiliados asociados.');
         }
 
         $empresa->delete();
-        return redirect()->route('empresas.index')->with('success', 'Empresa eliminada exitosamente.');
+        return redirect()->route('sistema.empresas.index')->with('success', 'Empresa eliminada exitosamente.');
     }
 
     public function enrich()
     {
         $incomplete = Empresa::whereNull('provincia_id')->count();
-        return view('empresas.enrich', compact('incomplete'));
+        $enriched   = Empresa::whereNotNull('provincia_id')->count();
+        return view('empresas.enrich', compact('incomplete', 'enriched'));
     }
 
     public function processEnrich()
@@ -228,7 +229,7 @@ class EmpresaController extends Controller
             'fecha_contacto' => now(),
         ]);
 
-        return redirect()->route('empresas.show', $empresa)->with('success', 'Interacción registrada exitosamente.');
+        return redirect()->route('sistema.empresas.show', $empresa)->with('success', 'Interacción registrada exitosamente.');
     }
 
     /**
