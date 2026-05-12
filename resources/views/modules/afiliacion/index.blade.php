@@ -3,30 +3,30 @@
 @section('content')
 <div class="p-4 md:p-10 max-w-[1600px] mx-auto min-h-[calc(100vh-100px)]">
     <!-- HEADER ESTRATÉGICO -->
-    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 mb-12">
-        <div class="space-y-2">
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-2 h-8 bg-indigo-600 rounded-full"></div>
-                <h1 class="text-5xl font-black tracking-tighter text-slate-900 leading-none">Bandeja Operativa</h1>
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 mb-16">
+        <div class="space-y-4">
+            <div class="flex items-center gap-4 mb-2">
+                <div class="w-3 h-10 bg-gradient-to-b from-indigo-600 to-indigo-400 rounded-full shadow-lg shadow-indigo-100"></div>
+                <h1 class="text-6xl font-black tracking-tighter text-slate-900 leading-none">Bandeja Operativa</h1>
             </div>
-            <p class="text-slate-500 font-medium text-xl max-w-2xl leading-relaxed">Gestión centralizada de expedientes de afiliación y procesos de validación corporativa.</p>
+            <p class="text-slate-500 font-medium text-xl max-w-2xl leading-relaxed">Gestión de expedientes de afiliación y procesos de validación con inteligencia operativa en tiempo real.</p>
         </div>
         <div class="flex flex-wrap gap-4">
             @can('solicitudes_afiliacion.configurar')
             <a href="{{ route('afiliacion.config') }}" 
-               class="bg-white text-slate-900 border border-slate-200 rounded-[20px] px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-3 shadow-sm group">
-                <i class="ph ph-sliders-horizontal text-xl group-hover:rotate-180 transition-transform duration-500"></i> Parámetros
+               class="bg-white text-slate-900 border border-slate-200 rounded-[22px] px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 hover:border-slate-400 hover:shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3 shadow-sm group">
+                <i class="ph ph-sliders-horizontal text-xl group-hover:rotate-180 transition-transform duration-700"></i> Configuración
             </a>
             @endcan
             <a href="{{ route('afiliacion.create') }}" 
-               class="bg-slate-900 text-white rounded-[20px] px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-800 transition-all flex items-center gap-3 shadow-2xl shadow-slate-200 group">
-                <i class="ph ph-plus-circle-fill text-xl group-hover:scale-110 transition-transform"></i> Nueva Solicitud
+               class="bg-slate-900 text-white rounded-[22px] px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-600 hover:shadow-2xl hover:shadow-indigo-200 hover:-translate-y-1 transition-all flex items-center gap-3 shadow-2xl shadow-slate-200 group">
+                <i class="ph ph-plus-circle-fill text-xl group-hover:scale-125 transition-transform"></i> Nueva Solicitud
             </a>
         </div>
     </div>
 
     <!-- DASHBOARD DE INDICADORES -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 mb-12">
         <!-- PENDIENTES -->
         <div class="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-50 rounded-full blur-2xl group-hover:bg-amber-100 transition-colors"></div>
@@ -72,70 +72,86 @@
             </div>
         </div>
 
-        <!-- APROBADAS -->
-        <div class="bg-slate-900 p-8 rounded-[40px] border border-slate-800 shadow-2xl shadow-indigo-200 relative overflow-hidden group">
-            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <!-- APROBADAS (PENDIENTE CIERRE) -->
+        <div class="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-teal-50 rounded-full blur-2xl group-hover:bg-teal-100 transition-colors"></div>
+            <div class="flex justify-between items-start mb-6 relative z-10">
+                <div class="w-14 h-14 bg-teal-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-teal-100 group-hover:scale-110 transition-transform">
+                    <i class="ph-bold ph-check-square text-2xl"></i>
+                </div>
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg">Fase 3</span>
+            </div>
+            <div class="relative z-10">
+                <div class="text-4xl font-black text-slate-900 tracking-tighter mb-1">{{ $stats['aprobadas'] }}</div>
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Pendiente Cierre Final</div>
+            </div>
+        </div>
+
+        <!-- COMPLETADAS -->
+        <div class="bg-slate-900 p-8 rounded-[40px] border border-slate-800 shadow-2xl shadow-emerald-200 relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
             <div class="flex justify-between items-start mb-6 relative z-10">
                 <div class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:rotate-12 transition-transform">
                     <i class="ph-bold ph-check-circle text-2xl"></i>
                 </div>
-                <span class="text-[9px] font-black text-white/40 uppercase tracking-widest bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">Histórico</span>
+                <span class="text-[9px] font-black text-white/40 uppercase tracking-widest bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">Éxito</span>
             </div>
             <div class="relative z-10">
-                <div class="text-4xl font-black text-white tracking-tighter mb-1">{{ $stats['aprobadas'] }}</div>
-                <div class="text-[10px] font-black text-white/50 uppercase tracking-[0.1em]">Total Expedientes Visados</div>
+                <div class="text-4xl font-black text-white tracking-tighter mb-1">{{ $stats['completadas'] }}</div>
+                <div class="text-[10px] font-black text-white/50 uppercase tracking-[0.1em]">Trámites Completados</div>
             </div>
         </div>
     </div>
 
     <!-- ÁREA DE GESTIÓN OPERATIVA -->
-    <div class="bg-white rounded-[48px] border border-slate-100 shadow-2xl shadow-slate-200/30 overflow-hidden">
+    <!-- ÁREA DE GESTIÓN OPERATIVA -->
+    <div class="bg-white rounded-[56px] border border-slate-100 shadow-2xl shadow-slate-200/30 overflow-hidden backdrop-blur-3xl">
         <!-- TOOLBAR DE FILTROS -->
-        <div class="p-8 md:p-10 border-b border-slate-50 bg-slate-50/30 flex flex-col xl:flex-row justify-between items-center gap-8">
-            <div class="flex flex-col md:flex-row items-center gap-6 w-full xl:w-auto">
+        <div class="p-8 md:p-12 border-b border-slate-50 bg-gradient-to-b from-slate-50/50 to-transparent flex flex-col xl:flex-row justify-between items-center gap-10">
+            <div class="flex flex-col md:flex-row items-center gap-8 w-full xl:w-auto">
                 <!-- SWITCHER DE VISTA -->
-                <div class="flex items-center gap-1 p-1 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                <div class="flex items-center gap-1 p-1.5 bg-slate-100/50 rounded-[24px] border border-slate-200 shadow-inner">
                     <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['view' => 'list'])) }}" 
-                       class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('view', 'list') == 'list' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600' }}">
-                        <i class="ph ph-rows-fill mr-2"></i> Lista
+                       class="px-6 py-3 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all {{ request('view', 'list') == 'list' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50' }}">
+                        <i class="ph-bold ph-rows-fill mr-2"></i> Lista
                     </a>
                     <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['view' => 'kanban'])) }}" 
-                       class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('view') == 'kanban' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600' }}">
-                        <i class="ph ph-kanban-fill mr-2"></i> Tablero
+                       class="px-6 py-3 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all {{ request('view') == 'kanban' ? 'bg-white text-indigo-600 shadow-xl shadow-indigo-100/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50' }}">
+                        <i class="ph-bold ph-kanban-fill mr-2"></i> Tablero
                     </a>
                 </div>
 
-                <div class="h-8 w-px bg-slate-200 hidden md:block mx-2"></div>
-
-                <div class="flex items-center gap-3 px-6 py-2 bg-white border border-slate-200 rounded-[24px] shadow-sm overflow-hidden p-1">
-                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => ''])) }}" 
-                       class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ !request('estado') ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600' }}">
-                        Todas
+                <div class="flex items-center gap-2 px-6 py-2 bg-slate-50 border border-slate-100 rounded-[32px] shadow-inner p-1.5">
+                    @php 
+                        $statusFilters = [
+                            ['slug' => '', 'label' => 'Todas', 'color' => 'slate-900'],
+                            ['slug' => 'Pendiente', 'label' => 'Pendientes', 'color' => 'amber-500'],
+                            ['slug' => 'En revisión', 'label' => 'Evaluación', 'color' => 'indigo-600'],
+                            ['slug' => 'Devuelta', 'label' => 'Devueltas', 'color' => 'orange-500'],
+                            ['slug' => 'Aprobada', 'label' => 'Aprobadas', 'color' => 'teal-600'],
+                            ['slug' => 'Completada', 'label' => 'Éxito', 'color' => 'emerald-600']
+                        ];
+                    @endphp
+                    @foreach($statusFilters as $filter)
+                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => $filter['slug']])) }}" 
+                       class="px-6 py-4 rounded-[24px] text-[9px] font-black uppercase tracking-[0.15em] transition-all {{ request('estado') == $filter['slug'] ? 'bg-white text-'.$filter['color'].' shadow-md border border-slate-100' : 'text-slate-400 hover:text-slate-600' }}">
+                        {{ $filter['label'] }}
                     </a>
-                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => 'Pendiente'])) }}" 
-                       class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('estado') == 'Pendiente' ? 'bg-amber-500 text-white shadow-lg shadow-amber-100' : 'text-slate-400 hover:text-slate-600' }}">
-                        Pendientes
-                    </a>
-                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => 'En revisión'])) }}" 
-                       class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('estado') == 'En revisión' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600' }}">
-                        En Revisión
-                    </a>
-                    <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => 'Devuelta'])) }}" 
-                       class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('estado') == 'Devuelta' ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'text-slate-400 hover:text-slate-600' }}">
-                        Devueltas
-                    </a>
+                    @endforeach
                 </div>
             </div>
             
             <form action="{{ route('afiliacion.index') }}" method="GET" class="relative w-full xl:w-[500px] group">
                 <input type="hidden" name="view" value="{{ request('view', 'list') }}">
                 <input type="hidden" name="estado" value="{{ request('estado') }}">
-                <i class="ph-bold ph-magnifying-glass absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 text-xl group-focus-within:text-indigo-600 transition-colors"></i>
+                <div class="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center group-focus-within:bg-indigo-600 transition-colors">
+                    <i class="ph-bold ph-magnifying-glass text-indigo-400 text-xl group-focus-within:text-white transition-colors"></i>
+                </div>
                 <input type="text" name="search" value="{{ request('search') }}" 
                        placeholder="Buscar por cédula, nombre o folio..." 
-                       class="w-full pl-16 pr-8 py-5 bg-white border-2 border-slate-100 rounded-[28px] text-sm font-black text-slate-800 placeholder-slate-300 focus:ring-8 focus:ring-indigo-50 focus:border-indigo-200 focus:bg-white transition-all shadow-sm">
+                       class="w-full pl-20 pr-10 py-6 bg-slate-50 border-2 border-transparent rounded-[32px] text-sm font-black text-slate-800 placeholder-slate-400 focus:ring-0 focus:border-indigo-100 focus:bg-white transition-all shadow-inner">
                 @if(request('search') || request('estado'))
-                <a href="{{ route('afiliacion.index') }}" class="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-rose-500 hover:text-rose-600 transition-colors">Limpiar</a>
+                <a href="{{ route('afiliacion.index') }}" class="absolute right-8 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-rose-500 hover:text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-xl transition-all">Limpiar</a>
                 @endif
             </form>
         </div>
@@ -144,12 +160,14 @@
             <!-- VISTA KANBAN (Tablero) -->
             <div class="p-10 bg-slate-50 overflow-x-auto">
                 <div class="flex gap-8 min-w-max pb-4">
-                    @foreach(['Pendiente', 'En revisión', 'Devuelta', 'Aprobada'] as $estado)
+                    @foreach(['Pendiente', 'En revisión', 'Devuelta', 'Aprobada', 'Completada'] as $estado)
                     <div class="w-96 flex flex-col gap-6">
                         <div class="flex items-center justify-between px-2">
                             <div class="flex items-center gap-3">
-                                <span class="w-3 h-3 rounded-full {{ $estado == 'Pendiente' ? 'bg-amber-500' : ($estado == 'En revisión' ? 'bg-indigo-600' : ($estado == 'Devuelta' ? 'bg-orange-500' : 'bg-emerald-500')) }}"></span>
-                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-[0.15em]">{{ $estado }}</h3>
+                                <span class="w-3 h-3 rounded-full {{ $estado == 'Pendiente' ? 'bg-amber-500' : ($estado == 'En revisión' ? 'bg-indigo-600' : ($estado == 'Devuelta' ? 'bg-orange-500' : ($estado == 'Aprobada' ? 'bg-teal-500' : 'bg-emerald-500'))) }}"></span>
+                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-[0.15em]">
+                                    {{ $estado == 'Aprobada' ? 'Pendiente de Cierre' : ($estado == 'En revisión' ? 'En Evaluación' : $estado) }}
+                                </h3>
                             </div>
                             <span class="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-black text-slate-500">
                                 {{ isset($tablero[$estado]) ? $tablero[$estado]->count() : 0 }}
@@ -170,7 +188,7 @@
                                     <h4 class="text-sm font-black text-slate-900 mb-1 leading-tight">{{ $sol->nombre_completo }}</h4>
                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">{{ $sol->tipoSolicitud->nombre }}</p>
 
-                                    @if(!in_array($sol->estado, ['Aprobada', 'Rechazada', 'Cerrada']))
+                                    @if(!in_array($sol->estado, ['Completada', 'Rechazada', 'Cerrada']))
                                     <div class="mb-4">
                                         <div class="flex justify-between items-center text-[8px] font-black uppercase tracking-widest mb-1">
                                             <span class="text-slate-400">Progreso SLA</span>
@@ -233,32 +251,32 @@
                 <table class="w-full text-left border-collapse table-fixed">
                     <thead>
                         <tr class="bg-white border-b border-slate-100">
-                            <th class="w-16 px-6 py-6 text-center">
-                                <input type="checkbox" @change="selected = $event.target.checked ? {{ $solicitudes->pluck('id')->toJson() }} : []" :checked="selected.length === {{ $solicitudes->count() }}" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                            <th class="w-16 px-6 py-8 text-center">
+                                <input type="checkbox" @change="selected = $event.target.checked ? {{ $solicitudes->pluck('id')->toJson() }} : []" :checked="selected.length === {{ $solicitudes->count() }}" class="rounded-lg border-slate-200 text-indigo-600 focus:ring-indigo-500 shadow-inner">
                             </th>
-                            <th class="w-1/4 px-6 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Folio / Tipo de Trámite</th>
-                            <th class="w-32 px-4 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Prioridad</th>
-                            <th class="w-1/5 px-6 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Afiliado</th>
-                            <th class="w-1/5 px-6 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Origen / Gestión</th>
-                            <th class="w-40 px-6 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Estado / SLA</th>
-                            <th class="w-32 px-6 py-6 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Acciones</th>
+                            <th class="w-1/4 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Folio / Tipo de Trámite</th>
+                            <th class="w-36 px-4 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Prioridad</th>
+                            <th class="w-1/5 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Afiliado</th>
+                            <th class="w-1/5 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Origen / Gestión</th>
+                            <th class="w-48 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Estado / SLA</th>
+                            <th class="w-36 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50/60">
                         @forelse($solicitudes as $solicitud)
                         @php
-                            $isFinished = in_array($solicitud->estado, ['Aprobada', 'Rechazada', 'Cerrada', 'Cancelada']);
+                            $isFinished = in_array($solicitud->estado, ['Completada', 'Rechazada', 'Cerrada', 'Cancelada']);
                             $rowStyle = match($solicitud->prioridad) {
-                                'Urgente' => 'bg-gradient-to-r from-rose-100/40 via-white to-white border-l-[8px] border-rose-600 ' . ($isFinished ? '' : 'animate-pulse'),
-                                'Alta' => 'bg-gradient-to-r from-amber-100/30 via-white to-white border-l-[8px] border-amber-500',
-                                default => 'hover:bg-slate-50/50'
+                                'Urgente' => 'bg-gradient-to-r from-rose-50 to-white border-l-[6px] border-rose-600 shadow-[inset_10px_0_15px_-10px_rgba(225,29,72,0.1)]',
+                                'Alta' => 'bg-gradient-to-r from-amber-50/50 to-white border-l-[6px] border-amber-500',
+                                default => 'hover:bg-slate-50/80'
                             };
                             
                             if ($isFinished) {
-                                $rowStyle = str_replace('border-l-[8px]', 'border-l-[4px] opacity-75 grayscale-[0.2]', $rowStyle);
+                                $rowStyle = 'opacity-60 grayscale-[0.4] bg-white border-l-[4px] border-slate-200';
                             }
                         @endphp
-                        <tr class="{{ $rowStyle }} transition-all group relative border-b border-slate-50">
+                        <tr class="{{ $rowStyle }} transition-all duration-300 group relative border-b border-slate-50 hover:scale-[1.005] hover:shadow-2xl hover:shadow-slate-200/50 hover:z-10 cursor-default">
                             <td class="px-6 py-8 text-center">
                                 <input type="checkbox" value="{{ $solicitud->id }}" x-model="selected" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
                             </td>
@@ -309,9 +327,9 @@
                             <td class="px-6 py-5">
                                 <div class="flex flex-col items-center gap-2">
                                     <span class="px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-[0.1em] {{ $solicitud->status_color }} border border-black/5">
-                                        {{ $solicitud->estado }}
+                                        {{ $solicitud->status_label }}
                                     </span>
-                                    @if(!in_array($solicitud->estado, ['Aprobada', 'Rechazada', 'Cerrada']))
+                                    @if(!in_array($solicitud->estado, ['Completada', 'Rechazada', 'Cerrada']))
                                     <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                         <div class="h-full {{ $solicitud->sla_percentage > 80 ? 'bg-rose-500' : ($solicitud->sla_percentage > 50 ? 'bg-amber-500' : 'bg-emerald-500') }}" style="width: {{ $solicitud->sla_percentage }}%"></div>
                                     </div>
@@ -319,20 +337,20 @@
                                 </div>
                             </td>
                             <td class="px-6 py-5">
-                                <div class="flex justify-end gap-2 scale-90 origin-right">
+                                <div class="flex justify-end gap-3 scale-95 origin-right">
                                     @if(in_array($solicitud->estado, ['Borrador', 'Devuelta']) && $solicitud->solicitante_user_id == auth()->id())
-                                    <a href="{{ route('afiliacion.edit', $solicitud) }}" class="w-10 h-10 flex items-center justify-center text-amber-500 hover:text-white hover:bg-amber-500 rounded-xl transition-all">
-                                        <i class="ph-bold ph-pencil-simple text-xl"></i>
+                                    <a href="{{ route('afiliacion.edit', $solicitud) }}" class="w-12 h-12 flex items-center justify-center text-amber-500 hover:text-white hover:bg-amber-500 rounded-[18px] transition-all shadow-sm hover:shadow-lg hover:shadow-amber-100 group/btn">
+                                        <i class="ph-bold ph-pencil-simple text-xl group-hover/btn:rotate-12 transition-transform"></i>
                                     </a>
                                     @endif
-                                    <a href="{{ route('afiliacion.show', $solicitud) }}" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all">
-                                        <i class="ph-bold ph-arrow-square-out text-xl"></i>
+                                    <a href="{{ route('afiliacion.show', $solicitud) }}" class="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-900 rounded-[18px] transition-all shadow-sm hover:shadow-lg hover:shadow-slate-200 group/btn">
+                                        <i class="ph-bold ph-arrow-square-out text-xl group-hover/btn:scale-110 transition-transform"></i>
                                     </a>
                                     @if($solicitud->estado == 'Pendiente' && auth()->user()->can('solicitudes_afiliacion.asignarse'))
                                     <form action="{{ route('afiliacion.assign', $solicitud) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="w-10 h-10 flex items-center justify-center text-emerald-500 hover:text-white hover:bg-emerald-500 rounded-xl transition-all">
-                                            <i class="ph-bold ph-hand-pointing text-xl"></i>
+                                        <button type="submit" class="w-12 h-12 flex items-center justify-center text-emerald-500 hover:text-white hover:bg-emerald-500 rounded-[18px] transition-all shadow-sm hover:shadow-lg hover:shadow-emerald-100 group/btn">
+                                            <i class="ph-bold ph-hand-pointing text-xl group-hover/btn:-translate-y-1 transition-transform"></i>
                                         </button>
                                     </form>
                                     @endif
@@ -392,31 +410,47 @@
     }
     
     /* Personalización del sistema de paginación para que coincida con el diseño */
+    /* Animación de pulso para casos urgentes */
+    @keyframes subtle-pulse {
+        0% { box-shadow: inset 6px 0 0 #e11d48; }
+        50% { box-shadow: inset 12px 0 20px -5px rgba(225,29,72,0.2); }
+        100% { box-shadow: inset 6px 0 0 #e11d48; }
+    }
+    
+    .animate-urgent {
+        animation: subtle-pulse 2s infinite ease-in-out;
+    }
+
+    /* Personalización del sistema de paginación */
     .pagination {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.75rem;
+        justify-content: center;
     }
     .page-item .page-link {
-        border-radius: 12px;
+        border-radius: 18px;
         font-weight: 900;
         text-transform: uppercase;
-        font-size: 10px;
-        letter-spacing: 0.1em;
-        border: none;
-        padding: 0.75rem 1.25rem;
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        border: 1px solid #f1f5f9;
+        padding: 1rem 1.5rem;
         color: #64748b;
         background: white;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .page-item.active .page-link {
         background: #0f172a;
         color: white;
-        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border-color: #0f172a;
+        shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
     }
     .page-item:hover .page-link:not(.active) {
         background: #f8fafc;
         color: #1e293b;
+        border-color: #e2e8f0;
+        transform: translateY(-1px);
     }
 </style>
 @push('scripts')

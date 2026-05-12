@@ -21,26 +21,45 @@
         </div>
 
         <!-- Filtros Flotantes -->
-        <form action="{{ route('reportes.produccion_traspasos') }}" method="GET" class="w-full md:w-auto bg-white p-2 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-wrap items-center gap-2">
-            <div class="flex items-center gap-2 px-4 py-2 border-r border-slate-100">
-                <i class="ph ph-calendar text-slate-400"></i>
-                <input type="date" name="fecha_desde" value="{{ $fecha_desde }}" class="border-none bg-transparent text-xs font-black text-slate-900 focus:ring-0 p-0 w-28">
-                <span class="text-slate-300 text-[10px] font-black">AL</span>
-                <input type="date" name="fecha_hasta" value="{{ $fecha_hasta }}" class="border-none bg-transparent text-xs font-black text-slate-900 focus:ring-0 p-0 w-28">
+        <div class="flex flex-col md:flex-row items-center gap-4">
+            <form action="{{ route('reportes.produccion_traspasos') }}" method="GET" class="bg-white p-2 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-wrap items-center gap-2">
+                <div class="flex items-center gap-2 px-4 py-2 border-r border-slate-100">
+                    <i class="ph ph-calendar text-slate-400"></i>
+                    <input type="date" name="fecha_desde" value="{{ $fecha_desde }}" class="border-none bg-transparent text-xs font-black text-slate-900 focus:ring-0 p-0 w-28">
+                    <span class="text-slate-300 text-[10px] font-black">AL</span>
+                    <input type="date" name="fecha_hasta" value="{{ $fecha_hasta }}" class="border-none bg-transparent text-xs font-black text-slate-900 focus:ring-0 p-0 w-28">
+                </div>
+                <div class="px-4 py-2 border-r border-slate-100 hidden lg:block">
+                    <select name="supervisor_id" class="border-none bg-transparent text-xs font-black text-slate-900 focus:ring-0 p-0 cursor-pointer min-w-[150px]">
+                        <option value="">Todos los Equipos</option>
+                        @foreach($supervisores as $sup)
+                            <option value="{{ $sup->id }}" {{ $supervisor_id == $sup->id ? 'selected' : '' }}>{{ $sup->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="bg-slate-900 text-white px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all flex items-center gap-2">
+                    <i class="ph ph-funnel text-lg"></i>
+                    Filtrar
+                </button>
+            </form>
+
+            <div class="flex items-center gap-2">
+                <a href="{{ route('reportes.produccion_traspasos', ['fecha_desde' => now()->format('Y-m-d'), 'fecha_hasta' => now()->format('Y-m-d'), 'supervisor_id' => $supervisor_id]) }}" 
+                   class="px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                    Hoy
+                </a>
+                <a href="{{ route('reportes.produccion_traspasos.export', request()->all()) }}" 
+                   class="px-6 py-3 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-100 flex items-center gap-2">
+                    <i class="ph ph-file-csv text-lg"></i>
+                    CSV
+                </a>
+                <a href="{{ route('reportes.produccion_traspasos.export_pdf', request()->all()) }}" 
+                   class="px-6 py-3 bg-emerald-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center gap-2">
+                    <i class="ph ph-file-pdf text-lg"></i>
+                    Exportar PDF
+                </a>
             </div>
-            <div class="px-4 py-2 border-r border-slate-100 hidden lg:block">
-                <select name="supervisor_id" class="border-none bg-transparent text-xs font-black text-slate-900 focus:ring-0 p-0 cursor-pointer min-w-[150px]">
-                    <option value="">Todos los Equipos</option>
-                    @foreach($supervisores as $sup)
-                        <option value="{{ $sup->id }}" {{ $supervisor_id == $sup->id ? 'selected' : '' }}>{{ $sup->nombre }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <button type="submit" class="bg-slate-900 text-white px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all flex items-center gap-2">
-                <i class="ph ph-funnel text-lg"></i>
-                Filtrar
-            </button>
-        </form>
+        </div>
     </div>
 
     <!-- Dashboard Bento -->
@@ -174,9 +193,18 @@
                                 <span class="text-xs font-black text-emerald-600">{{ number_format($ag->efectivos) }}</span>
                             </td>
                             <td class="px-10 py-6 text-center">
+                                <span class="text-xs font-black text-slate-600">{{ number_format($ag->dependientes_efectivos) }}</span>
+                            </td>
+                            <td class="px-10 py-6 text-center">
                                 <span class="px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-xl">
                                     {{ number_format($ag->total_vidas_efectivas) }}
                                 </span>
+                            </td>
+                            <td class="px-10 py-6 text-center">
+                                <span class="text-xs font-black text-amber-600">{{ number_format($ag->pendientes) }}</span>
+                            </td>
+                            <td class="px-10 py-6 text-center">
+                                <span class="text-xs font-black text-rose-600">{{ number_format($ag->rechazados) }}</span>
                             </td>
                             <td class="px-10 py-6">
                                 <div class="flex items-center gap-4 justify-end">

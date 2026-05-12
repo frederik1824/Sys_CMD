@@ -84,9 +84,6 @@ class AfiliadoController extends Controller
 
     public function indexOtros(Request $request)
     {
-        if (auth()->check() && auth()->user()->hasRole('Operador')) {
-            abort(403, 'No tienes permiso para ver afiliados de Extra Empresa.');
-        }
         return view('afiliados.index', $this->processIndex($request, 'Otros'));
     }
 
@@ -338,7 +335,7 @@ class AfiliadoController extends Controller
                 return redirect()->route('carnetizacion.afiliados.create', ['segment' => $request->segment])->with($msgType, $msg);
             }
 
-            $route = $request->segment === 'CMD' ? 'afiliados.cmd' : ($request->segment === 'Otros' ? 'afiliados.otros' : 'afiliados.index');
+            $route = $request->segment === 'CMD' ? 'carnetizacion.afiliados.cmd' : ($request->segment === 'Otros' ? 'carnetizacion.afiliados.otros' : 'carnetizacion.afiliados.index');
             return redirect()->route($route)->with($msgType, $msg);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -355,13 +352,46 @@ class AfiliadoController extends Controller
      */
     public function show(\App\Models\Afiliado $afiliado, \App\Services\FirebaseSyncService $syncService)
     {
+        // Gestión de Navegación (Breadcrumbs Dinámicos)
+        $previousUrl = url()->previous();
+        // Solo actualizar si venimos de un listado, no de un detalle, edición o guardado
+        $isList = str_contains($previousUrl, '/afiliados') && 
+                  !preg_match('/[a-f0-9-]{36}/', $previousUrl) && 
+                  !str_contains($previousUrl, '/edit') &&
+                  !str_contains($previousUrl, '/create');
+
+        if ($isList) {
+            $label = 'Afiliados';
+            if (str_contains($previousUrl, '/afiliados/cmd')) $label = 'Afiliados CMD';
+            elseif (str_contains($previousUrl, '/afiliados/otros')) $label = 'Afiliados Otros';
+            elseif (str_contains($previousUrl, '/afiliados/mios')) $label = 'Mis Afiliados';
+            elseif (str_contains($previousUrl, '/afiliados/call-center')) $label = 'Call Center';
+            elseif (str_contains($previousUrl, '/afiliados/salida-inmediata')) $label = 'Salida Inmediata';
+            
+            session(['afiliados_return_to' => $previousUrl]);
+            session(['afiliados_return_label' => $label]);
+        }
+
         $this->syncFromFirebase($afiliado, $syncService);
-        $afiliado->load(['corte', 'responsable', 'estado', 'empresaModel', 'evidenciasAfiliado', 'historialEstados.user', 'historialEstados.estadoAnterior', 'historialEstados.estadoNuevo', 'notas.user']);
+        $afiliado->load([
+            'corte', 'responsable', 'estado', 'empresaModel', 'evidenciasAfiliado', 
+            'historialEstados.user', 'historialEstados.estadoAnterior', 
+            'historialEstados.estadoNuevo', 'notas.user'
+        ]);
+
+        // Cargar auditoría de sincronización
+        $auditLogs = \App\Models\CloudSyncAudit::where('auditable_type', get_class($afiliado))
+            ->where('auditable_id', $afiliado->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
         
         $estados = \App\Models\Estado::all();
         $responsables = \App\Models\Responsable::all();
+
+        $returnUrl = session('afiliados_return_to', route('carnetizacion.afiliados.index'));
+        $returnLabel = session('afiliados_return_label', 'Afiliados');
         
-        return view('afiliados.show', compact('afiliado', 'estados', 'responsables'));
+        return view('afiliados.show', compact('afiliado', 'estados', 'responsables', 'returnUrl', 'returnLabel', 'auditLogs'));
     }
 
     /**
@@ -369,6 +399,26 @@ class AfiliadoController extends Controller
      */
     public function edit(\App\Models\Afiliado $afiliado, \App\Services\FirebaseSyncService $syncService)
     {
+        // Gestión de Navegación (Breadcrumbs Dinámicos)
+        $previousUrl = url()->previous();
+        // Solo actualizar si venimos de un listado, no de un detalle, edición o guardado
+        $isList = str_contains($previousUrl, '/afiliados') && 
+                  !preg_match('/[a-f0-9-]{36}/', $previousUrl) && 
+                  !str_contains($previousUrl, '/edit') &&
+                  !str_contains($previousUrl, '/create');
+
+        if ($isList) {
+            $label = 'Afiliados';
+            if (str_contains($previousUrl, '/afiliados/cmd')) $label = 'Afiliados CMD';
+            elseif (str_contains($previousUrl, '/afiliados/otros')) $label = 'Afiliados Otros';
+            elseif (str_contains($previousUrl, '/afiliados/mios')) $label = 'Mis Afiliados';
+            elseif (str_contains($previousUrl, '/afiliados/call-center')) $label = 'Call Center';
+            elseif (str_contains($previousUrl, '/afiliados/salida-inmediata')) $label = 'Salida Inmediata';
+            
+            session(['afiliados_return_to' => $previousUrl]);
+            session(['afiliados_return_label' => $label]);
+        }
+
         $this->syncFromFirebase($afiliado, $syncService);
         $afiliado->load('empresaModel');
         $cortes = \App\Models\Corte::all();
@@ -378,7 +428,10 @@ class AfiliadoController extends Controller
         $provincias = \App\Models\Provincia::orderBy('nombre')->get();
         $municipios = $afiliado->provincia_id ? \App\Models\Municipio::where('provincia_id', $afiliado->provincia_id)->orderBy('nombre')->get() : collect();
 
-        return view('afiliados.edit', compact('afiliado', 'cortes', 'estados', 'responsables', 'empresas', 'provincias', 'municipios'));
+        $returnUrl = session('afiliados_return_to', route('carnetizacion.afiliados.index'));
+        $returnLabel = session('afiliados_return_label', 'Afiliados');
+
+        return view('afiliados.edit', compact('afiliado', 'cortes', 'estados', 'responsables', 'empresas', 'provincias', 'municipios', 'returnUrl', 'returnLabel'));
     }
 
     /**
@@ -447,9 +500,7 @@ class AfiliadoController extends Controller
 
         try {
             DB::beginTransaction();
-            if ($afiliado->estado?->es_final || strtolower($afiliado->estado?->nombre) === 'completado') {
-                throw new Exception("Regla 5.3: No se puede reasignar un expediente COMPLETADO sin reapertura.");
-            }
+            /* Regla 5.3 Desactivada por solicitud de usuario para permitir reasignación de sincronizados */
 
             $oldResponsable = $afiliado->responsable?->nombre ?? 'Sin Asignar';
             $afiliado->responsable_id = $request->responsable_id;
@@ -483,15 +534,12 @@ class AfiliadoController extends Controller
 
         try {
             DB::beginTransaction();
-            $afiliados = \App\Models\Afiliado::whereIn('uuid', $request->selected)->get();
+            $afiliados = \App\Models\Afiliado::with(['responsable', 'estado', 'proveedor'])->whereIn('uuid', $request->selected)->get();
             $segment = $request->input('segment');
             
             foreach($afiliados as $afiliado) {
                 /** @var Afiliado $afiliado */
-                // Rule 5.3: Immutability check
-                if (strtolower($afiliado->estado?->nombre) === 'completado') {
-                    throw new Exception("Regla 5.3: Algunos registros están COMPLETADOS y no pueden ser reasignados.");
-                }
+                /* Regla 5.3 Desactivada para procesos masivos */
 
                 $afiliado->responsable_id = $request->responsable_id;
                 $afiliado->reasignado = true; // Flag for audit

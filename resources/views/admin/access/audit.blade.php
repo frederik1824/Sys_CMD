@@ -1,132 +1,109 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="space-y-8 animate-in fade-in duration-500">
-    <!-- HEADER -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="space-y-1">
-            <div class="flex items-center gap-3">
-                <div class="w-1.5 h-8 bg-slate-900 rounded-full"></div>
-                <h2 class="text-3xl font-black text-slate-900 tracking-tight">Logs de <span class="text-slate-400">Auditoría</span></h2>
-            </div>
-            <p class="text-slate-500 font-bold text-[10px] uppercase tracking-widest pl-5">Trazabilidad de Acciones • Seguridad Maestra</p>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+        <div>
+            <h1 class="text-4xl font-black text-slate-900 tracking-tighter flex items-center gap-4">
+                <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg shadow-slate-900/20">
+                    <i class="ph ph-clock-counter-clockwise text-white text-2xl"></i>
+                </div>
+                Trazabilidad de Seguridad
+            </h1>
+            <p class="text-slate-500 mt-2 font-medium">Historial cronológico de cambios en permisos, accesos e identidad.</p>
         </div>
+        
         <div class="flex items-center gap-4">
-            <span class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200">
-                Total Registros: {{ $logs->total() }}
-            </span>
+            <div class="px-6 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Eventos Registrados</span>
+                <span class="text-xl font-black text-slate-900">{{ $logs->total() }} Actividades</span>
+            </div>
         </div>
     </div>
 
-    <!-- FILTERS -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <form action="{{ route('admin.access.audit') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Usuario</label>
-                <select name="user_id" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none transition-all">
-                    <option value="">Todos los usuarios</option>
-                    @foreach($users as $u)
-                        <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Evento</label>
-                <select name="event" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none transition-all">
-                    <option value="">Todos los eventos</option>
-                    <option value="created" {{ request('event') == 'created' ? 'selected' : '' }}>Creado</option>
-                    <option value="updated" {{ request('event') == 'updated' ? 'selected' : '' }}>Actualizado</option>
-                    <option value="deleted" {{ request('event') == 'deleted' ? 'selected' : '' }}>Eliminado</option>
-                    <option value="login" {{ request('event') == 'login' ? 'selected' : '' }}>Inicio Sesión</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Módulo/Modelo</label>
-                <input type="text" name="model" value="{{ request('model') }}" placeholder="Ej: User, Role..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none transition-all">
-            </div>
-            <div class="flex items-end gap-2">
-                <button type="submit" class="flex-1 bg-slate-900 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
-                    Filtrar
-                </button>
-                <a href="{{ route('admin.access.audit') }}" class="px-4 py-3 bg-slate-100 text-slate-400 rounded-xl hover:bg-slate-200 transition-all">
-                    <i class="ph ph-arrow-counter-clockwise"></i>
-                </a>
-            </div>
-        </form>
-    </div>
+    <!-- Timeline Wrapper -->
+    <div class="relative">
+        <!-- Vertical Line -->
+        <div class="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-slate-200 hidden lg:block"></div>
 
-    <!-- LOGS TABLE -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="bg-slate-50/50 border-b border-slate-200">
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fecha / Hora</th>
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Usuario</th>
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Evento</th>
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Modelo / ID</th>
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cambios</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse($logs as $log)
-                    <tr class="hover:bg-slate-50/50 transition-colors group">
-                        <td class="px-8 py-5">
-                            <div class="flex flex-col">
-                                <span class="text-xs font-black text-slate-900">{{ $log->created_at->format('d/m/Y') }}</span>
-                                <span class="text-[10px] font-bold text-slate-400">{{ $log->created_at->format('H:i:s') }}</span>
-                            </div>
-                        </td>
-                        <td class="px-8 py-5">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 border border-slate-200">
-                                    {{ substr($log->user->name ?? 'SYS', 0, 2) }}
-                                </div>
-                                <span class="text-xs font-bold text-slate-700">{{ $log->user->name ?? 'Sistema' }}</span>
-                            </div>
-                        </td>
-                        <td class="px-8 py-5">
-                            <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border {{ 
-                                match($log->event) {
-                                    'created' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
-                                    'updated' => 'bg-amber-50 text-amber-700 border-amber-100',
-                                    'deleted' => 'bg-rose-50 text-rose-700 border-rose-100',
-                                    'login' => 'bg-blue-50 text-blue-700 border-blue-100',
-                                    default => 'bg-slate-50 text-slate-700 border-slate-100'
-                                }
-                            }}">
-                                {{ $log->event }}
+        <div class="space-y-12 relative">
+            @forelse($logs as $log)
+            <div class="flex flex-col lg:flex-row items-center gap-8 group">
+                <!-- Date/Time (Left on Desktop) -->
+                <div class="lg:w-1/2 lg:text-right order-2 lg:order-1">
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{{ \Carbon\Carbon::parse($log->created_at)->format('d M, Y') }}</p>
+                    <p class="text-xl font-black text-slate-900">{{ \Carbon\Carbon::parse($log->created_at)->format('H:i:s') }}</p>
+                </div>
+
+                <!-- Status Orb -->
+                <div class="relative z-10 order-1 lg:order-2">
+                    <div class="w-12 h-12 rounded-full border-4 border-white shadow-xl flex items-center justify-center transition-all duration-500
+                        @if(str_contains($log->action, 'grant')) bg-emerald-500 text-white
+                        @elseif(str_contains($log->action, 'revoke')) bg-rose-500 text-white
+                        @elseif(str_contains($log->action, 'impersonate')) bg-amber-500 text-white
+                        @else bg-blue-500 text-white @endif">
+                        <i class="ph ph-{{ str_contains($log->action, 'impersonate') ? 'eye' : (str_contains($log->action, 'revoke') ? 'lock' : 'shield-check') }} text-xl"></i>
+                    </div>
+                </div>
+
+                <!-- Content (Right on Desktop) -->
+                <div class="lg:w-1/2 order-3">
+                    <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 group-hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
+                        
+                        <div class="flex items-start justify-between mb-4">
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
+                                @if(str_contains($log->action, 'grant')) bg-emerald-50 text-emerald-600
+                                @elseif(str_contains($log->action, 'revoke')) bg-rose-50 text-rose-600
+                                @else bg-slate-100 text-slate-500 @endif">
+                                {{ strtoupper(str_replace('_', ' ', $log->action)) }}
                             </span>
-                        </td>
-                        <td class="px-8 py-5">
-                            <div class="flex flex-col">
-                                <span class="text-[10px] font-black text-slate-900 uppercase tracking-tighter">{{ class_basename($log->model_type) }}</span>
-                                <span class="text-[9px] font-bold text-slate-400">ID: {{ $log->model_id }}</span>
+                        </div>
+
+                        <!-- Human Readable Logic -->
+                        <div class="space-y-3">
+                            <p class="text-sm font-medium text-slate-600 leading-relaxed">
+                                <span class="font-black text-slate-900">{{ $log->performer_name ?: 'Sistema' }}</span> 
+                                @if($log->action == 'grant_access')
+                                    otorgó acceso al módulo <span class="font-black text-slate-900">{{ $log->application_key }}</span> a
+                                @elseif($log->action == 'revoke_access')
+                                    revocó el acceso de <span class="font-black text-slate-900">{{ $log->application_key }}</span> a
+                                @elseif($log->action == 'impersonate_start')
+                                    inició una sesión de soporte (impersonación) como
+                                @else
+                                    realizó una acción sobre
+                                @endif
+                                <span class="font-black text-slate-900">{{ $log->target_name }}</span>.
+                            </p>
+                        </div>
+
+                        <!-- Technical Metadata -->
+                        <div class="mt-6 pt-6 border-t border-slate-50 flex items-center gap-6">
+                            <div class="flex items-center gap-2">
+                                <i class="ph ph-map-pin text-slate-400"></i>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{{ $log->ip_address }}</span>
                             </div>
-                        </td>
-                        <td class="px-8 py-5">
-                            <div class="max-w-xs overflow-hidden">
-                                <p class="text-[9px] font-medium text-slate-500 italic truncate" title="{{ json_encode($log->new_values) }}">
-                                    {{ is_array($log->new_values) ? json_encode($log->new_values) : $log->new_values }}
-                                </p>
+                            <div class="flex items-center gap-2 max-w-[150px] truncate" title="{{ $log->user_agent }}">
+                                <i class="ph ph-browser text-slate-400"></i>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{{ explode(' ', $log->user_agent)[0] }}</span>
                             </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="px-8 py-20 text-center">
-                            <div class="flex flex-col items-center opacity-40">
-                                <i class="ph ph-list-magnifying-glass text-4xl mb-4"></i>
-                                <p class="text-[10px] font-black uppercase tracking-widest">No se encontraron registros de auditoría</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="py-32 text-center">
+                <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="ph ph-ghost text-4xl text-slate-200"></i>
+                </div>
+                <h3 class="text-lg font-black text-slate-900">Historial Limpio</h3>
+                <p class="text-slate-400">Aún no se han registrado eventos de seguridad.</p>
+            </div>
+            @endforelse
         </div>
+
         @if($logs->hasPages())
-        <div class="px-8 py-6 bg-slate-50/50 border-t border-slate-200">
+        <div class="mt-12 flex justify-center">
             {{ $logs->links() }}
         </div>
         @endif

@@ -15,7 +15,8 @@ class SolicitudAfiliacion extends Model
     protected $fillable = [
         'codigo_solicitud', 'tipo_solicitud_id', 'departamento_id', 'solicitante_user_id', 'asignado_user_id',
         'afiliado_id', 'cedula', 'nombre_completo', 'telefono', 'correo', 'empresa',
-        'rnc_empresa', 'estado', 'prioridad', 'observacion_solicitante', 'observacion_interna',
+        'rnc_empresa', 'numero_resolucion', 'tipo_pension', 'institucion_pension',
+        'estado', 'prioridad', 'observacion_solicitante', 'observacion_interna',
         'motivo_rechazo', 'motivo_devolucion', 'sla_fecha_limite', 'pausado_at', 'sla_acumulado_segundos', 'fecha_asignacion', 'fecha_cierre'
     ];
 
@@ -70,7 +71,8 @@ class SolicitudAfiliacion extends Model
             'En revisión'=> 'bg-indigo-100 text-indigo-700',
             'Devuelta'   => 'bg-orange-100 text-orange-700',
             'Corregida'  => 'bg-cyan-100 text-cyan-700',
-            'Aprobada'   => 'bg-emerald-100 text-emerald-700',
+            'Aprobada'   => 'bg-teal-50 text-teal-700 border-teal-200', // Color más suave para indicar que no ha terminado
+            'Completada' => 'bg-emerald-100 text-emerald-700', // Este ahora es el verde de éxito final
             'Rechazada'  => 'bg-rose-100 text-rose-700',
             'Escalada'   => 'bg-purple-100 text-purple-700',
             'Cerrada'    => 'bg-slate-800 text-white',
@@ -79,9 +81,18 @@ class SolicitudAfiliacion extends Model
         };
     }
 
+    public function getStatusLabelAttribute()
+    {
+        return match($this->estado) {
+            'Aprobada' => 'Pendiente de Cierre',
+            'En revisión' => 'En Evaluación',
+            default => $this->estado,
+        };
+    }
+
     public function getPriorityColorAttribute()
     {
-        $isFinished = in_array($this->estado, ['Aprobada', 'Rechazada', 'Cerrada', 'Cancelada']);
+        $isFinished = in_array($this->estado, ['Completada', 'Rechazada', 'Cerrada', 'Cancelada']);
 
         return match($this->prioridad) {
             'Normal'  => 'bg-slate-50 text-slate-500 border-slate-200',
@@ -125,7 +136,7 @@ class SolicitudAfiliacion extends Model
     public function getSlaPercentageAttribute()
     {
         if (!$this->sla_fecha_limite) return 0;
-        if (in_array($this->estado, ['Aprobada', 'Rechazada', 'Cancelada', 'Cerrada'])) return 100;
+        if (in_array($this->estado, ['Completada', 'Rechazada', 'Cancelada', 'Cerrada'])) return 100;
 
         $totalSeconds = $this->created_at->diffInSeconds($this->sla_fecha_limite);
         if ($totalSeconds <= 0) return 100;

@@ -5,18 +5,33 @@
         function traspasosInbox() {
             return {
                 showModal: false,
-                selectedTraspaso: { id: null, nombre: '', fecha_efectivo: '', periodo_efectivo: '', cantidad_dependientes: 0 },
+                showVerifyModal: false,
+                selectedTraspaso: { id: null, nombre: '', cedula: '', fecha_efectivo: '', periodo_efectivo: '', cantidad_dependientes: 0, verificado: false, unipago_status: 'pendiente', unipago_observaciones: '' },
                 motivosDynamic: @json($motivosRechazo),
                 
                 openEdit(traspaso) {
                     this.selectedTraspaso = {
                         id: traspaso.id,
                         nombre: traspaso.nombre,
+                        cedula: traspaso.cedula || '',
                         fecha_efectivo: traspaso.fecha_efectivo_raw || '',
                         periodo_efectivo: traspaso.periodo_efectivo || '',
                         cantidad_dependientes: traspaso.cantidad_dependientes || 0
                     };
                     this.showModal = true;
+                },
+
+                openVerify(traspaso) {
+                    this.selectedTraspaso = {
+                        id: traspaso.id,
+                        nombre: traspaso.nombre,
+                        cedula: traspaso.cedula || '',
+                        cantidad_dependientes: traspaso.cantidad_dependientes || 0,
+                        verificado: traspaso.verificado || false,
+                        unipago_status: traspaso.unipago_status || 'pendiente',
+                        unipago_observaciones: traspaso.unipago_observaciones || ''
+                    };
+                    this.showVerifyModal = true;
                 },
 
                 async emitirCarnet(traspasoId) {
@@ -206,9 +221,9 @@
                     }
                 },
 
-                async markNoDependents(traspasoId) {
+                async saveVerification() {
                     try {
-                        const url = "{{ route('traspasos.enrich', ':id') }}".replace(':id', traspasoId);
+                        const url = "{{ route('traspasos.verificar', ':id') }}".replace(':id', this.selectedTraspaso.id);
                         const response = await fetch(url, {
                             method: 'PATCH',
                             headers: {
@@ -217,7 +232,10 @@
                                 'Accept': 'application/json'
                             },
                             body: JSON.stringify({
-                                cantidad_dependientes: 0
+                                cantidad_dependientes: this.selectedTraspaso.cantidad_dependientes,
+                                verificado: this.selectedTraspaso.verificado,
+                                unipago_status: this.selectedTraspaso.unipago_status,
+                                unipago_observaciones: this.selectedTraspaso.unipago_observaciones
                             })
                         });
                         
@@ -226,14 +244,14 @@
                         if (response.ok && data.success) {
                             await Swal.fire({
                                 title: '¡Actualizado!',
-                                text: 'Se han marcado 0 dependientes.',
+                                text: data.message,
                                 icon: 'success',
                                 confirmButtonColor: '#0f172a',
                                 customClass: { popup: 'rounded-[32px]' }
                             });
                             window.location.reload();
                         } else {
-                            throw new Error(data.message || 'Error al procesar la solicitud');
+                            throw new Error(data.message || 'Error al procesar la verificación');
                         }
                     } catch (error) {
                         Swal.fire({
@@ -245,6 +263,7 @@
                         });
                     }
                 },
+
 
                 // Lógica de búsqueda automática
                 handleAutoSearch(event) {
@@ -344,6 +363,12 @@
                 <option value="efectivas" {{ request('efectividad') == 'efectivas' ? 'selected' : '' }}>Solo Efectivas</option>
                 <option value="no_efectivas" {{ request('efectividad') == 'no_efectivas' ? 'selected' : '' }}>Pendientes</option>
             </select>
+
+            <select name="verificado" onchange="this.form.submit()" class="bg-slate-50 border-none rounded-2xl px-6 py-3.5 text-sm font-bold focus:ring-2 focus:ring-primary/20">
+                <option value="all">Estado Verificación</option>
+                <option value="si" {{ request('verificado') == 'si' ? 'selected' : '' }}>Verificados</option>
+                <option value="no" {{ request('verificado') == 'no' ? 'selected' : '' }}>No Verificados</option>
+            </select>
         </form>
     </div>
 
@@ -369,7 +394,9 @@
                         </td>
                         <td class="px-8 py-6">
                             <div class="flex flex-col">
-                                <span class="text-sm font-black text-slate-900 group-hover:text-primary transition-colors uppercase">{{ $traspaso->nombre_afiliado }}</span>
+                                <a href="{{ route('traspasos.edit', $traspaso->id) }}" class="text-sm font-black text-slate-900 hover:text-primary transition-colors uppercase decoration-primary/30 decoration-2 underline-offset-4">
+                                    {{ $traspaso->nombre_afiliado }}
+                                </a>
                                 <span class="text-[11px] font-bold text-slate-400">{{ $traspaso->cedula_afiliado }}</span>
                             </div>
                         </td>
@@ -410,13 +437,6 @@
                             @if(is_null($traspaso->cantidad_dependientes))
                                 <div class="flex flex-col items-center gap-2">
                                     <span class="text-[9px] font-black text-amber-600 uppercase tracking-[0.1em] bg-amber-100/50 px-2 py-1 rounded-md border border-amber-200">Pendiente</span>
-                                    @if(!$isClosed)
-                                    <button @click="markNoDependents({{ $traspaso->id }})" 
-                                            class="p-2 bg-white text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all border border-slate-200 shadow-sm group"
-                                            title="Confirmar: 0 Dependientes">
-                                        <i class="ph-bold ph-checks text-lg group-hover:scale-110 transition-transform"></i>
-                                    </button>
-                                    @endif
                                 </div>
                             @else
                                 <span class="inline-flex items-center justify-center w-10 h-10 rounded-2xl {{ $traspaso->cantidad_dependientes > 0 ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-slate-900 text-white shadow-lg shadow-slate-200' }} text-sm font-black transition-all hover:scale-105">
@@ -432,7 +452,62 @@
                                         {{ $traspaso->fecha_efectivo ? $traspaso->fecha_efectivo->format('d/m/Y') : 'Pendiente' }}
                                     </span>
                                 </div>
-                                <div class="flex items-center gap-2">
+
+                                <div class="flex flex-col border-l border-slate-100 pl-4">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Unipago / Auditoría:</span>
+                                    <div class="flex flex-col gap-1 mt-1">
+                                        @if($traspaso->verificado)
+                                            <span class="text-[10px] font-black text-emerald-600 uppercase flex items-center gap-1">
+                                                <i class="ph-fill ph-check-circle"></i> Verificado
+                                            </span>
+                                            <span class="text-[9px] text-slate-400 font-bold" title="Verificado por {{ $traspaso->verificadoPor->name ?? 'Sistema' }}">
+                                                Cerrado: {{ $traspaso->verificado_at->format('d/m/y') }}
+                                            </span>
+                                        @else
+                                            @php
+                                                $revisadoHoy = $traspaso->unipago_revisado_at && $traspaso->unipago_revisado_at->isToday();
+                                                $statusColors = [
+                                                    'pendiente' => 'slate',
+                                                    'en_revision' => 'amber',
+                                                    'rechazo_visto' => 'rose',
+                                                    'verificado' => 'emerald'
+                                                ];
+                                                $statusColor = $statusColors[$traspaso->unipago_status] ?? 'slate';
+                                            @endphp
+                                            
+                                            <div class="flex items-center gap-2">
+                                                <span class="px-2 py-0.5 rounded-md text-[8px] font-black uppercase bg-{{ $statusColor }}-100 text-{{ $statusColor }}-700 border border-{{ $statusColor }}-200">
+                                                    {{ str_replace('_', ' ', $traspaso->unipago_status) }}
+                                                </span>
+                                                @if($revisadoHoy)
+                                                    <span class="text-[9px] font-black text-blue-600 flex items-center gap-0.5">
+                                                        <i class="ph-fill ph-eye"></i> Visto hoy
+                                                    </span>
+                                                @endif
+                                            </div>
+
+                                            <button @click="openVerify({
+                                                id: {{ $traspaso->id }},
+                                                nombre: '{{ addslashes($traspaso->nombre_afiliado) }}',
+                                                cedula: '{{ $traspaso->cedula_afiliado }}',
+                                                cantidad_dependientes: {{ $traspaso->cantidad_dependientes ?? 0 }},
+                                                verificado: false,
+                                                unipago_status: '{{ $traspaso->unipago_status }}',
+                                                unipago_observaciones: '{{ addslashes($traspaso->unipago_observaciones) }}'
+                                            })" class="mt-1 px-3 py-1 {{ $revisadoHoy ? 'bg-slate-50 text-slate-400 border-slate-100' : 'bg-amber-50 text-amber-600 border-amber-100 shadow-sm' }} border rounded-lg text-[9px] font-black uppercase hover:bg-amber-100 transition-all flex items-center gap-1 w-fit">
+                                                <i class="ph-bold ph-magnifying-glass"></i> {{ $revisadoHoy ? 'Validar de nuevo' : 'Validar' }}
+                                            </button>
+
+                                            @if($traspaso->unipago_revisado_at)
+                                                <span class="text-[8px] text-slate-400 font-bold mt-1">
+                                                    Última vez: {{ $traspaso->unipago_revisado_at->diffForHumans() }}
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-2 border-l border-slate-100 pl-4">
                                     @if($traspaso->fecha_efectivo)
                                         @if($traspaso->es_emitido)
                                             <span class="px-2 py-1 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-md flex items-center gap-1 border border-blue-100">
@@ -445,17 +520,9 @@
                                         @endif
                                     @endif
                                     
-                                    @if(!$isClosed)
-                                    <button @click="openEdit({
-                                        id: {{ $traspaso->id }},
-                                        nombre: '{{ addslashes($traspaso->nombre_afiliado) }}',
-                                        fecha_efectivo_raw: '{{ $traspaso->fecha_efectivo ? $traspaso->fecha_efectivo->format('Y-m-d') : '' }}',
-                                        periodo_efectivo: '{{ $traspaso->periodo_efectivo }}',
-                                        cantidad_dependientes: {{ $traspaso->cantidad_dependientes ?? 0 }}
-                                    })" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Editar">
+                                    <a href="{{ route('traspasos.edit', $traspaso->id) }}" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Ver Detalle y Editar">
                                         <i class="ph ph-pencil-simple-line text-lg"></i>
-                                    </button>
-                                    @endif
+                                    </a>
 
                                     <button @click="fetchHistory({{ $traspaso->id }}, '{{ addslashes($traspaso->nombre_afiliado) }}', '{{ $traspaso->cedula_afiliado }}')" class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Ver Historial">
                                         <i class="ph ph-clock-counter-clockwise text-lg"></i>
@@ -523,7 +590,96 @@
             </div>
         </div>
     </div>
-</div>
+
+    <!-- MODAL VERIFICACIÓN UNIPAGO (AUDITORÍA OPERATIVA) -->
+    <div x-show="showVerifyModal" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-cloak>
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md" @click="showVerifyModal = false"></div>
+        <div class="bg-white w-full max-w-xl rounded-[40px] shadow-2xl relative z-10 overflow-hidden">
+            <!-- Header con Estilo Premium -->
+            <div class="p-8 bg-slate-900 text-white relative">
+                <div class="absolute top-0 right-0 p-8">
+                    <button @click="showVerifyModal = false" class="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all">
+                        <i class="ph ph-x text-xl font-bold"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                        <i class="ph-fill ph-shield-check text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-black uppercase tracking-[0.2em] text-amber-400">Auditoría Unipago</h3>
+                        <p class="text-xl font-black tracking-tighter uppercase" x-text="selectedTraspaso.nombre"></p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="px-4 py-2 bg-white/5 rounded-xl border border-white/10">
+                        <span class="text-[9px] font-black text-slate-400 uppercase block mb-1">Cédula Afiliado</span>
+                        <span class="text-xs font-bold font-mono" x-text="selectedTraspaso.cedula"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 space-y-6">
+                <!-- Estado en Unipago -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Estado en Portal</label>
+                        <select x-model="selectedTraspaso.unipago_status" class="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-amber-500/20">
+                            <option value="pendiente">Pendiente de Revisión</option>
+                            <option value="en_revision">En Proceso / Visto hoy</option>
+                            <option value="rechazo_visto">Rechazo Detectado</option>
+                            <option value="verificado">Efectivo / OK</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Dependientes Hallados</label>
+                        <div class="flex items-center gap-4">
+                            <div class="relative flex-1">
+                                <i class="ph ph-users absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="number" x-model="selectedTraspaso.cantidad_dependientes" min="0" class="w-full bg-slate-50 border-none rounded-2xl pl-12 pr-4 py-4 text-sm font-bold focus:ring-2 focus:ring-amber-500/20">
+                            </div>
+                            <button @click="selectedTraspaso.cantidad_dependientes++" class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center font-black text-slate-600">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Observaciones de Auditoría</label>
+                    <textarea x-model="selectedTraspaso.unipago_observaciones" placeholder="Escriba detalles relevantes (ej: Falta firma, rechazo por cédula...)" class="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 h-24"></textarea>
+                </div>
+
+                <!-- Toggle de Verificación Final -->
+                <div class="bg-amber-50 p-6 rounded-3xl border border-amber-100 flex items-center justify-between">
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                            <i class="ph-fill ph-flag-checkered text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-black text-amber-900 uppercase">¿Finalizar Verificación?</p>
+                            <p class="text-[10px] font-medium text-amber-700">Marque si el proceso en Unipago está concluido.</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" x-model="selectedTraspaso.verificado" class="sr-only peer">
+                        <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
+                <!-- Footer Acciones -->
+                <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                    <button @click="showVerifyModal = false" class="bg-slate-100 text-slate-600 rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
+                    <button @click="saveVerification()" class="bg-slate-900 text-white rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all">Guardar Seguimiento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
     <!-- PANEL LATERAL: HISTORIAL / TIMELINE -->
     <div x-show="showHistory" 
          class="fixed inset-0 z-[100] overflow-hidden" 
@@ -618,4 +774,5 @@
             </div>
         </div>
     </div>
+</div>
 @endsection

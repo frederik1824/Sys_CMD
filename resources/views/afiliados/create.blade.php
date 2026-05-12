@@ -327,5 +327,24 @@
                 <button type="submit" name="action" value="save" class="px-6 py-3 bg-blue-700 text-white rounded-xl font-bold hover:bg-blue-800 transition-colors shadow-sm">Guardar y Volver</button>
             </div>
         </form>
+
+        <!-- Loading Overlay -->
+        <div id="loading_overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center hidden animate-in fade-in duration-300">
+            <div class="bg-white p-10 rounded-[3rem] shadow-2xl flex flex-col items-center max-w-xs text-center border border-white/20">
+                <div class="relative w-24 h-24 mb-8">
+                    <div class="absolute inset-0 rounded-full border-8 border-slate-100"></div>
+                    <div class="absolute inset-0 rounded-full border-8 border-blue-600 border-t-transparent animate-spin"></div>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 mb-2">Procesando Registro</h3>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Guardando datos en la red local y preparando sincronización...</p>
+            </div>
+        </div>
+
+        <script>
+            document.querySelector('form').addEventListener('submit', function() {
+                const overlay = document.getElementById('loading_overlay');
+                overlay.classList.remove('hidden');
+            });
+        </script>
     </div>
 @endsection

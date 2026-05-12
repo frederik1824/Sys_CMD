@@ -6,8 +6,8 @@
                 <h1 class="text-2xl font-bold tracking-tight text-on-surface">Editar Afiliado</h1>
                 <p class="text-on-surface-variant text-sm mt-1">Actualizar información de {{ $afiliado->nombre_completo }}</p>
             </div>
-            <a href="{{ route('carnetizacion.afiliados.index') }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-semibold">
-                <span class="material-symbols-outlined text-[1.25rem]">arrow_back</span> Volver
+            <a href="{{ $returnUrl }}" class="text-slate-500 hover:text-primary transition-colors flex items-center gap-1 text-sm font-semibold">
+                <span class="material-symbols-outlined text-[1.25rem]">arrow_back</span> Volver a {{ $returnLabel }}
             </a>
         </div>
 
@@ -309,9 +309,28 @@
             </div>
 
             <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-                <a href="{{ route('carnetizacion.afiliados.index') }}" class="px-6 py-3 hover:bg-slate-100 rounded-xl text-slate-600 font-semibold transition-colors">Cancelar</a>
-                <button type="submit" class="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-colors shadow-sm">Guardar Cambios</button>
+                <a href="{{ $returnUrl }}" class="px-6 py-3 hover:bg-slate-100 rounded-xl text-slate-600 font-semibold transition-colors">Cancelar</a>
+                <button type="submit" class="px-10 py-3 bg-blue-700 text-white rounded-xl font-bold hover:bg-blue-800 transition-all shadow-lg shadow-blue-500/20 active:scale-95">Guardar Cambios</button>
             </div>
         </form>
+
+        <!-- Loading Overlay -->
+        <div id="loading_overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center hidden animate-in fade-in duration-300">
+            <div class="bg-white p-10 rounded-[3rem] shadow-2xl flex flex-col items-center max-w-xs text-center border border-white/20">
+                <div class="relative w-24 h-24 mb-8">
+                    <div class="absolute inset-0 rounded-full border-8 border-slate-100"></div>
+                    <div class="absolute inset-0 rounded-full border-8 border-blue-600 border-t-transparent animate-spin"></div>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 mb-2">Actualizando Registro</h3>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Persistiendo cambios en la red local y encolando sincronización...</p>
+            </div>
+        </div>
+
+        <script>
+            document.querySelector('form').addEventListener('submit', function() {
+                const overlay = document.getElementById('loading_overlay');
+                overlay.classList.remove('hidden');
+            });
+        </script>
     </div>
 @endsection

@@ -4,158 +4,260 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login - SysCarnet</title>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <title>CMD Operaciones | Health ERP</title>
+    
+    <!-- Fuentes Premium -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Iconos Phosphor -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'primary': '#00346f',
-                        'secondary': '#0060ac',
+                        'cmd-blue': '#00346f',
+                        'cmd-yellow': '#ffcc00',
+                        'cmd-indigo': '#4f46e5',
                     },
                     fontFamily: {
-                        'headline': ['Manrope'],
-                        'body': ['Inter'],
+                        'outfit': ['Outfit', 'sans-serif'],
+                        'inter': ['Inter', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
+
     <style>
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+        [x-cloak] { display: none !important; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            overflow: hidden;
         }
-        .bg-mesh {
-            background-color: #00346f;
-            background-image: 
-                radial-gradient(at 0% 0%, hsla(212,100%,35%,1) 0, transparent 50%), 
-                radial-gradient(at 50% 0%, hsla(206,100%,45%,1) 0, transparent 50%), 
-                radial-gradient(at 100% 0%, hsla(212,100%,25%,1) 0, transparent 50%);
+
+        .bg-layer-1 {
+            background: radial-gradient(circle at top right, #ffcc00, transparent 40%),
+                        radial-gradient(circle at bottom left, #00346f, transparent 40%);
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 750px;
+            background: #ffffff;
+            border-radius: 60px;
+            box-shadow: 0 40px 100px -20px rgba(0,0,0,0.4);
+            overflow: hidden;
+            display: flex;
+        }
+
+        .visual-side {
+            flex: 1;
+            background: linear-gradient(135deg, #4f46e5 0%, #00346f 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 60px;
+            color: white;
+        }
+
+        .form-side {
+            width: 550px;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #ffffff;
+            border-radius: 60px 0 0 60px;
+            margin-left: -60px;
+            z-index: 10;
+            box-shadow: -20px 0 50px rgba(0,0,0,0.05);
+        }
+
+        .doctor-mask {
+            width: 320px;
+            height: 320px;
+            border-radius: 100px;
+            background-image: url('/brain/7cadaca8-14ed-47fb-90d4-7f9783fe22bf/cmd_medical_professional_1778179543777.png');
+            background-size: cover;
+            background-position: center;
+            border: 15px solid rgba(255, 255, 255, 0.1);
+            margin: auto;
+            position: relative;
+        }
+
+        .input-premium {
+            background: #f8fafc;
+            border: 2px solid #f1f5f9;
+            border-radius: 30px;
+            padding: 18px 24px 18px 56px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #0f172a;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-premium:focus {
+            background: #ffffff;
+            border-color: #ffcc00;
+            box-shadow: 0 10px 20px -10px rgba(255, 204, 0, 0.3);
+            transform: translateY(-1px);
+            outline: none;
+            ring: none;
+        }
+
+        .btn-action {
+            background: #4f46e5;
+            border-radius: 30px;
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-action:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(79, 70, 229, 0.5);
+        }
+
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-up {
+            animation: slide-up 0.8s ease-out forwards;
         }
     </style>
 </head>
-<body class="font-body bg-slate-50 min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-5xl w-full grid lg:grid-cols-2 bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white">
+<body class="min-h-screen flex items-center justify-center bg-layer-1 p-6">
+    
+    <!-- Background Decor -->
+    <div class="absolute inset-0 z-0 overflow-hidden">
+        <div class="absolute -top-24 -left-24 w-96 h-96 bg-cmd-coral/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -right-24 w-[600px] h-[600px] bg-cmd-blue/20 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Main Login Card -->
+    <main class="main-container relative z-10 animate-up">
         
-        <!-- Left Side: Visual/Branding -->
-        <div class="hidden lg:flex bg-mesh p-12 flex-col justify-between text-white relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-            
-            <div class="relative z-10">
-                <div class="flex items-center gap-3 mb-10">
-                    <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-                        <span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">shield_person</span>
+        <!-- Left: Visual Section -->
+        <section class="visual-side">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/30">
+                    <i class="ph-fill ph-stethoscope text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-black font-outfit uppercase tracking-widest">CMD Operaciones</h1>
+            </div>
+
+            <div class="relative">
+                <!-- Abstract Elements (Circles from ref) -->
+                <div class="absolute -top-10 -left-10 w-24 h-24 border-8 border-cmd-yellow/30 rounded-full"></div>
+                <div class="absolute -bottom-6 -right-6 w-16 h-16 bg-white/20 rounded-full backdrop-blur-sm"></div>
+                
+                <div class="doctor-mask shadow-2xl"></div>
+                
+                <div class="mt-12 text-center space-y-4">
+                    <h2 class="text-4xl font-extrabold font-outfit">Compromiso con la Salud</h2>
+                    <p class="text-white/60 text-sm font-medium max-w-[300px] mx-auto leading-relaxed">
+                        Gestionando la eficiencia operativa para ARS CMD y sus afiliados.
+                    </p>
+                </div>
+            </div>
+
+            <div class="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">
+                © {{ date('Y') }} ARS CMD • TECNOLOGÍA
+            </div>
+        </section>
+
+        <!-- Right: Form Section -->
+        <section class="form-side">
+            <div class="mb-12 text-center">
+                <img src="/img/Logo.png" alt="ARS CMD Logo" class="h-20 mx-auto mb-10">
+                <div class="border-b-2 border-slate-50 pb-6">
+                    <h3 class="text-2xl font-black text-cmd-blue uppercase tracking-tighter">Acceso Central</h3>
+                    <p class="text-sm font-medium text-slate-400">Identifícate para gestionar operaciones</p>
+                </div>
+            </div>
+
+            @if ($errors->any())
+                <div class="mb-8 p-4 bg-red-50 border-l-4 border-red-500 rounded-2xl flex items-center gap-4 animate-[bounce_2s_infinite]">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="ph-fill ph-warning-octagon text-red-600 text-xl"></i>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-black font-headline tracking-tighter">SysCarnet</h1>
-                        <p class="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-blue-200">ID Management System</p>
+                        <p class="text-[10px] font-black text-red-600 uppercase tracking-widest leading-none mb-1">Credenciales Inválidas</p>
+                        <p class="text-[11px] font-bold text-red-400 leading-tight">
+                            {{ $errors->first() }}
+                        </p>
                     </div>
-                </div>
-                
-                <h2 class="text-5xl font-extrabold font-headline leading-[1.1] mb-6">
-                    Gestiona la <span class="text-blue-300">identidad</span> de tu organización.
-                </h2>
-                <p class="text-blue-100 text-lg font-medium leading-relaxed max-w-md">
-                    Accede a la plataforma líder en carnetización y control de afiliados para ARS CMD y empresas aliadas.
-                </p>
-            </div>
-
-            <div class="relative z-10 pt-10 border-t border-white/10">
-                <div class="flex items-center gap-4">
-                    <div class="flex -space-x-3">
-                        <div class="w-10 h-10 rounded-full border-2 border-primary bg-blue-400"></div>
-                        <div class="w-10 h-10 rounded-full border-2 border-primary bg-blue-500"></div>
-                        <div class="w-10 h-10 rounded-full border-2 border-primary bg-blue-600"></div>
-                    </div>
-                    <p class="text-sm font-bold text-blue-100">+5,000 Afiliados procesados hoy</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Side: Login Form -->
-        <div class="p-8 lg:p-16 flex flex-col justify-center bg-white">
-            <div class="mb-10 lg:hidden flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary text-3xl">shield_person</span>
-                <span class="text-xl font-black text-primary font-headline">SysCarnet</span>
-            </div>
-
-            <div class="mb-10">
-                <h3 class="text-3xl font-black text-slate-800 font-headline mb-2">Bienvenido de nuevo</h3>
-                <p class="text-slate-500 font-medium italic">Ingresa tus credenciales para continuar</p>
-            </div>
-
-            <!-- Session Status -->
-            @if(session('status'))
-                <div class="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-700 text-sm font-bold flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg">check_circle</span>
-                    {{ session('status') }}
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-6">
+            <form method="POST" action="{{ route('login') }}" class="space-y-8">
                 @csrf
 
-                <!-- Email Address -->
                 <div class="space-y-2">
-                    <label for="email" class="text-xs font-black uppercase tracking-widest text-slate-400 ml-4">Correo Electrónico</label>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">alternate_email</span>
-                        <input id="email" type="email" name="email" :value="old('email')" required autofocus 
-                            class="w-full bg-slate-50 border-none rounded-2xl pl-12 pr-4 py-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary/10 transition-all outline-none" 
-                            placeholder="ejemplo@arscmd.com">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-2">Usuario Corporativo</label>
+                    <div class="relative group">
+                        <i class="ph-bold ph-user absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-cmd-yellow text-xl transition-colors"></i>
+                        <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
+                            class="w-full input-premium @error('email') !border-red-300 !bg-red-50 @enderror"
+                            placeholder="ej. juan.perez@arscmd.com.do">
                     </div>
-                    @if($errors->get('email'))
-                        <p class="text-[0.7rem] text-rose-500 font-bold mt-1 ml-4 italic">{{ $errors->first('email') }}</p>
-                    @endif
                 </div>
 
-                <!-- Password -->
                 <div class="space-y-2">
-                    <div class="flex justify-between items-center ml-4 mr-4">
-                        <label for="password" class="text-xs font-black uppercase tracking-widest text-slate-400">Contraseña</label>
+                    <div class="flex justify-between items-center px-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Contraseña</label>
                         @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}" class="text-[0.65rem] font-bold text-primary hover:underline">¿Olvidaste tu contraseña?</a>
+                            <a href="{{ route('password.request') }}" class="text-[9px] font-bold text-cmd-yellow uppercase tracking-tighter hover:underline">Recuperar</a>
                         @endif
                     </div>
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock_open</span>
-                        <input id="password" type="password" name="password" required 
-                            class="w-full bg-slate-50 border-none rounded-2xl pl-12 pr-4 py-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary/10 transition-all outline-none" 
-                            placeholder="••••••••">
+                    <div class="relative group">
+                        <i class="ph-bold ph-lock-key absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-cmd-yellow text-xl transition-colors"></i>
+                        <input id="password" type="password" name="password" required
+                            class="w-full input-premium @error('email') !border-red-300 !bg-red-50 @enderror"
+                            placeholder="••••••••••••">
                     </div>
-                    @if($errors->get('password'))
-                        <p class="text-[0.7rem] text-rose-500 font-bold mt-1 ml-4 italic">{{ $errors->first('password') }}</p>
-                    @endif
                 </div>
 
-                <!-- Remember Me -->
-                <div class="flex items-center ml-4">
+                <div class="flex items-center">
                     <label class="flex items-center cursor-pointer group">
-                        <input type="checkbox" name="remember" class="w-5 h-5 rounded-lg border-none bg-slate-100 text-primary focus:ring-0 transition-all">
-                        <span class="ml-3 text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">Recordar mi sesión</span>
+                        <input type="checkbox" name="remember" class="w-5 h-5 rounded-lg border-2 border-slate-100 text-cmd-indigo focus:ring-0">
+                        <span class="ml-3 text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-slate-800 transition-colors">Recordar mi sesión</span>
                     </label>
                 </div>
 
-                <!-- Submit Button -->
-                <button type="submit" class="w-full bg-primary hover:bg-slate-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-3 active:scale-[0.98]">
-                    Iniciar Sesión
-                    <span class="material-symbols-outlined text-xl">login</span>
+                <button type="submit" class="w-full btn-action text-white font-black py-5 text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 group">
+                    <span>Entrar al Sistema</span>
+                    <i class="ph-bold ph-arrow-right text-lg group-hover:translate-x-1 transition-transform"></i>
                 </button>
             </form>
 
-            <div class="mt-12 text-center">
-                <p class="text-[0.7rem] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                    © {{ date('Y') }} ARS CMD - Departamento de TI<br>
-                    <span class="text-slate-300">v2.1.0 - Sistema de Carnetización Masiva</span>
-                </p>
+            <div class="mt-12 flex justify-between items-center">
+                <div class="flex gap-4">
+                    <i class="ph ph-facebook-logo text-slate-200 hover:text-cmd-yellow cursor-pointer text-xl transition-colors"></i>
+                    <i class="ph ph-instagram-logo text-slate-200 hover:text-cmd-yellow cursor-pointer text-xl transition-colors"></i>
+                    <i class="ph ph-linkedin-logo text-slate-200 hover:text-cmd-yellow cursor-pointer text-xl transition-colors"></i>
+                </div>
+                <div class="text-[9px] font-black text-slate-200 uppercase tracking-tighter">
+                    v5.0 • SIG • ARS CMD
+                </div>
             </div>
-        </div>
+        </section>
+    </main>
+
+    <!-- Footer Decoration -->
+    <div class="absolute bottom-10 left-10 text-white/10">
+        <i class="ph ph-heart-beat text-9xl"></i>
     </div>
 </body>
 </html>

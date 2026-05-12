@@ -23,13 +23,32 @@ class SolicitudController extends Controller
             ->orderBy('created_at', 'desc');
 
         // Aislamiento por Departamento / Rol
-        if ($user->hasRole('Admin')) {
+        if ($user->hasRole(['Admin', 'Super-Admin'])) {
             // El admin ve todo
-        } elseif ($user->departamento && in_array($user->departamento->codigo, ['AFIL', 'AUTOR', 'AUDIT'])) {
-            // Analistas operativos ven lo que les llega a su área
+        } elseif ($user->hasRole(['Analista de Afiliación', 'Supervisor de Afiliación'])) {
+            // Bandeja de Departamento Completa: Ve todo lo de Afiliación y todo lo generado por Servicio al Cliente
+            $depAfiliacion = \App\Models\Departamento::where('codigo', 'AFIL')->first();
+            $depSC = \App\Models\Departamento::where('codigo', 'SC')->first();
+            
+            $query->where(function($q) use ($depAfiliacion, $depSC) {
+                // 1. Solicitudes dirigidas al departamento de Afiliación
+                if ($depAfiliacion) {
+                    $q->where('departamento_id', $depAfiliacion->id);
+                }
+                // 2. Solicitudes generadas por cualquier usuario de Servicio al Cliente
+                if ($depSC) {
+                    $q->orWhereHas('solicitante', function($sq) use ($depSC) {
+                        $sq->where('departamento_id', $depSC->id);
+                    });
+                }
+            });
+            // NOTA: Se ha eliminado cualquier filtro por asignado_user_id para este rol, 
+            // permitiendo la visibilidad total solicitada.
+        } elseif ($user->departamento && in_array($user->departamento->codigo, ['AUTOR', 'AUDIT'])) {
+            // Otros departamentos operativos ven lo que les llega a su área
             $query->where('departamento_id', $user->departamento_id);
-        } elseif ($user->departamento && str_contains($user->departamento->nombre, 'Servicio al Cliente')) {
-            // Si es de Servicio al Cliente, ve lo de su equipo (si es supervisor) o solo lo suyo
+        } elseif ($user->departamento && ($user->departamento->codigo === 'SC' || str_contains($user->departamento->nombre, 'Servicio al Cliente'))) {
+            // Si es de Servicio al Cliente, el supervisor ve todo el departamento (Representantes)
             if ($user->hasRole(['Supervisor de Servicio al Cliente'])) {
                 $query->whereHas('solicitante', function($q) use ($user) {
                     $q->where('departamento_id', $user->departamento_id);
@@ -65,10 +84,24 @@ class SolicitudController extends Controller
         
         // Stats filtrados por el mismo criterio de visibilidad
         $statsQuery = SolicitudAfiliacion::query();
-        if (!$user->hasRole('Admin')) {
-            if ($user->departamento && in_array($user->departamento->codigo, ['AFIL', 'AUTOR', 'AUDIT'])) {
+        if (!$user->hasRole(['Admin', 'Super-Admin'])) {
+            if ($user->hasRole(['Analista de Afiliación', 'Supervisor de Afiliación'])) {
+                $depAfiliacion = \App\Models\Departamento::where('codigo', 'AFIL')->first();
+                $depSC = \App\Models\Departamento::where('codigo', 'SC')->first();
+                
+                $statsQuery->where(function($q) use ($depAfiliacion, $depSC) {
+                    if ($depAfiliacion) {
+                        $q->where('departamento_id', $depAfiliacion->id);
+                    }
+                    if ($depSC) {
+                        $q->orWhereHas('solicitante', function($sq) use ($depSC) {
+                            $sq->where('departamento_id', $depSC->id);
+                        });
+                    }
+                });
+            } elseif ($user->departamento && in_array($user->departamento->codigo, ['AUTOR', 'AUDIT'])) {
                 $statsQuery->where('departamento_id', $user->departamento_id);
-            } elseif ($user->departamento && str_contains($user->departamento->nombre, 'Servicio al Cliente')) {
+            } elseif ($user->departamento && ($user->departamento->codigo === 'SC' || str_contains($user->departamento->nombre, 'Servicio al Cliente'))) {
                 if ($user->hasRole(['Supervisor de Servicio al Cliente'])) {
                     $statsQuery->whereHas('solicitante', function($q) use ($user) {
                         $q->where('departamento_id', $user->departamento_id);
@@ -86,6 +119,7 @@ class SolicitudController extends Controller
             'en_revision' => (clone $statsQuery)->where('estado', 'En revisión')->count(),
             'aprobadas' => (clone $statsQuery)->where('estado', 'Aprobada')->count(),
             'devueltas' => (clone $statsQuery)->where('estado', 'Devuelta')->count(),
+            'completadas' => (clone $statsQuery)->where('estado', 'Completada')->count(),
         ];
 
         $usuarios = User::role(['Analista de Afiliación', 'Supervisor de Afiliación', 'Admin'])->get();
@@ -156,7 +190,10 @@ class SolicitudController extends Controller
             'cedula' => 'required',
             'nombre_completo' => 'required',
             'prioridad' => 'required',
-            'expediente_pdf' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:20480', // 20MB
+            'expediente_pdf' => 'nullable|array',
+            'expediente_pdf.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png|max:20480',
+            'expediente_doc' => 'nullable|array',
+            'expediente_doc.*.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png|max:20480',
         ]);
 
         try {
@@ -188,25 +225,51 @@ class SolicitudController extends Controller
                     'correo' => $request->correo,
                     'empresa' => $request->empresa,
                     'rnc_empresa' => $request->rnc_empresa,
+                    'numero_resolucion' => $request->numero_resolucion,
+                    'tipo_pension' => $request->tipo_pension,
+                    'institucion_pension' => $request->institucion_pension,
                     'prioridad' => $request->prioridad,
                     'observacion_solicitante' => $request->observacion_solicitante,
                     'estado' => $request->save_as_draft ? 'Borrador' : 'Pendiente',
                     'sla_fecha_limite' => now()->addHours($tipo->sla_horas),
                 ]);
 
-                // Procesar Expediente PDF Único
+                // Procesar Expedientes Granulares (Vinculados a Requisitos)
+                if ($request->hasFile('expediente_doc')) {
+                    foreach ($request->file('expediente_doc') as $reqId => $files) {
+                        foreach ($files as $file) {
+                            $path = $file->store('solicitudes/' . $solicitud->id, 'public');
+                            
+                            // Si el reqId es 'cedula', podemos buscar un requisito que se llame así o dejarlo null con un flag
+                            $documentoRequeridoId = is_numeric($reqId) ? $reqId : null;
+                            
+                            DocumentoSolicitudAfiliacion::create([
+                                'solicitud_id' => $solicitud->id,
+                                'documento_requerido_id' => $documentoRequeridoId,
+                                'archivo_path' => $path,
+                                'nombre_original' => $file->getClientOriginalName(),
+                                'mime_type' => $file->getMimeType(),
+                                'uploaded_by' => auth()->id(),
+                                'es_identificacion' => ($reqId === 'cedula'), // Flag opcional si existe en la tabla
+                            ]);
+                        }
+                    }
+                }
+
+                // Procesar Expedientes Generales
                 if ($request->hasFile('expediente_pdf')) {
-                    $file = $request->file('expediente_pdf');
-                    $path = $file->store('solicitudes/' . $solicitud->id, 'public');
-                    
-                    DocumentoSolicitudAfiliacion::create([
-                        'solicitud_id' => $solicitud->id,
-                        'documento_requerido_id' => null, // No vinculado a un requisito específico
-                        'archivo_path' => $path,
-                        'nombre_original' => $file->getClientOriginalName(),
-                        'mime_type' => $file->getMimeType(),
-                        'uploaded_by' => auth()->id(),
-                    ]);
+                    foreach ($request->file('expediente_pdf') as $file) {
+                        $path = $file->store('solicitudes/' . $solicitud->id, 'public');
+                        
+                        DocumentoSolicitudAfiliacion::create([
+                            'solicitud_id' => $solicitud->id,
+                            'documento_requerido_id' => null,
+                            'archivo_path' => $path,
+                            'nombre_original' => $file->getClientOriginalName(),
+                            'mime_type' => $file->getMimeType(),
+                            'uploaded_by' => auth()->id(),
+                        ]);
+                    }
                 }
 
                 // Historial
@@ -301,23 +364,48 @@ class SolicitudController extends Controller
                     'correo' => $request->correo,
                     'empresa' => $request->empresa,
                     'rnc_empresa' => $request->rnc_empresa,
+                    'numero_resolucion' => $request->numero_resolucion,
+                    'tipo_pension' => $request->tipo_pension,
+                    'institucion_pension' => $request->institucion_pension,
                     'prioridad' => $nuevaPrioridad,
                     'observacion_solicitante' => $request->observacion_solicitante,
                     'estado' => $nuevoEstado,
                 ]);
 
+                // Procesar Expedientes Granulares
+                if ($request->hasFile('expediente_doc')) {
+                    foreach ($request->file('expediente_doc') as $reqId => $files) {
+                        foreach ($files as $file) {
+                            $path = $file->store('solicitudes/' . $solicitud->id, 'public');
+                            $documentoRequeridoId = is_numeric($reqId) ? $reqId : null;
+                            
+                            DocumentoSolicitudAfiliacion::create([
+                                'solicitud_id' => $solicitud->id,
+                                'documento_requerido_id' => $documentoRequeridoId,
+                                'archivo_path' => $path,
+                                'nombre_original' => $file->getClientOriginalName(),
+                                'mime_type' => $file->getMimeType(),
+                                'uploaded_by' => auth()->id(),
+                                'es_identificacion' => ($reqId === 'cedula'),
+                            ]);
+                        }
+                    }
+                }
+
+                // Procesar Múltiples Expedientes / Evidencias en Actualización (Generales)
                 if ($request->hasFile('expediente_pdf')) {
-                    $file = $request->file('expediente_pdf');
-                    $path = $file->store('solicitudes/' . $solicitud->id, 'public');
-                    
-                    DocumentoSolicitudAfiliacion::create([
-                        'solicitud_id' => $solicitud->id,
-                        'documento_requerido_id' => null,
-                        'archivo_path' => $path,
-                        'nombre_original' => $file->getClientOriginalName(),
-                        'mime_type' => $file->getMimeType(),
-                        'uploaded_by' => auth()->id(),
-                    ]);
+                    foreach ($request->file('expediente_pdf') as $file) {
+                        $path = $file->store('solicitudes/' . $solicitud->id, 'public');
+                        
+                        DocumentoSolicitudAfiliacion::create([
+                            'solicitud_id' => $solicitud->id,
+                            'documento_requerido_id' => null,
+                            'archivo_path' => $path,
+                            'nombre_original' => $file->getClientOriginalName(),
+                            'mime_type' => $file->getMimeType(),
+                            'uploaded_by' => auth()->id(),
+                        ]);
+                    }
                 }
 
                 // Historial con lógica de Fast Track
@@ -386,18 +474,35 @@ class SolicitudController extends Controller
     {
         $solicitud->update([
             'estado' => 'Aprobada',
+        ]);
+
+        HistorialSolicitudAfiliacion::create([
+            'solicitud_id' => $solicitud->id,
+            'user_id' => auth()->id(),
+            'accion' => 'Aprobación Técnica (Pendiente Cierre)',
+            'estado_anterior' => 'En revisión',
+            'estado_nuevo' => 'Aprobada',
+        ]);
+
+        return back()->with('success', 'Solicitud aprobada técnicamente. Queda pendiente de cierre definitivo.');
+    }
+
+    public function complete(SolicitudAfiliacion $solicitud)
+    {
+        $solicitud->update([
+            'estado' => 'Completada',
             'fecha_cierre' => now(),
         ]);
 
         HistorialSolicitudAfiliacion::create([
             'solicitud_id' => $solicitud->id,
             'user_id' => auth()->id(),
-            'accion' => 'Aprobación final del trámite',
-            'estado_anterior' => 'En revisión',
-            'estado_nuevo' => 'Aprobada',
+            'accion' => 'Cierre Definitivo del Trámite',
+            'estado_anterior' => 'Aprobada',
+            'estado_nuevo' => 'Completada',
         ]);
 
-        return back()->with('success', 'Solicitud aprobada correctamente.');
+        return back()->with('success', 'Trámite cerrado y completado definitivamente.');
     }
 
     public function reject(Request $request, SolicitudAfiliacion $solicitud)
@@ -493,9 +598,17 @@ class SolicitudController extends Controller
         $user = auth()->user();
         $statsQuery = SolicitudAfiliacion::query();
         
-        if (!$user->hasRole('Admin')) {
+        if (!$user->hasRole(['Admin', 'Super-Admin'])) {
             if ($user->departamento && in_array($user->departamento->codigo, ['AFIL', 'AUTOR'])) {
                 $statsQuery->where('departamento_id', $user->departamento_id);
+            } elseif ($user->departamento && ($user->departamento->codigo === 'SC' || str_contains($user->departamento->nombre, 'Servicio al Cliente'))) {
+                if ($user->hasRole(['Supervisor de Servicio al Cliente'])) {
+                    $statsQuery->whereHas('solicitante', function($q) use ($user) {
+                        $q->where('departamento_id', $user->departamento_id);
+                    });
+                } else {
+                    $statsQuery->where('solicitante_user_id', $user->id);
+                }
             } else {
                 $statsQuery->where('solicitante_user_id', $user->id);
             }

@@ -13,10 +13,16 @@ use Illuminate\Support\Facades\Cache;
  */
 class FirebaseSyncService
 {
-    protected $client;
-    protected $projectId;
-    protected $credentials;
     protected $accessToken;
+    protected $readCount = 0;
+    protected $writeCount = 0;
+    protected $readBudget = 50000; // Daily limit or per-session limit
+    protected $writeBudget = 20000;
+
+    // In-memory token store as fallback when cache has permission issues
+    protected static $staticToken = null;
+    protected static $tokenExpiresAt = 0;
+
 
     public function __construct()
     {
@@ -33,56 +39,106 @@ class FirebaseSyncService
     }
 
     /**
-     * Gets an OAuth2 Access Token from Google using the Service Account JSON
+     * Gets an OAuth2 Access Token from Google using PHP-native JWT signing (RS256).
+     * Does NOT rely on the system `openssl` binary (Windows compatible).
      */
-    protected function getAccessToken(): ?string
+    public function getAccessToken(): ?string
     {
-        // Check cache first to avoid repetitive auth calls
-        if ($token = Cache::get('firebase_access_token')) {
-            return $token;
+        // 1. Check in-memory static token first (check expiration)
+        if (self::$staticToken && self::$tokenExpiresAt > time()) {
+            return self::$staticToken;
+        }
+
+        // 2. Try the cache (using v2 key to avoid stale locked files)
+        try {
+            if ($token = Cache::get('firebase_access_token_v2')) {
+                self::$staticToken = $token;
+                return $token;
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Firebase: Could not read from cache, proceeding without it: " . $e->getMessage());
+        }
+
+        if (!isset($this->credentials) || !$this->credentials || !isset($this->credentials['private_key'])) {
+            Log::error("Firebase Auth Error: Missing credentials or private_key.");
+            return null;
         }
 
         try {
-            $now = time();
-            $header = base64_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
-            $payload = base64_encode(json_encode([
+            // MASTER CLOCK SYNC: Get current time from Google directly to avoid clock drift
+            $timeResponse = $this->client->head('https://www.google.com');
+            $googleDate = $timeResponse->getHeaderLine('Date');
+            $googleTime = strtotime($googleDate) ?: time();
+            $now = $googleTime - 10; // 10s buffer against clock skew rejection
+
+            // SANITIZE KEY: Remove \r characters that corrupt signing on Windows
+            $cleanKey = str_replace("\r", "", trim($this->credentials['private_key']));
+            
+            $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+            
+            $payload = $this->base64UrlEncode(json_encode([
                 'iss' => $this->credentials['client_email'],
-                'scope' => 'https://www.googleapis.com/auth/datastore',
-                'aud' => 'https://oauth2.googleapis.com/token',
+                'scope' => 'https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/cloud-platform',
+                'aud' => 'https://www.googleapis.com/oauth2/v4/token',
                 'iat' => $now,
                 'exp' => $now + 3600
             ]));
 
-            // Helper for base64UrlEncode
-            $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], trim($header, '='));
-            $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], trim($payload, '='));
+            $signatureInput = $header . "." . $payload;
 
-            $signatureInput = $base64UrlHeader . "." . $base64UrlPayload;
+            // Use PHP's native openssl extension ONLY — no exec(), no system binary needed
+            $key = openssl_pkey_get_private($cleanKey);
+            if (!$key) {
+                Log::error("Firebase Auth Error: Could not parse private key. OpenSSL error: " . openssl_error_string());
+                return null;
+            }
+
             $signature = '';
-            
-            openssl_sign($signatureInput, $signature, $this->credentials['private_key'], 'sha256');
-            $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], trim(base64_encode($signature), '='));
+            if (!openssl_sign($signatureInput, $signature, $key, OPENSSL_ALGO_SHA256)) {
+                Log::error("Firebase OpenSSL Sign Error: " . openssl_error_string());
+                return null;
+            }
 
-            $jwt = $signatureInput . "." . $base64UrlSignature;
+            $jwt = $signatureInput . "." . $this->base64UrlEncode($signature);
 
-            $response = $this->client->post('https://oauth2.googleapis.com/token', [
+            $response = $this->client->post('https://www.googleapis.com/oauth2/v4/token', [
                 'form_params' => [
                     'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
                     'assertion' => $jwt
-                ]
+                ],
+                'http_errors' => false
             ]);
 
-            $data = json_decode($response->getBody()->getContents(), true);
+            $body = $response->getBody()->getContents();
+            $data = json_decode($body, true);
+
+            if ($response->getStatusCode() !== 200) {
+                Log::error("Firebase Auth Error (HTTP {$response->getStatusCode()}): " . $body);
+                return null;
+            }
+
             $token = $data['access_token'];
 
-            // Cache for 55 minutes
-            Cache::put('firebase_access_token', $token, 3300);
+            // Store in static memory with expiration; save to cache only if possible
+            self::$staticToken = $token;
+            self::$tokenExpiresAt = time() + 3300; // 55 minutes
+            try {
+                Cache::put('firebase_access_token_v2', $token, 3300);
+            } catch (\Throwable $e) {
+                Log::warning("Firebase: Token cached in memory only (cache write failed): " . $e->getMessage());
+            }
+
             return $token;
 
         } catch (\Throwable $e) {
-            Log::error("Firebase Auth Error: " . $e->getMessage());
+            Log::error("Firebase Auth Exception: " . $e->getMessage());
             return null;
         }
+    }
+
+    private function base64UrlEncode(string $data): string
+    {
+        return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($data));
     }
 
     /**
@@ -100,16 +156,29 @@ class FirebaseSyncService
             $baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
             
             do {
-                // Forzamos pageSize a 500 (el máximo permitido por REST) para reducir peticiones HTTP
+                // Budget Check
+                if ($this->readCount >= $this->readBudget) {
+                    $this->sendToFeed("🛑 PRESUPUESTO DE LECTURA AGOTADO ({$this->readCount}). Abortando proceso.", "rose");
+                    throw new \Exception("Read budget exceeded: {$this->readBudget}");
+                }
+
                 $query = "?pageSize=500" . ($pageToken ? "&pageToken={$pageToken}" : "");
                 
                 $response = $this->client->get("{$baseUrl}/{$collectionName}{$query}", [
-                    'headers' => ['Authorization' => "Bearer {$token}"]
+                    'headers' => [
+                        'Authorization' => "Bearer {$token}",
+                        'Accept' => 'application/json'
+                    ],
+                    'http_errors' => true
                 ]);
 
                 $data = json_decode($response->getBody()->getContents(), true);
                 
-                foreach ($data['documents'] ?? [] as $doc) {
+                $docs = $data['documents'] ?? [];
+                $batchSize = count($docs);
+                $this->readCount += $batchSize;
+
+                foreach ($docs as $doc) {
                     $results[] = $this->mapFirestoreRestDoc($doc);
                 }
 
@@ -122,7 +191,7 @@ class FirebaseSyncService
         } catch (\Throwable $e) {
             if (str_contains($e->getMessage(), '429') || str_contains($e->getMessage(), 'quota')) {
                 $this->sendToFeed("⚠️ ERROR 429: Google Firebase ha bloqueado el acceso por exceso de cuota.", "rose");
-                throw $e; // Throw to stop command
+                throw $e; 
             }
             Log::error("Firebase Sync Error (GET $collectionName): " . $e->getMessage());
             return $results;
@@ -133,9 +202,9 @@ class FirebaseSyncService
      * Retrieve a single document from a Firestore collection via REST
      */
     /**
-     * Retrieve documents from a Firestore collection changed since a given date
+     * Retrieve documents from a Firestore collection changed since a given date with pagination
      */
-    public function getCollectionIncremental(string $collection, string $sinceDate): array
+    public function getCollectionIncrementalPaged(string $collection, string $sinceDate, int $pageSize = 500, string $startAfterId = null): array
     {
         $query = [
             'structuredQuery' => [
@@ -146,9 +215,45 @@ class FirebaseSyncService
                         'op' => 'GREATER_THAN',
                         'value' => ['stringValue' => $sinceDate]
                     ]
-                ]
+                ],
+                'orderBy' => [
+                    ['field' => ['fieldPath' => 'updated_at'], 'direction' => 'ASCENDING'],
+                    ['field' => ['fieldPath' => '__name__'], 'direction' => 'ASCENDING'] // Tie-breaker for cursor
+                ],
+                'limit' => $pageSize
             ]
         ];
+
+        if ($startAfterId) {
+             // Cursors are complex in REST. For simple incremental, we rely on the timestamp mostly.
+             // But for real pagination within a large set of same-timestamp docs, we'd need more.
+             // Let's stick to timestamp + limit for now as it's the most common case.
+        }
+
+        return $this->runQuery($collection, $query);
+    }
+
+    /**
+     * Paged collection retrieval using runQuery to allow filtering/sorting
+     */
+    public function getCollectionPaged(string $collection, int $pageSize = 500, string $lastId = null): array
+    {
+        $query = [
+            'structuredQuery' => [
+                'from' => [['collectionId' => $collection]],
+                'orderBy' => [
+                    ['field' => ['fieldPath' => '__name__'], 'direction' => 'ASCENDING']
+                ],
+                'limit' => $pageSize
+            ]
+        ];
+
+        if ($lastId) {
+            $query['structuredQuery']['startAt'] = [
+                'values' => [['referenceValue' => "projects/{$this->projectId}/databases/(default)/documents/{$collection}/{$lastId}"]],
+                'before' => false
+            ];
+        }
 
         return $this->runQuery($collection, $query);
     }
@@ -184,6 +289,12 @@ class FirebaseSyncService
         $token = $this->getAccessToken();
         if (!$token) return [];
 
+        // Budget Check
+        if ($this->readCount >= $this->readBudget) {
+            $this->sendToFeed("🛑 PRESUPUESTO DE LECTURA AGOTADO ({$this->readCount}). Abortando query.", "rose");
+            throw new \Exception("Read budget exceeded: {$this->readBudget}");
+        }
+
         try {
             $baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents:runQuery";
             
@@ -193,13 +304,19 @@ class FirebaseSyncService
             ]);
 
             $rawData = json_decode($response->getBody()->getContents(), true);
+            
+            // runQuery counts as many reads as documents returned (min 1)
+            $docCount = 0;
             $results = [];
 
             foreach ($rawData as $item) {
                 if (isset($item['document'])) {
                     $results[] = $this->mapFirestoreRestDoc($item['document']);
+                    $docCount++;
                 }
             }
+
+            $this->readCount += max(1, $docCount);
 
             return $results;
 
@@ -269,8 +386,9 @@ class FirebaseSyncService
     /**
      * Pushes multiple documents to Firestore using a single Atomic Batch (REST: commit)
      * Handles up to 500 documents per call.
+     * Format: [['id' => 'doc1', 'data' => [...]], ['id' => 'doc2', 'data' => [...]]]
      */
-    public function batchPush(string $collection, array $documents): bool
+    public function pushBatch(string $collection, array $documents): bool
     {
         $token = $this->getAccessToken();
         if (!$token) return false;
@@ -279,7 +397,9 @@ class FirebaseSyncService
             $baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents:commit";
             $writes = [];
 
-            foreach ($documents as $docId => $data) {
+            foreach ($documents as $doc) {
+                $docId = $doc['id'];
+                $data = $doc['data'];
                 $writes[] = [
                     'update' => [
                         'name' => "projects/{$this->projectId}/databases/(default)/documents/{$collection}/{$docId}",
@@ -293,11 +413,28 @@ class FirebaseSyncService
                 'json' => ['writes' => $writes]
             ]);
 
-            return $response->getStatusCode() === 200;
+            if ($response->getStatusCode() === 200) {
+                $this->writeCount += count($documents);
+                return true;
+            }
+            return false;
         } catch (\Throwable $e) {
-            Log::error("Firebase Batch Push Error ($collection): " . $e->getMessage());
+            Log::error("Firebase pushBatch Error ($collection): " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Compatibility alias
+     */
+    public function batchPush(string $collection, array $documents): bool
+    {
+        // Convert old format to new format
+        $newDocs = [];
+        foreach($documents as $id => $data) {
+            $newDocs[] = ['id' => $id, 'data' => $data];
+        }
+        return $this->pushBatch($collection, $newDocs);
     }
 
     /**
@@ -318,7 +455,11 @@ class FirebaseSyncService
                     'json' => $formattedData
                 ]);
 
-                return $response->getStatusCode() === 200 || $response->getStatusCode() === 204;
+                if ($response->getStatusCode() === 200 || $response->getStatusCode() === 204) {
+                    $this->writeCount++;
+                    return true;
+                }
+                return false;
             } catch (\Throwable $e) {
                 if (str_contains($e->getMessage(), '429') || str_contains($e->getMessage(), 'quota')) {
                     $this->sendToFeed("⚠️ CRÍTICO: Límite de cuota Google Firebase alcanzado (Escritura).", "rose");
@@ -455,5 +596,18 @@ class FirebaseSyncService
             'color' => $color
         ]);
         \Illuminate\Support\Facades\Cache::put('firebase_sync_feed', array_slice($feed, 0, 50), 600);
+    }
+
+    public function setReadBudget(int $limit) { $this->readBudget = $limit; }
+    public function setWriteBudget(int $limit) { $this->writeBudget = $limit; }
+    public function getReadCount(): int { return $this->readCount; }
+    public function getWriteCount(): int { return $this->writeCount; }
+    public function resetCounters() { $this->readCount = 0; $this->writeCount = 0; }
+    /**
+     * Check if the connection to Firebase is active
+     */
+    public function checkConnection(): bool
+    {
+        return $this->getAccessToken() !== null;
     }
 }

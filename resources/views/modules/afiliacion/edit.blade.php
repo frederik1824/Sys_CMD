@@ -14,9 +14,13 @@
     },
 
     handleFile(event) {
-        const file = event.target.files[0];
-        if (file) {
-            this.fileName = file.name;
+        const files = event.target.files;
+        if (files.length > 1) {
+            this.fileName = `${files.length} archivos seleccionados`;
+        } else if (files.length === 1) {
+            this.fileName = files[0].name;
+        } else {
+            this.fileName = '';
         }
     }
 }">
@@ -94,6 +98,53 @@
                                 </select>
                                 <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                     <i class="ph-bold ph-caret-down"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE DINÁMICO: DATOS DE PENSIONADO (Sólo si ID = 6) -->
+                        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 p-8 bg-indigo-50/50 rounded-[32px] border border-indigo-100/50 mt-4" 
+                             x-show="tipoSeleccionado == 6" 
+                             x-transition:enter="transition ease-out duration-300"
+                             x-transition:enter-start="opacity-0 transform -translate-y-4"
+                             x-transition:enter-end="opacity-100 transform translate-y-0"
+                             style="display: none;">
+                            
+                            <div class="space-y-3">
+                                <label class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-2 block">Nº de Resolución</label>
+                                <div class="relative group">
+                                    <div class="absolute left-6 top-1/2 -translate-y-1/2 text-indigo-400 group-focus-within:text-indigo-600 transition-colors">
+                                        <i class="ph-bold ph-hash-straight text-lg"></i>
+                                    </div>
+                                    <input type="text" name="numero_resolucion" value="{{ $solicitud->numero_resolucion }}" placeholder="Res. 2024-XXX"
+                                        class="w-full bg-white border-2 border-transparent focus:border-indigo-500 rounded-[20px] pl-14 pr-6 py-4 text-sm font-bold text-slate-800 transition-all placeholder:text-slate-300">
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <label class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-2 block">Tipo de Pensión</label>
+                                <div class="relative">
+                                    <select name="tipo_pension" 
+                                        class="w-full bg-white border-2 border-transparent focus:border-indigo-500 rounded-[20px] px-6 py-4 text-sm font-bold text-slate-800 appearance-none transition-all cursor-pointer">
+                                        <option value="">Seleccionar...</option>
+                                        @foreach(['Hacienda', 'IDSS', 'Jubilación', 'Sobrevivencia', 'Discapacidad'] as $tp)
+                                        <option value="{{ $tp }}" {{ $solicitud->tipo_pension == $tp ? 'selected' : '' }}>{{ $tp == 'Hacienda' ? 'Hacienda / Estado' : ($tp == 'IDSS' ? 'IDSS (Antiguo)' : $tp) }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-indigo-300">
+                                        <i class="ph-bold ph-caret-down"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <label class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-2 block">Institución</label>
+                                <div class="relative group">
+                                    <div class="absolute left-6 top-1/2 -translate-y-1/2 text-indigo-400 group-focus-within:text-indigo-600 transition-colors">
+                                        <i class="ph-bold ph-bank text-lg"></i>
+                                    </div>
+                                    <input type="text" name="institucion_pension" value="{{ $solicitud->institucion_pension }}" placeholder="Ej: DGJP"
+                                        class="w-full bg-white border-2 border-transparent focus:border-indigo-500 rounded-[20px] pl-14 pr-6 py-4 text-sm font-bold text-slate-800 transition-all placeholder:text-slate-300">
                                 </div>
                             </div>
                         </div>
@@ -238,7 +289,7 @@
                              @dragleave.prevent="isDragging = false" 
                              @drop.prevent="isDragging = false; handleFile($event)">
                             
-                            <input type="file" name="expediente_pdf" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            <input type="file" name="expediente_pdf[]" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                                    @change="handleFile($event)"
                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50">
                             

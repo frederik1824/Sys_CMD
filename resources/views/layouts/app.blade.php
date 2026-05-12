@@ -160,17 +160,33 @@
           data-success="{{ session('success') }}" 
           data-error="{{ session('error') ?? ($errors->any() ? 'Existen errores de validación en el formulario.' : '') }}">
 
-    {{-- Impersonation Banner --}}
+    <!-- Impersonation Floating Hub -->
     @if(session()->has('impersonate_original_id'))
-    <div class="fixed top-0 left-0 right-0 z-[9999] bg-rose-600 text-white text-[11px] font-black uppercase tracking-[0.2em] py-2 px-4 flex items-center justify-center gap-4 shadow-xl border-b border-rose-500/30 backdrop-blur-sm bg-rose-600/95 no-print">
-        <span class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-[14px] animate-pulse">security</span>
-            MODO IMPERSONACIÓN ACTIVO: Estás navegando como {{ auth()->user()->name }}
-        </span>
-        <a href="{{ route('admin.access.stop_impersonating') }}" class="bg-white text-rose-600 px-3 py-1 rounded-full font-bold hover:bg-rose-50 transition-all flex items-center gap-1 shadow-sm">
-            <span class="material-symbols-outlined text-[14px]">logout</span>
-            VOLVER A MI SESIÓN
-        </a>
+    <div class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[9999] animate-in slide-in-from-bottom duration-700 no-print">
+        <div class="bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-3 pl-6 pr-4 shadow-2xl flex items-center gap-8 shadow-slate-900/40 min-w-[500px]">
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+                        <i class="ph-fill ph-user-focus text-2xl"></i>
+                    </div>
+                    <div class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-slate-900 animate-pulse"></div>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 leading-none mb-1">Sesión de Soporte Activa</p>
+                    <p class="text-sm font-black text-white leading-none">Viendo como: <span class="text-blue-400">{{ auth()->user()->name }}</span></p>
+                </div>
+            </div>
+            
+            <div class="h-10 w-px bg-white/10"></div>
+            
+            <form action="{{ route('admin.access.impersonate.stop') }}" method="POST">
+                @csrf
+                <button type="submit" class="group flex items-center gap-3 px-6 py-3 bg-white text-slate-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl active:scale-95">
+                    <i class="ph-bold ph-arrow-left text-lg group-hover:-translate-x-1 transition-transform"></i>
+                    Cerrar y Volver
+                </button>
+            </form>
+        </div>
     </div>
     @endif
 
@@ -182,9 +198,11 @@
         $isCallCenter = request()->is('call-center*') || request()->routeIs('call-center.*');
         $isUpdateManager = request()->is('admin/updates*') || request()->routeIs('admin.updates.*');
         $isDispersion = request()->is('admin/dispersion*') || request()->routeIs('dispersion.*');
+        $isPyp = request()->is('pyp*') || request()->routeIs('pyp.*');
+        $isAsistencia = request()->is('asistencia*') || request()->routeIs('asistencia.*');
         
         // CMD is the default operational context for general system, carnetizacion and global reports
-        $isCMD = !$isTraspasos && !$isAfiliacion && !$isExecutive && !$isAccessControl && !$isCallCenter && !$isUpdateManager && !$isDispersion;
+        $isCMD = !$isTraspasos && !$isAfiliacion && !$isExecutive && !$isAccessControl && !$isCallCenter && !$isUpdateManager && !$isDispersion && !$isPyp && !$isAsistencia;
     @endphp
 
     <!-- SideNavBar Component -->
@@ -198,10 +216,10 @@
                 <div class="w-px h-6 bg-slate-200"></div>
                 <div>
                     <h1 class="text-sm font-black tracking-tight text-slate-900 leading-none">
-                        {{ $isTraspasos ? 'Traspasos' : ($isAfiliacion ? 'Afiliación' : ($isExecutive ? 'Intelligence' : ($isAccessControl ? 'Seguridad' : ($isCallCenter ? 'Call Center' : ($isUpdateManager ? 'Update Manager' : ($isDispersion ? 'Dispersión' : 'Servicios')))))) }}
+                        {{ $isTraspasos ? 'Traspasos' : ($isAfiliacion ? 'Afiliación' : ($isExecutive ? 'Intelligence' : ($isAccessControl ? 'Seguridad' : ($isCallCenter ? 'Call Center' : ($isUpdateManager ? 'Update Manager' : ($isDispersion ? 'Dispersión' : ($isPyp ? 'Programa PyP' : ($isAsistencia ? 'Asistencia' : 'Servicios')))))))) }}
                     </h1>
-                    <p class="text-[0.6rem] font-bold uppercase tracking-wider {{ $isTraspasos ? 'text-amber-600' : ($isAfiliacion ? 'text-indigo-600' : ($isExecutive ? 'text-rose-600' : ($isAccessControl ? 'text-slate-900' : ($isCallCenter ? 'text-emerald-600' : ($isUpdateManager ? 'text-blue-600' : ($isDispersion ? 'text-emerald-600' : 'text-blue-600')))))) }} mt-0.5">
-                        {{ $isTraspasos ? 'Operativo' : ($isAfiliacion ? 'Interno' : ($isExecutive ? 'Ejecutivo' : ($isAccessControl ? 'Administración' : ($isCallCenter ? 'Gestión CRM' : ($isUpdateManager ? 'Release Hub' : ($isDispersion ? 'PDSS & Bajas' : 'CMD')))))) }}
+                    <p class="text-[0.6rem] font-bold uppercase tracking-wider {{ $isTraspasos ? 'text-amber-600' : ($isAfiliacion ? 'text-indigo-600' : ($isExecutive ? 'text-rose-600' : ($isAccessControl ? 'text-slate-900' : ($isCallCenter ? 'text-emerald-600' : ($isUpdateManager ? 'text-blue-600' : ($isDispersion ? 'text-emerald-600' : ($isPyp ? 'text-indigo-600' : ($isAsistencia ? 'text-emerald-600' : 'text-blue-600')))))))) }} mt-0.5">
+                        {{ $isTraspasos ? 'Operativo' : ($isAfiliacion ? 'Interno' : ($isExecutive ? 'Ejecutivo' : ($isAccessControl ? 'Administración' : ($isCallCenter ? 'Gestión CRM' : ($isUpdateManager ? 'Release Hub' : ($isDispersion ? 'PDSS & Bajas' : ($isPyp ? 'Riesgo Clínico' : ($isAsistencia ? 'Personal SAC' : 'CMD')))))))) }}
                     </p>
                 </div>
             </div>
@@ -215,8 +233,9 @@
                 request()->routeIs('carnetizacion.afiliados.index', 'lotes.*', 'cierre.*', 'mensajeros.*', 'rutas.*', 'despachos.*') ? 'logistica' : (
                 request()->routeIs('evidencias.*', 'liquidacion.*') ? 'gestion' : (
                 request()->routeIs('reportes.*') ? 'reportes' : (
+                request()->routeIs('pyp.*') ? 'pyp' : (
                 request()->routeIs('sistema.*', 'intranet.catalogo.index') ? 'sistema' : ''
-            )))))) }}' 
+            ))))))) }}' 
         }">
             <!-- Portal Return Button (SANEADO) -->
             <div class="px-2 mb-6">
@@ -259,12 +278,6 @@
                         <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Administración</p>
                     </div>
 
-
-                    <a class="{{ request()->routeIs('traspasos.departamentos.*') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.departamentos.index') }}">
-                        <i class="ph ph-buildings text-[22px] {{ request()->routeIs('traspasos.departamentos.*') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Estructura / Dptos</span>
-                    </a>
-
                     <a class="{{ request()->routeIs('traspasos.config.afiliacion-procesos.*') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.config.afiliacion-procesos.index') }}">
                         <i class="ph ph-notebook text-[22px] {{ request()->routeIs('traspasos.config.afiliacion-procesos.*') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
                         <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Requisitos Afiliación</span>
@@ -273,11 +286,6 @@
                     <a class="{{ request()->routeIs('traspasos.config.motivos.*') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.config.motivos.index') }}">
                         <i class="ph ph-list-checks text-[22px] {{ request()->routeIs('traspasos.config.motivos.*') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
                         <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Catálogo de Motivos</span>
-                    </a>
-
-                    <a class="{{ request()->routeIs('traspasos.config.agentes') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.config.agentes') }}">
-                        <i class="ph ph-users-three text-[22px] {{ request()->routeIs('traspasos.config.agentes') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Agentes y Equipos</span>
                     </a>
                 @endhasanyrole
             @elseif($isAfiliacion)
@@ -304,13 +312,9 @@
                 </a>
                 @endhasanyrole
 
-                @hasanyrole('Admin|Supervisor|Supervisor de Afiliación|Supervisor de Autorizaciones|Supervisor de Cuentas Médicas|Supervisor de Servicio al Cliente')
+                @hasanyrole('Admin')
                 <div class="pt-4 mt-4 border-t border-slate-100">
                     <p class="px-6 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Administración</p>
-                    <a class="{{ request()->routeIs('solicitudes-afiliacion.usuarios.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.usuarios.index') }}">
-                        <i class="ph ph-users text-[22px] {{ request()->routeIs('solicitudes-afiliacion.usuarios.*') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Gestión de Personal</span>
-                    </a>
                     <a class="{{ request()->routeIs('solicitudes-afiliacion.departamentos.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.departamentos.index') }}">
                         <i class="ph ph-buildings text-[22px] {{ request()->routeIs('solicitudes-afiliacion.departamentos.*') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
                         <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Estructura / Dptos</span>
@@ -384,8 +388,78 @@
                     <i class="ph ph-gear-six text-[22px] {{ request()->routeIs('dispersion.config') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
                     <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Configuración</span>
                 </a>
+            @elseif($isPyp)
+                <!-- MENU: PROGRAMA PYP -->
+                <a class="{{ request()->routeIs('pyp.dashboard') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('pyp.dashboard') }}">
+                    <i class="ph ph-activity text-[22px] {{ request()->routeIs('pyp.dashboard') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Dashboard Riesgo</span>
+                </a>
+
+                <a class="{{ request()->routeIs('pyp.afiliados.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('pyp.afiliados.index') }}">
+                    <i class="ph ph-users-three text-[22px] {{ request()->routeIs('pyp.afiliados.*') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Buscador Clínico</span>
+                </a>
+
+                <a class="{{ request()->routeIs('pyp.programas.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('pyp.programas.index') }}">
+                    <i class="ph ph-folder-notched text-[22px] {{ request()->routeIs('pyp.programas.*') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Programas Base</span>
+                </a>
+                
+                <div class="px-6 pt-6 pb-2">
+                    <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Acciones Médicas</p>
+                </div>
+
+                <a class="flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link mb-2" href="{{ route('pyp.afiliados.index') }}">
+                    <i class="ph ph-plus-circle text-[22px] group-hover/link:text-indigo-700 text-slate-400"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Nueva Evaluación</span>
+                </a>
+            @elseif($isAsistencia)
+                <!-- MENU: ASISTENCIA -->
+                <a class="{{ request()->routeIs('asistencia.index') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.index') }}">
+                    <i class="ph ph-clock text-[22px] {{ request()->routeIs('asistencia.index') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reloj Checador</span>
+                </a>
+
+                <a class="{{ request()->routeIs('asistencia.permisos.*') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.permisos.index') }}">
+                    <i class="ph ph-envelope-open text-[22px] {{ request()->routeIs('asistencia.permisos.*') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Mis Permisos</span>
+                </a>
+
+                <a class="{{ request()->routeIs('asistencia.historial') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.historial') }}">
+                    <i class="ph ph-calendar-check text-[22px] {{ request()->routeIs('asistencia.historial') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Mi Historial</span>
+                </a>
+
+                @hasanyrole('Admin|Supervisor|Recursos Humanos')
+                    <div class="px-6 pt-6 pb-2">
+                        <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Administración</p>
+                    </div>
+
+                    <a class="{{ request()->routeIs('asistencia.dashboard') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.dashboard') }}">
+                        <i class="ph ph-chart-pie text-[22px] {{ request()->routeIs('asistencia.dashboard') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Dashboard Monitor</span>
+                    </a>
+
+                    <a class="{{ request()->routeIs('asistencia.permisos.bandeja') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.permisos.bandeja') }}">
+                        <i class="ph ph-tray text-[22px] {{ request()->routeIs('asistencia.permisos.bandeja') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Bandeja Aprobación</span>
+                    </a>
+
+                    <a class="{{ request()->routeIs('asistencia.reportes.*') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.reportes.index') }}">
+                        <i class="ph ph-file-csv text-[22px] {{ request()->routeIs('asistencia.reportes.*') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reportes Analíticos</span>
+                    </a>
+
+                    <a class="{{ request()->routeIs('asistencia.configuracion.*') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.configuracion.index') }}">
+                        <i class="ph ph-gear text-[22px] {{ request()->routeIs('asistencia.configuracion.*') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
+                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Configuración App</span>
+                    </a>
+                @endhasanyrole
             @else
                 @if($isCMD)
+                    {{-- DASHBOARD GLOBAL --}}
+                    <x-nav-link route="carnetizacion.dashboard" icon="ph ph-chart-pie" label="Dashboard Principal" />
+
                     {{-- GRUPO: ADMISIÓN --}}
                     @can('manage_affiliates')
                     <div class="space-y-1">
@@ -516,6 +590,7 @@
                     </div>
                     @endcan
                 @elseif($isAccessControl)
+                    @hasanyrole('Admin')
                     <!-- MENU: SEGURIDAD / ACCESOS -->
                     <div class="px-6 pt-2 pb-2">
                         <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Control Maestro</p>
@@ -540,6 +615,7 @@
                         <i class="ph ph-shield-checkered text-[22px] {{ request()->routeIs('admin.access.index') ? 'text-slate-900' : 'group-hover/link:text-slate-900 text-slate-400' }}"></i>
                         <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Matriz de Accesos</span>
                     </a>
+                    @endhasanyrole
                 @else
                     <!-- Navigation Links (Suite Ejecutiva / Otros) -->
                     <a class="{{ request()->routeIs('executive.suite') ? 'flex items-center gap-4 px-6 py-3 text-blue-700 font-black bg-blue-50/50 border-l-[3px] border-blue-600 shadow-sm rounded-r-xl transition-all relative overflow-hidden' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-4 mt-0.5" href="{{ route('reportes.executive.suite') }}">
@@ -579,72 +655,116 @@
     <!-- Main Canvas -->
     <main class="ml-72 print:ml-0 min-h-screen">
         <!-- TopNavBar Component -->
-        @if($isCMD)
-        <header class="no-print sticky top-0 z-40 bg-white/80 backdrop-blur-md h-16 px-8 flex justify-between items-center shadow-sm border-b border-slate-100">
-            <div class="flex items-center gap-8">
-                <div class="relative w-80 group">
-                    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-hover:text-blue-600 transition-colors"></i>
-                    <input id="navbar-search" class="w-full bg-slate-50 border border-slate-200 rounded-full pl-11 pr-16 py-2.5 text-[0.875rem] font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium shadow-inner" placeholder="Buscar afiliado o empresa..." type="text" autocomplete="off"/>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 bg-white rounded-md border border-slate-200 shadow-sm pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
-                        <span class="text-[0.6rem] font-black text-slate-400">CTRL</span>
-                        <span class="text-[0.6rem] font-black text-slate-400">K</span>
+        @if($isCMD || $isAfiliacion || $isPyp || $isTraspasos || $isCallCenter || $isDispersion || $isAsistencia)
+        @php
+            $hasActiveShift = false;
+            if(auth()->check()) {
+                $empleado = \App\Models\Asistencia\Empleado::where('user_id', auth()->id())->first();
+                if($empleado) {
+                    $registroHoy = \App\Models\Asistencia\Registro::where('empleado_id', $empleado->id)->where('fecha', now()->toDateString())->first();
+                    $hasActiveShift = $registroHoy && $registroHoy->hora_entrada && !$registroHoy->hora_salida;
+                    
+                    // Verificar si ya pasó su hora de salida
+                    $salidaEsperada = \Carbon\Carbon::parse(now()->toDateString() . ' ' . $empleado->turno->salida_esperada);
+                    $isOvertime = now()->greaterThan($salidaEsperada);
+                }
+            }
+        @endphp
+        <header class="no-print sticky top-0 z-40 bg-white/60 backdrop-blur-2xl h-20 px-10 flex justify-between items-center border-b border-slate-200/50 shadow-[0_4px_30px_rgba(0,0,0,0.03)] transition-all duration-500">
+            <div class="flex items-center gap-10">
+                <!-- Smart Search Command -->
+                <div class="relative w-96 group">
+                    <div class="absolute inset-0 bg-blue-500/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+                    <i class="ph-bold ph-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-xl group-focus-within:text-blue-600 transition-colors"></i>
+                    <input id="navbar-search" class="w-full bg-slate-50/50 border border-slate-200/60 rounded-2xl pl-14 pr-16 py-3.5 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 focus:bg-white outline-none transition-all placeholder:text-slate-300 shadow-sm" placeholder="Comando de búsqueda..." type="text" autocomplete="off"/>
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2.5 py-1.5 bg-white rounded-xl border border-slate-200 shadow-sm pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity">
+                        <span class="text-[9px] font-black text-slate-500">CTRL</span>
+                        <span class="text-[9px] font-black text-slate-500 text-blue-600">K</span>
                     </div>
                     
-                    <!-- Search Results Dropdown -->
-                    <div id="search-results" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-                        <div class="p-3 border-b border-slate-50 bg-slate-50/50">
-                            <span class="text-[0.65rem] font-black uppercase tracking-widest text-slate-400">Resultados sugeridos</span>
+                    @if($hasActiveShift && $isOvertime)
+                    <div class="flex items-center gap-3 px-5 py-2.5 bg-rose-50 border border-rose-100 rounded-2xl animate-pulse shadow-sm">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+                        </span>
+                        <span class="text-[10px] font-black text-rose-700 uppercase tracking-[0.1em]">Atención: No has marcado salida</span>
+                    </div>
+                    @endif
+                </div>
+                    
+                    <!-- Dropdown de Resultados (Crystal Lux) -->
+                    <div id="search-results" class="absolute top-full left-0 right-0 mt-4 bg-white/90 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.2)] border border-white/20 overflow-hidden hidden animate-in fade-in zoom-in-95 duration-500 z-[100]">
+                        <div class="p-6 border-b border-slate-100/50 bg-slate-50/30 flex justify-between items-center">
+                            <span class="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600">OmniSearch Intelligence</span>
+                            <div class="flex gap-1">
+                                <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
+                                <div class="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-pulse delay-75"></div>
+                                <div class="w-1.5 h-1.5 rounded-full bg-indigo-100 animate-pulse delay-150"></div>
+                            </div>
                         </div>
-                        <div id="results-container" class="max-h-[400px] overflow-y-auto custom-scrollbar divide-y divide-slate-50">
-                            <!-- JS Will fill this -->
-                        </div>
-                        <div id="search-empty" class="p-8 text-center hidden">
-                            <i class="ph ph-user-focus text-slate-200 text-4xl mb-2"></i>
-                            <p class="text-xs font-bold text-slate-400">No se encontraron coincidencias.</p>
+                        <div id="results-container" class="max-h-[500px] overflow-y-auto custom-scrollbar divide-y divide-slate-50">
+                            <!-- Inyectado por JS con estilo enriquecido -->
                         </div>
                     </div>
                 </div>
-                <nav class="flex gap-6">
-                    <a class="{{ request()->routeIs('dashboard') ? 'text-blue-600 font-bold border-b-[3px] border-blue-600 pb-[1.4rem] pt-6' : 'text-slate-500 font-medium hover:text-blue-600 border-b-[3px] border-transparent pb-[1.4rem] pt-6 transition-colors' }} text-[0.875rem] flex items-center gap-2" href="{{ route('dashboard') }}">
-                        Operación CMD
+
+                <!-- Strategic Navigation -->
+                <nav class="hidden xl:flex items-center gap-8">
+                    @php
+                        $moduleDashboard = match(true) {
+                            $isTraspasos => route('traspasos.dashboard'),
+                            $isAfiliacion => route('afiliacion.reports'),
+                            $isCallCenter => route('call-center.stats'),
+                            $isPyp => route('pyp.dashboard'),
+                            $isDispersion => route('dispersion.index'),
+                            $isAsistencia => route('asistencia.dashboard'),
+                            default => route('carnetizacion.dashboard'),
+                        };
+                        
+                        $isAtDashboard = request()->url() == $moduleDashboard;
+                    @endphp
+
+                    <a class="{{ $isAtDashboard ? 'text-blue-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-blue-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest flex items-center gap-2 py-6" href="{{ $moduleDashboard }}">
+                        <i class="ph ph-chart-pie-slice text-lg"></i> Dashboard
                     </a>
+
                     @can('manage_affiliates')
-                    <a class="{{ request()->routeIs('afiliados.cmd') ? 'text-blue-600 font-bold border-b-[3px] border-blue-600 pb-[1.4rem] pt-6' : 'text-slate-500 font-medium hover:text-blue-600 border-b-[3px] border-transparent pb-[1.4rem] pt-6 transition-colors' }} text-[0.875rem]" href="{{ route('carnetizacion.afiliados.cmd') }}">Afiliados</a>
+                    <a class="{{ request()->routeIs('carnetizacion.afiliados.cmd') ? 'text-blue-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-blue-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest py-6" href="{{ route('carnetizacion.afiliados.cmd') }}">Afiliados</a>
                     @endcan
                     @can('manage_companies')
-                    <a class="{{ request()->routeIs('sistema.empresas.*') ? 'text-blue-600 font-bold border-b-[3px] border-blue-600 pb-[1.4rem] pt-6' : 'text-slate-500 font-medium hover:text-blue-600 border-b-[3px] border-transparent pb-[1.4rem] pt-6 transition-colors' }} text-[0.875rem]" href="{{ route('sistema.empresas.index') }}">Empresas</a>
+                    <a class="{{ request()->routeIs('sistema.empresas.*') ? 'text-blue-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-blue-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest py-6" href="{{ route('sistema.empresas.index') }}">Empresas</a>
                     @endcan
                 </nav>
             </div>
             
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-6">
                 @livewire('call-center.follow-up-reminder')
                 
-                <!-- Background Jobs Monitor -->
-                @unless(auth()->user()->hasRole('Operador'))
+                <!-- Monitor de Procesos (Admin Only) -->
+                @hasanyrole('Admin')
                 <div id="queue-monitor" class="relative hidden" x-data="{ open: false, imports: [] }">
-                    <button @click="open = !open" class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-100 hover:bg-blue-100 transition-colors">
-                        <i class="ph-fill ph-cpu text-blue-600 animate-spin-slow"></i>
-                        <span id="queue-count" class="text-[0.65rem] font-black text-blue-700 uppercase tracking-tight">Procesando...</span>
-                        <i class="ph ph-caret-down text-[10px] text-blue-400"></i>
-                    </button>
-                    <!-- Detalle de procesos -->
-                    <div x-show="open" @click.outside="open = false" 
-                         x-transition:enter="transition ease-out duration-200"
-                         class="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
-                        <div class="p-4 border-b border-slate-50 bg-slate-50/50">
-                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest">Tareas en curso</h3>
+                    <button @click="open = !open" class="flex items-center gap-3 px-4 py-2.5 bg-blue-50/50 rounded-2xl border border-blue-100/50 hover:bg-blue-100 transition-all group">
+                        <div class="relative">
+                            <i class="ph-fill ph-cpu text-blue-600 animate-spin-slow text-lg"></i>
+                            <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white"></span>
                         </div>
-                        <div id="queue-details-list" class="p-4 space-y-4 max-h-60 overflow-y-auto custom-scrollbar">
-                            <div class="flex items-center justify-center py-4">
-                                <p class="text-[0.7rem] text-slate-400 italic">Obteniendo detalles...</p>
-                            </div>
+                        <span id="queue-count" class="text-[10px] font-black text-blue-700 uppercase tracking-widest">Tareas en curso</span>
+                    </button>
+                    <!-- Popover de Procesos -->
+                    <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 mt-4 w-80 bg-white rounded-[2rem] shadow-2xl border border-slate-100 z-50 overflow-hidden">
+                        <div class="p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                            <h3 class="text-[10px] font-black text-slate-900 uppercase tracking-widest">Monitor de Infraestructura</h3>
+                            <i class="ph ph-activity text-blue-500"></i>
+                        </div>
+                        <div id="queue-details-list" class="p-6 space-y-5 max-h-72 overflow-y-auto custom-scrollbar">
+                            <p class="text-[10px] text-slate-400 text-center font-bold italic py-4">Actualizando procesos...</p>
                         </div>
                     </div>
                 </div>
-                @endunless
+                @endhasanyrole
 
-                <!-- Notifications -->
+                <!-- Notification Engine -->
                 <div class="relative" x-data='{ 
                     open: false,
                     markRead() {
@@ -660,89 +780,97 @@
                         }
                     }
                 }'>
-                    <button @click="open = !open; if(open) markRead()" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors rounded-full relative group">
-                        <i class="ph ph-bell text-[22px] group-hover:scale-110 transition-transform"></i>
+                    <button @click="open = !open; if(open) markRead()" class="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50/50 rounded-2xl border border-transparent hover:border-blue-100/50 transition-all relative group">
+                        <i class="ph ph-bell text-2xl group-hover:scale-110 transition-transform"></i>
                         @if(auth()->user()->unreadNotifications->count() > 0)
-                        <span class="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full border-[2px] border-white text-[0.6rem] text-white flex items-center justify-center font-bold">
+                        <span class="absolute top-2.5 right-2.5 w-5 h-5 bg-rose-500 rounded-lg border-2 border-white text-[9px] text-white flex items-center justify-center font-black shadow-lg shadow-rose-200 animate-bounce">
                             {{ auth()->user()->unreadNotifications->count() }}
                         </span>
                         @endif
                     </button>
 
-                    <!-- Notifications Dropdown -->
+                    <!-- Notifications Dropdown (Crystal Redesign) -->
                     <div x-show="open" @click.outside="open = false" 
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 scale-95 translate-y-[-10px]"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
                          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                         class="absolute right-0 mt-3 w-80 bg-white rounded-[32px] shadow-2xl border border-slate-100 z-50 overflow-hidden" x-cloak>
-                        <div class="p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest">Notificaciones</h3>
-                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-[9px] font-black rounded-lg">RECIBIDAS</span>
+                         class="absolute right-0 mt-4 w-[400px] bg-white rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] border border-slate-100 z-50 overflow-hidden" x-cloak>
+                        <div class="p-8 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest mb-1">Notificaciones</h3>
+                                <p class="text-[10px] font-bold text-slate-400">Recibidas recientemente</p>
+                            </div>
+                            <span class="px-3 py-1.5 bg-blue-600 text-white text-[9px] font-black rounded-xl shadow-lg shadow-blue-200">HISTORIAL</span>
                         </div>
-                        <div class="max-h-80 overflow-y-auto custom-scrollbar">
-                            @forelse(auth()->user()->notifications->take(10) as $notification)
-                                <div class="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors flex gap-4 {{ $notification->read_at ? 'opacity-60' : '' }}">
-                                    <div class="w-10 h-10 rounded-xl bg-{{ $notification->data['icon_color'] ?? 'blue' }}-50 flex items-center justify-center shrink-0">
-                                        <i class="ph-fill ph-{{ $notification->data['icon'] ?? 'bell' }} text-{{ $notification->data['icon_color'] ?? 'blue' }}-600"></i>
+                        <div class="max-h-[450px] overflow-y-auto custom-scrollbar divide-y divide-slate-50">
+                            @forelse(auth()->user()->notifications->take(15) as $notification)
+                                <div class="p-6 hover:bg-slate-50/80 transition-all flex gap-5 group/notif {{ $notification->read_at ? 'opacity-50' : '' }}">
+                                    <div class="w-12 h-12 rounded-[1.2rem] bg-{{ $notification->data['icon_color'] ?? 'blue' }}-50 flex items-center justify-center shrink-0 group-hover/notif:scale-110 transition-transform">
+                                        <i class="ph-fill ph-{{ $notification->data['icon'] ?? 'bell' }} text-2xl text-{{ $notification->data['icon_color'] ?? 'blue' }}-600"></i>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-[0.7rem] font-bold text-slate-800 leading-tight">{{ $notification->data['title'] ?? 'Notificación' }}</p>
-                                        <p class="text-[0.65rem] text-slate-500 mt-1 leading-relaxed">{{ $notification->data['message'] ?? '' }}</p>
-                                        <p class="text-[0.6rem] text-slate-400 mt-2 font-medium">{{ $notification->created_at->diffForHumans() }}</p>
+                                        <div class="flex justify-between items-start mb-1">
+                                            <p class="text-xs font-black text-slate-900 truncate pr-4">{{ $notification->data['title'] ?? 'Notificación' }}</p>
+                                            <span class="text-[9px] font-black text-slate-300 whitespace-nowrap">{{ $notification->created_at->diffForHumans(null, true) }}</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 font-medium leading-relaxed">{{ $notification->data['message'] ?? '' }}</p>
                                     </div>
                                 </div>
                             @empty
-                                <div class="py-12 text-center">
-                                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <i class="ph ph-bell-slash text-2xl text-slate-300"></i>
+                                <div class="py-20 text-center">
+                                    <div class="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+                                        <i class="ph ph-bell-slash text-4xl text-slate-200"></i>
                                     </div>
-                                    <p class="text-[0.7rem] text-slate-400 font-bold uppercase tracking-widest">Bandeja Vacía</p>
+                                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">Bandeja Despejada</p>
                                 </div>
                             @endforelse
                         </div>
-                        <div class="p-4 bg-slate-50/50">
+                        <div class="p-6 bg-white border-t border-slate-50">
                             <form method="POST" action="{{ route('notifications.markAllAsRead') }}">
                                 @csrf
-                                <button type="submit" class="w-full py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all">
-                                    Marcar todo como leído
+                                <button type="submit" class="w-full py-4 bg-slate-900 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3">
+                                    <i class="ph ph-check-circle text-lg"></i> Marcar todo como leído
                                 </button>
                             </form>
                         </div>
                     </div>
                 </div>
                 
-                <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+                <div class="h-10 w-px bg-slate-200/60 mx-2"></div>
                 
-                <!-- User Profile -->
+                <!-- Advanced Profile Launcher -->
                 <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" class="flex items-center gap-3 p-1 pr-4 bg-white hover:bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-full shadow-sm hover:shadow transition-all duration-200">
-                        <img src="{{ $user->avatar_url }}" class="w-8 h-8 rounded-full object-cover border border-slate-200" alt="User">
-                        <div class="hidden md:flex flex-col text-left">
-                            <span class="text-[0.75rem] font-black text-slate-800 leading-tight">{{ $user->name }}</span>
-                            <span class="text-[0.6rem] font-bold text-blue-600 uppercase tracking-tighter">{{ $user->getRoleNames()->first() ?? 'Usuario' }}</span>
+                    <button @click="open = !open" class="flex items-center gap-4 p-1.5 pr-6 bg-white hover:bg-slate-50 border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 active:scale-95 group">
+                        <div class="relative">
+                            <img src="{{ $user->avatar_url }}" class="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-md" alt="User">
+                            <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white"></div>
                         </div>
-                        <i class="ph ph-caret-down text-[10px] text-slate-400 ml-1"></i>
+                        <div class="hidden md:flex flex-col text-left">
+                            <span class="text-xs font-black text-slate-900 leading-tight">{{ $user->name }}</span>
+                            <span class="text-[9px] font-black text-blue-600 uppercase tracking-widest">{{ $user->getRoleNames()->first() ?? 'Usuario' }}</span>
+                        </div>
+                        <i class="ph ph-caret-down text-xs text-slate-300 group-hover:text-slate-900 transition-colors ml-2"></i>
                     </button>
 
-                    <!-- User Dropdown -->
+                    <!-- Profile Dropdown (Crystal Style) -->
                     <div x-show="open" @click.outside="open = false" 
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 scale-95 translate-y-[-10px]"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
                          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                         class="absolute right-0 mt-3 w-56 bg-white rounded-[32px] shadow-2xl border border-slate-100 z-50 overflow-hidden" x-cloak>
-                        <div class="p-6 border-b border-slate-50 bg-slate-50/50">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Sesión Activa</p>
+                         class="absolute right-0 mt-4 w-64 bg-white rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] border border-slate-100 z-50 overflow-hidden" x-cloak>
+                        <div class="p-8 border-b border-slate-50 bg-slate-50/50">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 italic">Sesión de Usuario</p>
                             <p class="text-xs font-black text-slate-800 truncate">{{ $user->email }}</p>
                         </div>
-                        <div class="p-2">
-                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 p-4 text-[0.75rem] font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-colors">
-                                <i class="ph ph-user-circle text-lg"></i> Perfil Personal
+                        <div class="p-3">
+                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-4 p-4 text-[11px] font-black text-slate-600 uppercase tracking-widest hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-all group/item">
+                                <i class="ph ph-user-circle text-2xl group-hover/item:scale-110 transition-transform"></i> Perfil Personal
                             </a>
-                            <div class="h-[1px] bg-slate-50 my-1"></div>
+                            <div class="h-px bg-slate-50 my-2"></div>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="w-full flex items-center gap-3 p-4 text-[0.75rem] font-black text-rose-500 hover:bg-rose-50 rounded-2xl transition-colors">
-                                    <i class="ph ph-power text-lg"></i> Cerrar Sesión
+                                <button type="submit" class="w-full flex items-center gap-4 p-4 text-[11px] font-black text-rose-500 uppercase tracking-widest hover:bg-rose-50 rounded-2xl transition-all group/item">
+                                    <i class="ph ph-power text-2xl group-hover/item:scale-110 transition-transform"></i> Cerrar Sesión
                                 </button>
                             </form>
                         </div>
@@ -1082,18 +1210,30 @@
                                 queueMonitor.classList.remove('hidden');
                                 if (queueCount) queueCount.textContent = `Procesando (${data.count})`;
                                 
-                                if (queueDetailsList && data.active_imports.length > 0) {
-                                    queueDetailsList.innerHTML = data.active_imports.map(imp => `
-                                        <div class="space-y-1.5">
-                                            <div class="flex justify-between items-center text-[0.65rem]">
-                                                <span class="font-bold text-slate-700 truncate max-w-[140px]">${imp.nombre}</span>
-                                                <span class="font-black text-blue-600">${imp.progress}%</span>
+                                if (queueDetailsList) {
+                                    if (data.active_imports.length > 0) {
+                                        queueDetailsList.innerHTML = data.active_imports.map(imp => `
+                                            <div class="space-y-1.5 p-3 bg-blue-50/30 rounded-xl border border-blue-100/50">
+                                                <div class="flex justify-between items-center text-[0.65rem]">
+                                                    <span class="font-bold text-slate-700 truncate max-w-[140px]">${imp.nombre}</span>
+                                                    <span class="font-black text-blue-600">${imp.progress}%</span>
+                                                </div>
+                                                <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                    <div class="h-full bg-blue-500 transition-all duration-500" style="width: ${imp.progress}%"></div>
+                                                </div>
                                             </div>
-                                            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                <div class="h-full bg-blue-500 transition-all duration-500" style="width: ${imp.progress}%"></div>
+                                        `).join('');
+                                    } else {
+                                        queueDetailsList.innerHTML = `
+                                            <div class="py-6 text-center">
+                                                <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                                                    <i class="ph ph-gear text-blue-400 text-xl"></i>
+                                                </div>
+                                                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tareas del Sistema</p>
+                                                <p class="text-[9px] text-slate-400 font-bold mt-1 italic">Procesando cola de trabajo en segundo plano...</p>
                                             </div>
-                                        </div>
-                                    `).join('');
+                                        `;
+                                    }
                                 }
                             } else {
                                 queueMonitor.classList.add('hidden');
@@ -1109,6 +1249,40 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     @stack('scripts')
+    
+    <!-- Flash Notifications Handler -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            @if (session('success'))
+                Toast.fire({ icon: 'success', title: '{{ session('success') }}' });
+            @endif
+
+            @if (session('error'))
+                Toast.fire({ icon: 'error', title: '{{ session('error') }}' });
+            @endif
+
+            @if (session('info'))
+                Toast.fire({ icon: 'info', title: '{{ session('info') }}' });
+            @endif
+
+            @if (session('warning'))
+                Toast.fire({ icon: 'warning', title: '{{ session('warning') }}' });
+            @endif
+        });
+    </script>
+
     @livewireScripts
 </body>
 </html>

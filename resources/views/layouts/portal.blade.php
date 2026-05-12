@@ -20,7 +20,6 @@
     
     <!-- Scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -55,6 +54,7 @@
             min-height: 100vh;
         }
     </style>
+    @livewireStyles
 </head>
 <body class="font-sans antialiased text-slate-900 overflow-x-hidden" x-data="{ sidebarOpen: false }">
     <div class="flex min-h-screen">
@@ -118,14 +118,47 @@
         </div>
     </div>
 
-    <!-- Overlay for mobile sidebar -->
-    <div x-show="sidebarOpen" 
-         @click="sidebarOpen = false" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
-         x-cloak>
+    <!-- Global Notification (Toast) -->
+    <div x-data="{ 
+            show: false, 
+            message: '', 
+            type: 'success',
+            timeout: null 
+        }" 
+        @notify.window="
+            show = true; 
+            message = $event.detail[0].msg || $event.detail[0].message; 
+            type = $event.detail[0].type || 'success';
+            clearTimeout(timeout);
+            timeout = setTimeout(() => show = false, 5000);
+        "
+        x-show="show" 
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-4"
+        class="fixed bottom-8 right-8 z-[100]"
+        x-cloak>
+        
+        <div :class="{
+                'bg-emerald-600': type === 'success',
+                'bg-rose-600': type === 'error',
+                'bg-amber-600': type === 'warning',
+                'bg-blue-600': type === 'info'
+            }" 
+            class="text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[300px]">
+            <i class="ph-bold" :class="{
+                'ph-check-circle': type === 'success',
+                'ph-warning-octagon': type === 'error',
+                'ph-warning': type === 'warning',
+                'ph-info': type === 'info'
+            } + ' text-xl'"></i>
+            <span x-text="message" class="text-sm font-black tracking-tight"></span>
+        </div>
     </div>
+
+    @livewireScripts
 </body>
 </html>

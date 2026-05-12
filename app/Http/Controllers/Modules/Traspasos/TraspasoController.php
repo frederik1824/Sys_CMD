@@ -51,7 +51,11 @@ class TraspasoController extends Controller
             }
         }
 
-        $traspasos = $query->with(['agenteRel.supervisor', 'estadoRel', 'motivoRechazoRel'])->orderBy('fecha_solicitud', 'desc')->paginate(30);
+        if ($request->has('verificado') && $request->verificado != 'all') {
+            $query->where('verificado', $request->verificado == 'si');
+        }
+
+        $traspasos = $query->with(['agenteRel.supervisor', 'estadoRel', 'motivoRechazoRel', 'verificadoPor'])->orderBy('fecha_solicitud', 'desc')->paginate(30);
         $agentes = AgenteTraspaso::where('activo', true)->get();
         $estados = EstadoTraspaso::all();
         $supervisores = SupervisorTraspaso::where('activo', true)->get();
@@ -706,6 +710,7 @@ class TraspasoController extends Controller
             'estado_id' => $estadoRechazado->id,
             'motivo_rechazo_id' => $request->motivo_id,
             'motivos_estado' => $request->motivos_estado,
+            'fecha_rechazo' => now()->format('Y-m-d'),
             'fecha_efectivo' => null,
             'periodo_efectivo' => null,
         ]);
@@ -753,6 +758,104 @@ class TraspasoController extends Controller
             'message' => 'Afiliado creado correctamente en el módulo de carnetización.',
             'uuid' => $afiliado->uuid
         ]);
+    }
+
+    public function verificar(Request $request, Traspaso $traspaso)
+    {
+        $request->validate([
+            'cantidad_dependientes' => 'nullable|integer|min:0',
+            'verificado' => 'required|boolean',
+            'unipago_status' => 'nullable|string',
+            'unipago_observaciones' => 'nullable|string',
+        ]);
+
+        $data = [
+            'cantidad_dependientes' => $request->cantidad_dependientes,
+            'unipago_status' => $request->unipago_status ?? 'en_revision',
+            'unipago_observaciones' => $request->unipago_observaciones,
+            'unipago_revisado_at' => now(),
+        ];
+
+        if ($request->verificado) {
+            $data['verificado'] = true;
+            $data['verificado_at'] = now();
+            $data['verificado_por'] = auth()->id();
+            $data['unipago_status'] = 'verificado';
+        }
+
+        $traspaso->update($data);
+
+        return response()->json([
+            'success' => true, 
+            'message' => $request->verificado ? 'Verificación finalizada correctamente.' : 'Seguimiento registrado. El registro aparecerá como revisado hoy.',
+            'traspaso' => $traspaso
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified transfer.
+     */
+    public function edit(Traspaso $traspaso)
+    {
+        $agentes = AgenteTraspaso::where('activo', true)->get();
+        $estados = EstadoTraspaso::all();
+        $motivosRechazo = \App\Models\MotivoRechazoTraspaso::where('activo', true)->get();
+        
+        return view('modules.traspasos.edit', compact('traspaso', 'agentes', 'estados', 'motivosRechazo'));
+    }
+
+    /**
+     * Update the specified transfer in storage.
+     */
+    public function update(Request $request, Traspaso $traspaso)
+    {
+        $request->validate([
+            'nombre_afiliado' => 'required|string|max:255',
+            'cedula_afiliado' => 'required|string|max:20',
+            'numero_solicitud_epbd' => 'nullable|string|max:100',
+            'agente_id' => 'required|exists:agente_traspasos,id',
+            'estado_id' => 'required|exists:estado_traspasos,id',
+            'cantidad_dependientes' => 'nullable|integer|min:0',
+            'fecha_solicitud' => 'nullable|date',
+            'fecha_envio_epbd' => 'nullable|date',
+            'fecha_efectivo' => 'nullable|date',
+            'periodo_efectivo' => 'nullable|string|regex:/^\d{4}-\d{2}$/',
+            'motivo_rechazo_id' => 'nullable|exists:motivo_rechazo_traspasos,id',
+            'fecha_rechazo' => 'nullable|date',
+        ]);
+
+        $data = $request->all();
+        
+        // Manejo de booleanos (checkboxes)
+        $data['pendiente_carga_documento'] = $request->has('pendiente_carga_documento');
+        $data['pendiente_aprobar_consentimiento'] = $request->has('pendiente_aprobar_consentimiento');
+        $data['verificado'] = $request->has('verificado');
+
+        if ($data['verificado'] && !$traspaso->verificado) {
+            $data['verificado_at'] = now();
+            $data['verificado_por'] = auth()->id();
+        } elseif (!$data['verificado']) {
+            $data['verificado_at'] = null;
+            $data['verificado_por'] = null;
+        }
+
+        // Si se cambia a efectivo y no tiene fecha, asignar hoy
+        $estadoEfectivo = EstadoTraspaso::where('slug', 'efectivo')->first();
+        if ($data['estado_id'] == $estadoEfectivo?->id && empty($data['fecha_efectivo'])) {
+            $data['fecha_efectivo'] = now()->format('Y-m-d');
+            $data['fecha_rechazo'] = null;
+        }
+
+        $estadoRechazado = EstadoTraspaso::where('slug', 'rechazado')->first();
+        if ($data['estado_id'] == $estadoRechazado?->id && empty($data['fecha_rechazo'])) {
+            $data['fecha_rechazo'] = now()->format('Y-m-d');
+            $data['fecha_efectivo'] = null;
+        }
+
+        $traspaso->update($data);
+
+        return redirect()->route('traspasos.index')
+            ->with('success', 'Traspaso actualizado correctamente.');
     }
 
     private function parseDate($dateString)

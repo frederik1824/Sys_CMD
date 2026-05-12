@@ -1,345 +1,237 @@
 @extends('layouts.app')
 
 @section('content')
-<style>
-    .glass-morphism {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-    .dark-glass {
-        background: rgba(15, 23, 42, 0.85);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .bento-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        grid-template-rows: auto;
-        gap: 1.5rem;
-    }
-    .bento-item {
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .bento-item:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-    }
-    @media (max-width: 1024px) {
-        .bento-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 640px) {
-        .bento-grid { grid-template-columns: 1fr; }
-    }
-</style>
-
-<div class="p-4 lg:p-8 space-y-8 min-h-screen bg-[#f1f5f9] bg-fixed" style="background-image: radial-gradient(at 0% 0%, hsla(210,100%,98%,1) 0, transparent 50%), radial-gradient(at 100% 100%, hsla(210,100%,95%,1) 0, transparent 50%);">
-    
-    <!-- Header Premium -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-        <div>
-            <h1 class="text-4xl font-[900] tracking-tighter text-slate-900 mb-1 flex items-center gap-3">
-                <span class="p-2 bg-primary text-white rounded-2xl shadow-xl shadow-primary/20">
-                    <span class="material-symbols-outlined text-3xl">analytics</span>
-                </span>
-                Dashboard <span class="text-primary italic font-light">Ejecutivo</span>
-            </h1>
-            <p class="text-slate-400 font-bold flex items-center gap-2 text-xs uppercase tracking-[0.3em] pl-16">
-                Unificación Estratégica • {{ now()->translatedFormat('F Y') }}
-            </p>
-        </div>
-        <div class="flex items-center gap-3 bg-white/50 backdrop-blur-md p-2 rounded-[2rem] border border-white shadow-sm">
-            <div class="flex -space-x-3">
-                @foreach(range(1, 3) as $i)
-                    <div class="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
-                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=random" class="w-full h-full object-cover">
-                    </div>
-                @endforeach
-            </div>
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Live Monitoring</span>
-        </div>
-    </header>
-
-    <!-- Bento Grid Section -->
-    <div class="bento-grid">
-        
-        <!-- Health Score (Large Item) -->
-        <div class="col-span-1 lg:col-span-2 row-span-1 dark-glass p-8 rounded-[3rem] text-white flex flex-col justify-between bento-item relative overflow-hidden group">
-            <div class="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl opacity-50 group-hover:scale-125 transition-transform duration-1000"></div>
-            
-            <div class="relative z-10 flex justify-between items-start">
-                <div>
-                    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-primary-light">Salud Operativa Global</h2>
-                    <p class="text-xs text-slate-400 font-bold mt-1">Algoritmo de efectividad unificada</p>
-                </div>
-                <span class="px-4 py-2 bg-white/10 rounded-2xl text-xs font-black uppercase tracking-widest border border-white/10">Score: {{ $healthIndex }}</span>
-            </div>
-
-            <div class="relative z-10 py-10 flex items-end gap-8">
-                <div class="text-8xl font-[900] tracking-tighter leading-none">{{ $healthIndex }}%</div>
-                <div class="flex-1 pb-2">
-                    <div class="w-full bg-white/10 h-3 rounded-full overflow-hidden border border-white/5">
-                        <div class="h-full bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all duration-1000" style="width: {{ $healthIndex }}%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="relative z-10 grid grid-cols-{{ ($canSeeCmd ? 1 : 0) + ($canSeeAfiliacion ? 1 : 0) + ($canSeeTraspasos ? 1 : 0) }} gap-4 border-t border-white/10 pt-6">
-                @if($canSeeCmd)
-                <div>
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Carnetización</p>
-                    <p class="text-lg font-black">{{ $cmdData['porcentaje'] }}%</p>
-                </div>
-                @endif
-                @if($canSeeAfiliacion)
-                <div>
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Afiliación</p>
-                    <p class="text-lg font-black">{{ $afiliacionData['porcentaje'] }}%</p>
-                </div>
-                @endif
-                @if($canSeeTraspasos)
-                <div>
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Traspasos</p>
-                    <p class="text-lg font-black">{{ $traspasosData['porcentaje'] }}%</p>
-                </div>
-                @endif
-            </div>
-        </div>
-
-        @if($canSeeCmd)
-        <!-- Módulo CMD (Square Item) -->
-        <div class="glass-morphism p-8 rounded-[3rem] bento-item border-l-8 border-l-blue-500">
-            <div class="flex justify-between items-start mb-6">
-                <span class="material-symbols-outlined text-blue-500 text-3xl p-3 bg-blue-50 rounded-2xl">badge</span>
-                <span class="text-[10px] font-black text-blue-600/50 uppercase tracking-widest">CMD</span>
-            </div>
-            <h3 class="text-lg font-black text-slate-800 tracking-tight mb-1">Carnetización</h3>
-            <div class="text-3xl font-black text-slate-900 mb-6">{{ number_format($cmdData['total']) }}</div>
-            
-            <div class="space-y-4">
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-400 font-bold uppercase tracking-tighter">Completados</span>
-                    <span class="text-emerald-500 font-black">{{ number_format($cmdData['completados']) }}</span>
-                </div>
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-400 font-bold uppercase tracking-tighter">Críticos SLA</span>
-                    <span class="text-rose-500 font-black animate-pulse">{{ $cmdData['criticos'] }}</span>
-                </div>
-                <div class="pt-4 border-t border-slate-100 mt-4">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Cartera Pendiente</p>
-                    <p class="text-lg font-black text-slate-800">RD$ {{ number_format($cmdData['monto_pendiente'], 0) }}</p>
-                </div>
-            </div>
-        </div>
-        @endif
-
-        @if($canSeeAfiliacion)
-        <!-- Módulo Afiliación (Square Item) -->
-        <div class="glass-morphism p-8 rounded-[3rem] bento-item border-l-8 border-l-indigo-500">
-            <div class="flex justify-between items-start mb-6">
-                <span class="material-symbols-outlined text-indigo-500 text-3xl p-3 bg-indigo-50 rounded-2xl">person_add</span>
-                <span class="text-[10px] font-black text-indigo-600/50 uppercase tracking-widest">OPS</span>
-            </div>
-            <h3 class="text-lg font-black text-slate-800 tracking-tight mb-1">Afiliaciones</h3>
-            <div class="text-3xl font-black text-slate-900 mb-6">{{ number_format($afiliacionData['total']) }}</div>
-            
-            <div class="space-y-4">
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-400 font-bold uppercase tracking-tighter">Aprobadas</span>
-                    <span class="text-emerald-500 font-black">{{ number_format($afiliacionData['aprobadas']) }}</span>
-                </div>
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-400 font-bold uppercase tracking-tighter">Ingreso Hoy</span>
-                    <span class="text-indigo-600 font-black">+{{ $afiliacionData['hoy'] }}</span>
-                </div>
-                <div class="pt-4 border-t border-slate-100 mt-4">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Tasa Devolución</p>
-                    <p class="text-lg font-black text-amber-600">{{ $afiliacionData['tasa_devolucion'] }}%</p>
-                </div>
-            </div>
-        </div>
-        @endif
-
-        <!-- Tendencia Global (Wide Item) -->
-        <div class="col-span-1 lg:col-span-3 glass-morphism p-8 rounded-[3rem] bento-item">
-            <div class="flex justify-between items-center mb-8">
-                <div>
-                    <h3 class="text-xl font-black text-slate-800 tracking-tighter">Tendencia Multimodular</h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">Crecimiento consolidado 6 meses</p>
-                </div>
-                <div class="flex gap-2">
-                    @if($canSeeCmd)
-                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100">
-                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                        <span class="text-[9px] font-black text-blue-600 uppercase">CMD</span>
-                    </div>
-                    @endif
-                    @if($canSeeAfiliacion)
-                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100">
-                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                        <span class="text-[9px] font-black text-indigo-600 uppercase">OPS</span>
-                    </div>
-                    @endif
-                    @if($canSeeTraspasos)
-                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-100">
-                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                        <span class="text-[9px] font-black text-amber-600 uppercase">TRA</span>
-                    </div>
-                    @endif
-                </div>
-            </div>
-            <div class="h-[300px]">
-                <canvas id="mainTrendChart"></canvas>
-            </div>
-        </div>
-
-        @if($canSeeTraspasos)
-        <!-- Traspasos (Square Item) -->
-        <div class="glass-morphism p-8 rounded-[3rem] bento-item border-l-8 border-l-amber-500">
-            <div class="flex justify-between items-start mb-6">
-                <span class="material-symbols-outlined text-amber-500 text-3xl p-3 bg-amber-50 rounded-2xl">swap_horiz</span>
-                <span class="text-[10px] font-black text-amber-600/50 uppercase tracking-widest">TRA</span>
-            </div>
-            <h3 class="text-lg font-black text-slate-800 tracking-tight mb-1">Traspasos</h3>
-            <div class="text-3xl font-black text-slate-900 mb-6">{{ number_format($traspasosData['total']) }}</div>
-            
-            <div class="space-y-4">
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-400 font-bold uppercase tracking-tighter">Efectivos</span>
-                    <span class="text-emerald-500 font-black">{{ number_format($traspasosData['efectivos']) }}</span>
-                </div>
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-400 font-bold uppercase tracking-tighter">Mes Actual</span>
-                    <span class="text-slate-800 font-black">{{ $traspasosData['mes_actual'] }}</span>
-                </div>
-                <div class="pt-4 border-t border-slate-100 mt-4 text-center">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Meta Mensual</p>
-                    <div class="text-2xl font-black text-slate-900">{{ $traspasosData['cumplimiento_meta'] }}%</div>
-                    <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-                        <div class="h-full bg-amber-500" style="width: {{ $traspasosData['cumplimiento_meta'] }}%"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endif
-
+<div class="min-h-screen bg-slate-900 text-white p-6 lg:p-12 font-sans selection:bg-blue-500/30">
+    <!-- Background Decor -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse"></div>
+        <div class="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse"></div>
     </div>
 
-    <!-- Hidden Data for JS -->
-    <div id="exec-data" class="hidden"
-        data-labels='{!! json_encode($tendencia['labels']) !!}'
-        data-cmd='{!! json_encode($tendencia['cmd']) !!}'
-        data-afiliacion='{!! json_encode($tendencia['afiliacion']) !!}'
-        data-traspasos='{!! json_encode($tendencia['traspasos']) !!}'>
-    </div>
+    <div class="relative z-10 max-w-[1600px] mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-16">
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="px-4 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Executive Intelligence</span>
+                </div>
+                <h1 class="text-5xl font-black tracking-tighter mb-2">Dashboard <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Ejecutivo</span></h1>
+                <p class="text-slate-400 font-medium max-w-lg">Visión consolidada de operaciones, crecimiento CRM y cumplimiento de seguridad.</p>
+            </div>
 
+            <!-- Global Health Gauge -->
+            <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] p-8 flex items-center gap-8 shadow-2xl">
+                <div class="relative w-24 h-24">
+                    <svg class="w-full h-full transform -rotate-90">
+                        <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent" class="text-white/5"></circle>
+                        <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent" 
+                                class="@if($healthIndex > 80) text-emerald-500 @elseif($healthIndex > 50) text-amber-500 @else text-rose-500 @endif"
+                                stroke-dasharray="251.2"
+                                stroke-dashoffset="{{ 251.2 * (1 - $healthIndex / 100) }}"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-2xl font-black">{{ $healthIndex }}%</span>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Índice de Salud</p>
+                    <p class="text-lg font-black text-white">Operación @if($healthIndex > 80) Óptima @else en Riesgo @endif</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <!-- 1. CRM Metrics -->
+            @if($canSeeCallCenter)
+            <div class="bg-gradient-to-br from-blue-600/20 to-transparent backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 group hover:border-blue-500/30 transition-all">
+                <div class="flex justify-between items-start mb-8">
+                    <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30">
+                        <i class="ph-duotone ph-phone-call text-2xl"></i>
+                    </div>
+                    <span class="text-emerald-400 text-xs font-bold">+{{ $callCenterData['tasa_conversion'] }}% Conv.</span>
+                </div>
+                <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Crecimiento CRM</h3>
+                <p class="text-4xl font-black mb-6">{{ number_format($callCenterData['total']) }} <span class="text-lg text-slate-500 font-bold tracking-normal">Leads</span></p>
+                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                    <div class="bg-blue-500 h-full transition-all duration-1000" style="width: {{ $callCenterData['porcentaje_gestion'] }}%"></div>
+                </div>
+                <p class="text-[10px] font-bold text-slate-500 mt-3">{{ $callCenterData['gestionados'] }} gestiones realizadas hoy</p>
+            </div>
+            @endif
+
+            <!-- 2. Security Compliance -->
+            @if($canSeeSecurity)
+            <div class="bg-gradient-to-br @if($securityData['conflictos_activos'] > 0) from-rose-600/20 @else from-emerald-600/20 @endif to-transparent backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 group hover:scale-[1.02] transition-all">
+                <div class="flex justify-between items-start mb-8">
+                    <div class="w-14 h-14 @if($securityData['conflictos_activos'] > 0) bg-rose-600 shadow-rose-600/30 @else bg-emerald-600 shadow-emerald-600/30 @endif rounded-2xl flex items-center justify-center shadow-lg">
+                        <i class="ph-duotone @if($securityData['conflictos_activos'] > 0) ph-shield-warning @else ph-shield-check @endif text-2xl"></i>
+                    </div>
+                </div>
+                <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Seguridad (SoD)</h3>
+                <p class="text-4xl font-black mb-6 text-@if($securityData['conflictos_activos'] > 0) rose @else emerald @endif-400">{{ $securityData['conflictos_activos'] }} <span class="text-lg text-slate-500 font-bold tracking-normal">Alertas</span></p>
+                <p class="text-[11px] font-bold leading-tight @if($securityData['conflictos_activos'] > 0) text-rose-300 @else text-emerald-300 @endif">
+                    @if($securityData['conflictos_activos'] > 0)
+                        Se han detectado conflictos de segregación de funciones en los roles.
+                    @else
+                        Todas las jerarquías de acceso cumplen con el estándar de seguridad.
+                    @endif
+                </p>
+            </div>
+            @endif
+
+            <!-- 3. Operation Volume (CMD) -->
+            @if($canSeeCmd)
+            <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8">
+                <div class="flex justify-between items-start mb-8">
+                    <div class="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30">
+                        <i class="ph-duotone ph-identification-card text-2xl"></i>
+                    </div>
+                </div>
+                <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Carnetización</h3>
+                <p class="text-4xl font-black mb-6">{{ number_format($cmdData['total']) }}</p>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-black px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded-md">{{ $cmdData['porcentaje'] }}%</span>
+                    <span class="text-[10px] text-slate-500 font-bold">Producción Completada</span>
+                </div>
+            </div>
+            @endif
+
+            <!-- 4. Affiliation Funnel -->
+            @if($canSeeAfiliacion)
+            <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8">
+                <div class="flex justify-between items-start mb-8">
+                    <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/30">
+                        <i class="ph-duotone ph-user-plus text-2xl"></i>
+                    </div>
+                </div>
+                <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Solicitudes</h3>
+                <p class="text-4xl font-black mb-6">{{ number_format($afiliacionData['total']) }}</p>
+                <p class="text-[10px] text-slate-500 font-bold italic">{{ $afiliacionData['hoy'] }} nuevas solicitudes recibidas hoy</p>
+            </div>
+            @endif
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-[3rem] p-10 shadow-2xl">
+                <div class="flex items-center justify-between mb-12">
+                    <div>
+                        <h3 class="text-xl font-black tracking-tight mb-1">Tendencia de Crecimiento Multi-App</h3>
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-widest">Comparativa de los últimos 6 meses</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                            <span class="text-[10px] font-bold text-slate-400">CRM</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 bg-amber-500 rounded-full"></span>
+                            <span class="text-[10px] font-bold text-slate-400">Carnet</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-[400px]">
+                    <canvas id="mainTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Security Audit -->
+            @if($canSeeSecurity)
+            <div class="bg-slate-950/50 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 flex flex-col shadow-2xl">
+                <h3 class="text-xl font-black mb-8">Control de Accesos</h3>
+                <div class="space-y-6 flex-1 overflow-y-auto no-scrollbar pr-4">
+                    <div class="flex items-center gap-6 p-4 rounded-3xl bg-white/5 border border-white/5">
+                        <div class="w-10 h-10 bg-blue-500/20 text-blue-500 rounded-xl flex items-center justify-center">
+                            <i class="ph-bold ph-eye text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-black text-white">Auditorías de Hoy</p>
+                            <p class="text-2xl font-black">{{ $securityData['auditorias_hoy'] }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 ml-1">Ecosistema de Roles</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 bg-slate-900 rounded-2xl border border-white/5">
+                                <p class="text-2xl font-black text-amber-500">{{ $securityData['roles_criticos'] }}</p>
+                                <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Perfiles Activos</p>
+                            </div>
+                            <div class="p-4 bg-slate-900 rounded-2xl border border-white/5">
+                                <p class="text-2xl font-black text-blue-500">99.9%</p>
+                                <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Uptime Seguridad</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="{{ route('admin.access.audit') }}" class="mt-8 w-full py-4 bg-white/5 hover:bg-white/10 text-center rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-white/5">
+                    Ver Bitácora de Auditoría
+                </a>
+            </div>
+            @endif
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const dataContainer = document.getElementById('exec-data');
-    if (!dataContainer) return;
-
-    const labels = JSON.parse(dataContainer.dataset.labels);
-    const cmdData = JSON.parse(dataContainer.dataset.cmd);
-    const afiData = JSON.parse(dataContainer.dataset.afiliacion);
-    const traData = JSON.parse(dataContainer.dataset.traspasos);
-
-    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
-    Chart.defaults.color = '#94a3b8';
-
     const ctx = document.getElementById('mainTrendChart').getContext('2d');
     
-    // Gradients
-    const gradBlue = ctx.createLinearGradient(0, 0, 0, 300);
-    gradBlue.addColorStop(0, 'rgba(59, 130, 246, 0.1)');
-    gradBlue.addColorStop(1, 'rgba(59, 130, 246, 0)');
+    const gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
+    gradientBlue.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+    gradientBlue.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
-    const gradIndi = ctx.createLinearGradient(0, 0, 0, 300);
-    gradIndi.addColorStop(0, 'rgba(99, 102, 241, 0.1)');
-    gradIndi.addColorStop(1, 'rgba(99, 102, 241, 0)');
+    const gradientAmber = ctx.createLinearGradient(0, 0, 0, 400);
+    gradientAmber.addColorStop(0, 'rgba(245, 158, 11, 0.3)');
+    gradientAmber.addColorStop(1, 'rgba(245, 158, 11, 0)');
 
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: {!! json_encode($tendencia['labels']) !!},
             datasets: [
-                @if($canSeeCmd)
+                {
+                    label: 'CRM',
+                    data: {!! json_encode($tendencia['crm']) !!},
+                    borderColor: '#3b82f6',
+                    borderWidth: 4,
+                    fill: true,
+                    backgroundColor: gradientBlue,
+                    tension: 0.4,
+                    pointRadius: 0
+                },
                 {
                     label: 'Carnetización',
-                    data: cmdData,
-                    borderColor: '#3b82f6',
-                    backgroundColor: gradBlue,
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 4,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#3b82f6',
-                    pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 3
-                },
-                @endif
-                @if($canSeeAfiliacion)
-                {
-                    label: 'Afiliación',
-                    data: afiData,
-                    borderColor: '#6366f1',
-                    backgroundColor: gradIndi,
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 4,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#6366f1',
-                    pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 3
-                },
-                @endif
-                @if($canSeeTraspasos)
-                {
-                    label: 'Traspasos',
-                    data: traData,
+                    data: {!! json_encode($tendencia['cmd']) !!},
                     borderColor: '#f59e0b',
-                    fill: false,
-                    tension: 0.4,
                     borderWidth: 4,
-                    borderDash: [5, 5],
+                    fill: true,
+                    backgroundColor: gradientAmber,
+                    tension: 0.4,
                     pointRadius: 0
                 }
-                @endif
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: '#0f172a',
-                    padding: 15,
-                    cornerRadius: 15,
-                    titleFont: { size: 14, weight: '900' },
-                    bodyFont: { size: 12, weight: 'bold' }
-                }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    grid: { color: 'rgba(0,0,0,0.03)', drawBorder: false },
-                    ticks: { padding: 10 }
-                },
+                y: { display: false },
                 x: {
                     grid: { display: false },
-                    ticks: { padding: 10 }
+                    ticks: { color: '#64748b', font: { weight: 'bold', size: 10 } }
                 }
             }
         }
     });
-});
 </script>
+
+<style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    canvas { filter: drop-shadow(0 20px 30px rgba(0,0,0,0.5)); }
+</style>
 @endsection

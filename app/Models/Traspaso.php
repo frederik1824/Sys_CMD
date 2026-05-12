@@ -29,7 +29,19 @@ class Traspaso extends Model
         'periodo_efectivo',
         'cantidad_dependientes',
         'es_emitido',
+        'verificado',
+        'verificado_at',
+        'verificado_por',
+        'unipago_revisado_at',
+        'unipago_status',
+        'unipago_observaciones',
+        'fecha_rechazo',
     ];
+
+    public function verificadoPor()
+    {
+        return $this->belongsTo(User::class, 'verificado_por');
+    }
 
     public function agenteRel()
     {
@@ -60,6 +72,10 @@ class Traspaso extends Model
             'pendiente_carga_documento' => 'boolean',
             'pendiente_aprobar_consentimiento' => 'boolean',
             'es_emitido' => 'boolean',
+            'verificado' => 'boolean',
+            'verificado_at' => 'datetime',
+            'unipago_revisado_at' => 'datetime',
+            'fecha_rechazo' => 'date',
         ];
     }
 

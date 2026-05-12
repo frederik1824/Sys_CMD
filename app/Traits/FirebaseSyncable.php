@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Services\FirebaseSyncService;
 use Illuminate\Support\Facades\Log;
+use App\Models\CloudSyncAudit;
 
 /**
  * Trait to handle bidirectional sync with Firebase Firestore
@@ -20,23 +21,27 @@ trait FirebaseSyncable
      */
     public static function bootFirebaseSyncable()
     {
-        static::saved(function ($model) {
-            // No sincronizar si el flag global está activo (evita desbordamientos en mass pulls)
-            if (static::$isSyncingDisabled) {
-                return;
-            }
+        static::saving(function ($model) {
+            if (static::$isSyncingDisabled) return;
 
-            if ($model->getFirebaseDocumentId()) {
-                $success = $model->pushToFirebase();
-                
-                if ($success) {
-                    if (\Schema::hasColumn($model->getTable(), 'firebase_synced_at')) {
-                        $now = now();
-                        $model->timestamps = false;
-                        $model->firebase_synced_at = $now;
-                        $model->saveQuietly();
-                        
-                        Log::channel('single')->info("Firebase Push Success [" . $model->getTable() . "/" . $model->getFirebaseDocumentId() . "] for ID {$model->id}");
+            // Detect real changes before marking as pending
+            if ($model->isDirty()) {
+                if (\Schema::hasColumn($model->getTable(), 'sync_status')) {
+                    $model->sync_status = 'pending';
+                }
+            }
+        });
+
+        static::saved(function ($model) {
+            if (static::$isSyncingDisabled) return;
+
+            // Sincronización en segundo plano (Job) si hay colas configuradas
+            if (config('firebase.immediate_push', true)) {
+                if ($model->getFirebaseDocumentId()) {
+                    if (config('queue.default') !== 'sync') {
+                        \App\Jobs\FirebasePushJob::dispatch($model);
+                    } else {
+                        $model->pushToFirebase();
                     }
                 }
             }
@@ -63,6 +68,12 @@ trait FirebaseSyncable
     public function pullFromFirebase(): bool
     {
         try {
+            // Protection: If we have pending local changes, DO NOT pull (to avoid overwriting our own unsynced work)
+            if (\Schema::hasColumn($this->getTable(), 'sync_status') && $this->sync_status === 'pending') {
+                Log::channel('single')->info("Firebase Pull Skipped [{$this->getFirebaseDocumentId()}] - Model has pending local changes.");
+                return false;
+            }
+
             $syncService = app(FirebaseSyncService::class);
             $collection = $this->getFirebaseCollection();
             $docId = $this->getFirebaseDocumentId();
@@ -72,9 +83,8 @@ trait FirebaseSyncable
             // Try fetching
             $docData = $syncService->getDocument($collection, $docId);
 
-            // En el caso de afiliados, la búsqueda ahora prioriza los guiones
+            // Fallback for affiliates
             if (!$docData && $collection === 'afiliados') {
-                // Si el ID actual tiene guiones (o es el objeto completo), intentamos la versión "limpia" como fallback legacy
                 $docIdRaw = preg_replace('/[^0-9]/', '', $docId);
                 if ($docIdRaw !== $docId) {
                     $docData = $syncService->getDocument($collection, $docIdRaw);
@@ -82,28 +92,68 @@ trait FirebaseSyncable
             }
 
             if ($docData) {
+                // Conflict Resolution & Versioning
+                $remoteUpdatedAt = isset($docData['updated_at']) ? \Carbon\Carbon::parse($docData['updated_at']) : null;
+                $localUpdatedAt = $this->updated_at;
+                
+                // If remote is older than local, we might want to skip or flag
+                if ($remoteUpdatedAt && $localUpdatedAt && $remoteUpdatedAt->lt($localUpdatedAt->subSeconds(5))) {
+                    if (\Schema::hasColumn($this->getTable(), 'conflict_status')) {
+                        $this->conflict_status = 'remote_is_older';
+                        $this->saveQuietly();
+                    }
+                    // Continue anyway if we want "Firebase is source of truth", 
+                    // or return if we want to protect local edits. 
+                    // For SAFE <-> CMD, Firebase is the bridge.
+                }
+
                 $mapping = $this->getFirebaseMapping();
                 $updateData = [];
+                $changes = [];
 
                 foreach ($mapping as $localField => $firebaseField) {
                     if (array_key_exists($firebaseField, $docData)) {
-                        $updateData[$localField] = $docData[$firebaseField];
+                        $newValue = $docData[$firebaseField];
+                        $oldValue = $this->{$localField};
+
+                        // Comparison for auditing
+                        if ($newValue != $oldValue) {
+                            $updateData[$localField] = $newValue;
+                            $changes[$localField] = [
+                                'old' => $oldValue,
+                                'new' => $newValue
+                            ];
+                        }
                     }
                 }
 
                 if (!empty($updateData)) {
-                    // Aplicar reglas de negocio específicas del modelo (si existen)
+                    // Business Rules (Gating)
                     if (method_exists($this, 'applyGatingRule')) {
                         $updateData = $this->applyGatingRule($updateData);
                     }
 
-                    // Update without triggering observers to avoid loop
+                    // Perform update without triggering events
                     self::withoutEvents(function() use ($updateData) {
                         $this->update($updateData);
                     });
+
+                    // Log Audits for traceability
+                    $origin = env('FIREBASE_SYNC_ROLE') === 'CMD' ? 'SAFE' : 'CMD'; // If I am CMD, source is SAFE
+                    foreach ($changes as $field => $val) {
+                        CloudSyncAudit::create([
+                            'auditable_type' => get_class($this),
+                            'auditable_id' => $this->id,
+                            'field' => $field,
+                            'old_value' => is_array($val['old']) ? json_encode($val['old']) : $val['old'],
+                            'new_value' => is_array($val['new']) ? json_encode($val['new']) : $val['new'],
+                            'company_origin' => $origin,
+                            'user_name' => 'Firebase Sync',
+                            'synced_at' => now()
+                        ]);
+                    }
                     
-                    // Specific log for debugging sync success
-                    Log::channel('single')->info("Firebase Pull Success [{$collection}/{$docId}] for ID {$this->id}");
+                    Log::channel('single')->info("Firebase Pull Success [{$collection}/{$docId}] - " . count($changes) . " fields updated.");
                     return true;
                 }
             }
@@ -134,8 +184,23 @@ trait FirebaseSyncable
                 $dataToPush[$firebaseField] = $this->{$localField};
             }
 
+            // Add timestamp for cloud ordering
+            $dataToPush['updated_at'] = now()->toIso8601String();
+
             if (!empty($dataToPush)) {
-                return $syncService->push($collection, $docId, $dataToPush);
+                $success = $syncService->push($collection, $docId, $dataToPush);
+                
+                if ($success) {
+                    self::withoutEvents(function() {
+                        $this->timestamps = false;
+                        $this->firebase_synced_at = now();
+                        if (\Schema::hasColumn($this->getTable(), 'sync_status')) {
+                            $this->sync_status = 'synced';
+                        }
+                        $this->saveQuietly();
+                    });
+                    return true;
+                }
             }
 
             return false;

@@ -49,38 +49,15 @@
                 <form id="globalSyncForm" action="{{ route('carnetizacion.afiliados.sync_firebase') }}" method="POST" class="hidden">
                     @csrf
                 </form>
+                <a href="{{ route('carnetizacion.dashboard') }}" class="px-5 py-2.5 bg-amber-500 text-white font-bold text-xs rounded-xl shadow-lg hover:bg-amber-600 transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">dashboard</span>
+                    Dashboard
+                </a>
                 <a href="{{ route('carnetizacion.afiliados.create', ['segment' => $segment]) }}" class="bg-primary text-white px-5 py-2.5 rounded-xl shadow-lg shadow-primary/20 text-sm font-semibold flex items-center gap-2 hover:bg-blue-800 transition-colors">
                     <span class="material-symbols-outlined text-lg">add</span> Nuevo
                 </a>
             </div>
         </div>
-
-        @if(isset($statsPorPeriodo) && $statsPorPeriodo->count() > 0)
-        <!-- Panel de Avance por Periodo -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            @foreach($statsPorPeriodo as $stat)
-            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                <div class="flex justify-between items-start mb-2">
-                    <span class="text-[0.6rem] font-black uppercase text-slate-400 tracking-wider">{{ $stat->nombre }}</span>
-                    <span class="text-xs font-bold text-primary">{{ $stat->porcentaje }}%</span>
-                </div>
-                <div class="flex items-end justify-between">
-                    <div>
-                        <p class="text-lg font-black text-slate-800">{{ $stat->total }}</p>
-                        <p class="text-[0.6rem] text-slate-400 font-bold uppercase">Total</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm font-bold text-amber-600">{{ $stat->pendiente }}</p>
-                        <p class="text-[0.6rem] text-slate-400 font-bold uppercase">Pendiente</p>
-                    </div>
-                </div>
-                <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" style="width: {{ $stat->porcentaje }}%"></div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-        @endif
 
         <!-- Quick Filters (NUEVO SEMANA 2) -->
         <div class="flex items-center gap-2 border-b border-slate-200 pb-px">
@@ -88,16 +65,20 @@
                class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ !request('estado_id') && !request('sla_critical') ? 'border-blue-600 text-blue-700 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
                 Todos
             </a>
-            <a href="{{ request()->fullUrlWithQuery(['estado_id' => 7, 'sla_critical' => null]) }}" 
-               class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ request('estado_id') == 7 ? 'border-amber-500 text-amber-700 bg-amber-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
+            @php
+                $completadoId = $estados->where('nombre', 'Completado')->first()->id ?? 9;
+                $pendienteValId = $estados->where('nombre', 'Pendiente Validación')->first()->id ?? 7;
+            @endphp
+            <a href="{{ request()->fullUrlWithQuery(['estado_id' => $pendienteValId, 'sla_critical' => null]) }}" 
+               class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ request('estado_id') == $pendienteValId ? 'border-amber-500 text-amber-700 bg-amber-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
                 Pendientes Validación
             </a>
             <a href="{{ request()->fullUrlWithQuery(['estado_id' => null, 'sla_critical' => 1]) }}" 
                class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ request('sla_critical') == 1 ? 'border-rose-500 text-rose-700 bg-rose-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
                 SLA Crítico
             </a>
-            <a href="{{ request()->fullUrlWithQuery(['estado_id' => 8, 'sla_critical' => null]) }}" 
-               class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ request('estado_id') == 8 ? 'border-emerald-500 text-emerald-700 bg-emerald-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
+            <a href="{{ request()->fullUrlWithQuery(['estado_id' => $completadoId, 'sla_critical' => null]) }}" 
+               class="px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 {{ request('estado_id') == $completadoId ? 'border-emerald-500 text-emerald-700 bg-emerald-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50' }}">
                 Completados
             </a>
         </div>
@@ -337,16 +318,12 @@
                                     <button type="button" onclick="syncSingle('{{ $afiliado->uuid }}', this)" class="p-1.5 text-slate-400 hover:text-blue-600 transition-all" title="Sincronizar">
                                         <span class="material-symbols-outlined text-[1.1rem]">sync</span>
                                     </button>
-                                    @if(strtolower($afiliado->estado?->nombre) !== 'completado')
                                     <button type="button" onclick="confirmAcuse('{{ $afiliado->uuid }}', '{{ $afiliado->nombre_completo }}', this)" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Acuse">
                                         <span class="material-symbols-outlined text-[1.1rem]">assignment_late</span>
                                     </button>
-                                    @endif
-                                    @if($afiliado->estado?->nombre !== 'Completado' && $afiliado->estado_id != 7)
                                     <button type="button" onclick="quickComplete('{{ $afiliado->uuid }}', '{{ $afiliado->nombre_completo }}', this)" class="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors" title="Completar">
                                         <span class="material-symbols-outlined text-[1.1rem]">check_circle</span>
                                     </button>
-                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -367,58 +344,7 @@
             </div>
         </div>
         
-        <!-- Tablero de Resumen (Bento) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Summary Card -->
-            <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm flex flex-col justify-between border border-slate-100 dark:border-slate-800">
-                <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-[0.6875rem] font-bold tracking-widest uppercase text-slate-400">Completado Global</span>
-                        <span class="material-symbols-outlined text-primary-container">fact_check</span>
-                    </div>
-                    {{-- TODO Lógica de Progreso Dashboard --}}
-                    <h3 class="text-3xl font-bold text-primary">0%</h3>
-                    <p class="text-xs text-on-surface-variant mt-1">Afiliados con documentación validada.</p>
-                </div>
-                <div class="mt-6 w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" style="width: 0%;"></div>
-                </div>
-            </div>
-
-            <!-- Assignment Pulse -->
-            <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-[0.6875rem] font-bold tracking-widest uppercase text-slate-400">Pendientes</span>
-                    <span class="material-symbols-outlined text-amber-500">bolt</span>
-                </div>
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <span class="text-xs font-medium text-on-surface dark:text-slate-300">Asignados Activos</span>
-                        </div>
-                        <span class="text-xs font-bold text-on-surface dark:text-slate-200">0</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                            <span class="text-xs font-medium text-on-surface dark:text-slate-300">Sin Asignar</span>
-                        </div>
-                        <span class="text-xs font-bold text-on-surface dark:text-slate-200">0</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Action CTA Card -->
-            <div class="bg-primary-container p-6 rounded-2xl shadow-sm text-white relative overflow-hidden group">
-                <div class="relative z-10">
-                    <h4 class="text-lg font-bold mb-2">Cierre de Documentos</h4>
-                    <p class="text-blue-100 text-xs mb-6">Módulo para carga y validación de acuses y formularios físicos.</p>
-                    <a href="{{ route('cierre.index') }}" class="bg-white text-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-800 hover:text-white transition-all inline-block">Ir a Módulo</a>
-                </div>
-                <span class="material-symbols-outlined absolute -bottom-4 -right-4 text-white/10 text-8xl group-hover:scale-110 transition-transform">folder_zip</span>
-            </div>
-        </div>
+        {{-- Bento Summary Section Removed as per User Request --}}
 
     </div>
 
@@ -726,7 +652,7 @@
                     const row = btn.closest('tr');
                     row.style.opacity = '0.5';
 
-                    fetch(`/afiliados/${uuid}/estado_single`, {
+                    fetch(`/carnetizacion/afiliados/${uuid}/estado_single`, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -801,7 +727,7 @@
                     row.style.opacity = '0.5';
                     row.style.pointerEvents = 'none';
 
-                    fetch(`/afiliados/${uuid}/confirm-receipt`, {
+                    fetch(`/carnetizacion/afiliados/${uuid}/confirm-receipt`, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -849,7 +775,7 @@
                     const row = btn.closest('tr');
                     row.style.opacity = '0.5';
 
-                    fetch(`/afiliados/${uuid}/confirm-acuse`, {
+                    fetch(`/carnetizacion/afiliados/${uuid}/confirm-acuse`, {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -880,7 +806,7 @@
             icon.classList.add('animate-spin');
             btn.disabled = true;
 
-            fetch(`/afiliados/${uuid}/sync_single`, {
+            fetch(`/carnetizacion/afiliados/${uuid}/sync_single`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -954,6 +880,8 @@
         let pollInterval = null;
 
         function checkProgress() {
+            if (!container) return;
+
             fetch('{{ route('carnetizacion.afiliados.sync_progress') }}')
                 .then(response => response.json())
                 .then(data => {

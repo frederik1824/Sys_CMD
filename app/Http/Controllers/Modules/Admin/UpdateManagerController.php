@@ -54,6 +54,7 @@ class UpdateManagerController extends Controller
 
     public function pack(Request $request)
     {
+        set_time_limit(0);
         try {
             $version = $request->input('version');
             $changelog = $request->input('changelog', 'Actualización general del sistema.');
@@ -136,21 +137,34 @@ class UpdateManagerController extends Controller
             // 1. Bloqueo
             \Illuminate\Support\Facades\Cache::put('system_update_lock', true, now()->addMinutes(10));
 
-            // 2. Restaurar DB
-            $dbConfig = config('database.connections.mysql');
-            $command = sprintf(
-                'mysql --user=%s --password=%s --host=%s %s < %s',
-                escapeshellarg($dbConfig['username']),
-                escapeshellarg($dbConfig['password']),
-                escapeshellarg($dbConfig['host']),
-                escapeshellarg($dbConfig['database']),
-                Storage::disk('local')->path($backup->path)
-            );
+            // 2. Ejecutar restauración según el tipo
+            if ($backup->type === 'code') {
+                // Restauración de Archivos (Unzip)
+                $zip = new ZipArchive;
+                $zipPath = Storage::disk('local')->path($backup->path);
+                if ($zip->open($zipPath) === TRUE) {
+                    $zip->extractTo(base_path());
+                    $zip->close();
+                } else {
+                    throw new \Exception("No se pudo abrir el snapshot de código.");
+                }
+            } else {
+                // Restauración de Base de Datos (SQL)
+                $dbConfig = config('database.connections.mysql');
+                $command = sprintf(
+                    'mysql --user=%s --password=%s --host=%s %s < %s',
+                    escapeshellarg($dbConfig['username']),
+                    escapeshellarg($dbConfig['password']),
+                    escapeshellarg($dbConfig['host']),
+                    escapeshellarg($dbConfig['database']),
+                    Storage::disk('local')->path($backup->path)
+                );
 
-            exec($command, $output, $returnVar);
+                exec($command, $output, $returnVar);
 
-            if ($returnVar !== 0) {
-                throw new \Exception("Fallo al restaurar la base de datos.");
+                if ($returnVar !== 0) {
+                    throw new \Exception("Fallo al restaurar la base de datos.");
+                }
             }
 
             // 3. Limpiar Caché
@@ -159,7 +173,7 @@ class UpdateManagerController extends Controller
             // 4. Desbloqueo
             \Illuminate\Support\Facades\Cache::forget('system_update_lock');
 
-            return response()->json(['success' => true, 'message' => 'Sistema restaurado con éxito al punto: ' . $backup->created_at->format('d/m/Y H:i')]);
+            return response()->json(['success' => true, 'message' => 'Sistema restaurado con éxito desde: ' . $backup->filename]);
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Cache::forget('system_update_lock');
@@ -250,18 +264,36 @@ class UpdateManagerController extends Controller
             $this->recursiveCopy($extractPath, base_path());
             $logs[] = "✅ Archivos actualizados.";
 
-            // 6. Migraciones y Limpieza
+            // 6. Migraciones y Sincronización de Datos
             $logs[] = "⚙️ Ejecutando migraciones de base de datos...";
             Artisan::call('migrate', ['--force' => true]);
+            
+            // NUEVO: Sincronización Automática de Aplicaciones y Permisos
+            $logs[] = "🔄 Sincronizando catálogo de aplicaciones y permisos...";
+            try {
+                // Intentamos ejecutar un seeder específico de actualizaciones si existe
+                if (File::exists(app_path('Database/Seeders/SystemUpdateSeeder.php'))) {
+                    Artisan::call('db:seed', ['--class' => 'SystemUpdateSeeder', '--force' => true]);
+                }
+                
+                // Asegurar que las apps básicas estén registradas (Hardcoded para seguridad)
+                $this->syncCoreApplications();
+                $logs[] = "✅ Estructura de aplicaciones sincronizada.";
+            } catch (\Exception $seederError) {
+                $logs[] = "⚠️ Advertencia en sincronización de datos: " . $seederError->getMessage();
+            }
+
             $logs[] = "🧹 Limpiando caché del sistema...";
             Artisan::call('optimize:clear');
             $logs[] = "✅ Tareas de mantenimiento terminadas.";
 
             // 7. Registro
-            $versionInfo = json_decode(file_get_contents(base_path('version.json')), true);
+            $versionFile = base_path('version.json');
+            $versionInfo = File::exists($versionFile) ? json_decode(file_get_contents($versionFile), true) : ['version' => '1.0.' . time(), 'build' => time()];
+            
             SystemUpdate::create([
-                'version' => $versionInfo['version'] ?? 'unknown',
-                'build_number' => $versionInfo['build'] ?? time(),
+                'version' => $versionInfo['version'],
+                'build_number' => $versionInfo['build'],
                 'type' => 'patch',
                 'status' => 'success',
                 'completed_at' => now(),
@@ -409,8 +441,17 @@ class UpdateManagerController extends Controller
     {
         $dir = opendir($src);
         @mkdir($dst);
+        
+        // Archivos que NUNCA deben ser sobrescritos en el servidor destino
+        $protectedFiles = ['.env', 'sys_carnet_lan.conf', 'sys_carnet-firebase-adminsdk-fbsvc-7eab5483a2.json'];
+
         while (false !== ($file = readdir($dir))) {
             if (($file != '.') && ($file != '..')) {
+                // Si el archivo está protegido y ya existe en el destino, saltarlo
+                if (in_array($file, $protectedFiles) && file_exists($dst . '/' . $file)) {
+                    continue;
+                }
+
                 if (is_dir($src . '/' . $file)) {
                     $this->recursiveCopy($src . '/' . $file, $dst . '/' . $file);
                 } else {
@@ -419,5 +460,82 @@ class UpdateManagerController extends Controller
             }
         }
         closedir($dir);
+    }
+
+    /**
+     * Sincronización forzada de aplicaciones núcleo para evitar módulos invisibles post-update.
+     */
+    private function syncCoreApplications()
+    {
+        $coreApps = [
+            [
+                'slug' => 'cmd',
+                'name' => 'Carnetización',
+                'description' => 'Módulo central de gestión de carnets y afiliados.',
+                'route' => 'carnetizacion.afiliados.cmd',
+                'icon' => 'ph ph-identification-card',
+                'color' => 'blue',
+                'order_weight' => 10
+            ],
+            [
+                'slug' => 'afiliacion',
+                'name' => 'Solicitudes de Afiliación',
+                'description' => 'Gestión de nuevas solicitudes y trámites de afiliación.',
+                'route' => 'afiliacion.index',
+                'icon' => 'ph ph-user-plus',
+                'color' => 'emerald',
+                'order_weight' => 20
+            ],
+            [
+                'slug' => 'pyp',
+                'name' => 'Programa PyP',
+                'description' => 'Módulo de Promoción y Prevención / Riesgo Clínico',
+                'route' => 'pyp.dashboard',
+                'icon' => 'ph ph-heartbeat',
+                'color' => 'indigo',
+                'order_weight' => 30
+            ],
+            [
+                'slug' => 'call_center',
+                'name' => 'Call Center & CRM',
+                'description' => 'Gestión de prospectos, llamadas y seguimiento comercial.',
+                'route' => 'call-center.index',
+                'icon' => 'ph ph-headset',
+                'color' => 'orange',
+                'order_weight' => 40
+            ],
+            [
+                'slug' => 'access_control',
+                'name' => 'Control de Accesos',
+                'description' => 'Gestión de usuarios, roles y permisos de aplicaciones.',
+                'route' => 'admin.access.users',
+                'icon' => 'ph ph-shield-check',
+                'color' => 'rose',
+                'order_weight' => 90
+            ],
+            [
+                'slug' => 'update_manager',
+                'name' => 'Update Manager',
+                'description' => 'Gestor de actualizaciones, backups y salud del sistema.',
+                'route' => 'admin.updates.index',
+                'icon' => 'ph ph-rocket-launch',
+                'color' => 'slate',
+                'order_weight' => 100
+            ]
+        ];
+
+        foreach ($coreApps as $appData) {
+            \App\Models\Application::updateOrCreate(
+                ['slug' => $appData['slug']],
+                array_merge($appData, ['is_active' => true, 'is_visible' => true])
+            );
+        }
+
+        // Módulos que deben ser DESACTIVADOS (Limpieza de sistema)
+        $appsToDeactivate = ['admin', 'configuracion']; // Slugs de módulos obsoletos
+        \App\Models\Application::whereIn('slug', $appsToDeactivate)->update([
+            'is_active' => false,
+            'is_visible' => false
+        ]);
     }
 }

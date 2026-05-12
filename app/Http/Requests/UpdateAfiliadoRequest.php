@@ -22,10 +22,12 @@ class UpdateAfiliadoRequest extends FormRequest
         return [
             'nombre_completo' => 'required|string|max:255',
             'cedula' => ['required', 'string', 'max:20', new \App\Rules\CedulaDominicana],
+            'sexo' => 'nullable|string|in:M,F',
             'telefono' => 'nullable|string|max:20',
             'direccion' => 'nullable|string',
             'provincia_id' => 'nullable|exists:provincias,id',
             'municipio_id' => 'nullable|exists:municipios,id',
+            'empresa_id' => 'nullable|exists:empresas,id',
             'corte_id' => 'required|exists:cortes,id',
             'estado_id' => 'required|exists:estados,id',
             'responsable_id' => 'nullable|exists:responsables,id',
@@ -36,6 +38,9 @@ class UpdateAfiliadoRequest extends FormRequest
             'fecha_liquidacion' => 'nullable|date',
             'recibo_liquidacion' => 'nullable|string|max:100',
             'fecha_entrega_safesure' => 'nullable|date',
+            'contrato' => 'nullable|string|max:100',
+            'poliza' => 'nullable|string|max:100',
+            'observaciones' => 'nullable|string',
         ];
     }
     

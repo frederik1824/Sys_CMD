@@ -31,7 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    Route::get('stop-impersonating', [\App\Http\Controllers\UserController::class, 'stopImpersonating'])->name('usuarios.stop_impersonating');
+    Route::get('stop-impersonating', [\App\Http\Controllers\Admin\AccessControlController::class, 'stopImpersonating'])->name('usuarios.stop_impersonating');
 
     // --------------------------------------------------------------------------
     // ADMINISTRACIÓN CENTRAL DE ACCESOS
@@ -60,6 +60,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/roles', [\App\Http\Controllers\Admin\AccessControlController::class, 'roles'])->name('roles');
         Route::get('/roles/create', [\App\Http\Controllers\Admin\AccessControlController::class, 'createRole'])->name('roles.create');
         Route::post('/roles/store', [\App\Http\Controllers\Admin\AccessControlController::class, 'storeRole'])->name('roles.store');
+        Route::get('/roles/{role}/edit', [\App\Http\Controllers\Admin\AccessControlController::class, 'editRole'])->name('roles.edit');
+        Route::put('/roles/{role}/update', [\App\Http\Controllers\Admin\AccessControlController::class, 'updateRole'])->name('roles.update');
+        Route::post('/roles/{role}/duplicate', [\App\Http\Controllers\Admin\AccessControlController::class, 'duplicateRole'])->name('roles.duplicate');
         Route::get('/permissions', [\App\Http\Controllers\Admin\AccessControlController::class, 'permissions'])->name('permissions');
 
         Route::post('/store', [\App\Http\Controllers\Admin\AccessControlController::class, 'store'])->name('store');
@@ -70,7 +73,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Esta ruta debe ser accesible por el usuario impersonado para poder volver
-    Route::get('/stop-impersonating', [\App\Http\Controllers\Admin\AccessControlController::class, 'stopImpersonating'])->name('admin.access.stop_impersonating');
+    Route::post('/impersonate/stop', [\App\Http\Controllers\Admin\AccessControlController::class, 'stopImpersonating'])->name('admin.access.impersonate.stop');
 
     // Redirección de Rutas Legadas a la Nueva Consola de Seguridad
     Route::get('sistema/usuarios', function() { return redirect()->route('admin.access.users'); });
@@ -103,6 +106,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/compare', [App\Http\Controllers\FirebaseSyncController::class, 'compare'])->name('compare');
             Route::get('/snapshots', [App\Http\Controllers\FirebaseSyncController::class, 'list_snapshots'])->name('list_snapshots');
             Route::post('/restore-snapshot', [App\Http\Controllers\FirebaseSyncController::class, 'restoreSnapshot'])->name('restore_snapshot');
+            
+            // New Advanced Views
+            Route::get('/records', [App\Http\Controllers\FirebaseSyncController::class, 'records'])->name('records');
+            Route::get('/conflicts', [App\Http\Controllers\FirebaseSyncController::class, 'conflicts'])->name('conflicts');
         });
 
         // Módulo de Afiliados
@@ -220,6 +227,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'index'])->name('index');
         Route::get('/dashboard', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'dashboard'])->name('dashboard');
         Route::get('/exportar', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'export'])->name('export');
+        Route::get('/historial/{traspaso}', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'history'])->name('history');
+        Route::get('/{traspaso}/editar', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'edit'])->name('edit');
+        Route::put('/{traspaso}', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'update'])->name('update');
         Route::get('/importar', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'importView'])->name('import');
         Route::post('/importar', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'import'])->name('import.store');
         Route::get('/efectividad-masiva', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'bulkEffectiveView'])->name('bulk.effective');
@@ -227,6 +237,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{traspaso}/emitir-carnet', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'emitirCarnet'])->name('emitir-carnet');
         Route::post('/{traspaso}/rechazar', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'rechazar'])->name('rechazar');
         Route::patch('/{traspaso}/enriquecer', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'updateEnrichment'])->name('enrich');
+        Route::patch('/{traspaso}/verificar', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'verificar'])->name('verificar');
         Route::get('/{traspaso}/historial', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'history'])->name('history');
         Route::get('/sincronizacion-unipago', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'syncUnipagoView'])->name('sync.unipago');
         Route::post('/sincronizacion-unipago', [\App\Http\Controllers\Modules\Traspasos\TraspasoController::class, 'processSyncUnipago'])->name('sync.unipago.store');
@@ -295,6 +306,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/{solicitud}', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'update'])->name('update');
         Route::post('/{solicitud}/asignar', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'assign'])->name('assign');
         Route::post('/{solicitud}/aprobar', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'approve'])->name('approve');
+        Route::post('/{solicitud}/completar', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'complete'])->name('complete');
         Route::post('/{solicitud}/rechazar', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'reject'])->name('reject');
         Route::post('/{solicitud}/devolver', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'return'])->name('return');
         Route::middleware('can:solicitudes_afiliacion.escalar')->post('/{solicitud}/escalar', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'escalate'])->name('escalate');
@@ -372,6 +384,8 @@ Route::middleware('auth')->group(function () {
         Route::get('heatmap', [\App\Http\Controllers\ReporteController::class, 'heatmap'])->name('heatmap');
         Route::get('alertas-sla', [\App\Http\Controllers\ReporteController::class, 'slaAlerts'])->name('sla_alerts');
         Route::get('produccion-traspasos', [\App\Http\Controllers\ReporteController::class, 'produccionTraspasos'])->name('produccion_traspasos');
+        Route::get('produccion-traspasos/export', [\App\Http\Controllers\ReporteController::class, 'exportProduccionTraspasos'])->name('produccion_traspasos.export');
+        Route::get('produccion-traspasos/export-pdf', [\App\Http\Controllers\ReporteController::class, 'exportProduccionTraspasosPdf'])->name('produccion_traspasos.export_pdf');
         Route::get('comparativa', [\App\Http\Controllers\ReporteController::class, 'comparison'])->name('comparativa');
         Route::get('pendientes', [\App\Http\Controllers\ReporteController::class, 'pendientes'])->name('pendientes');
         Route::get('pendientes/export', [\App\Http\Controllers\ReporteController::class, 'exportPendientes'])->name('pendientes.export');
@@ -430,6 +444,44 @@ Route::middleware('auth')->group(function () {
         Route::get('/estadisticas', [App\Http\Controllers\Modules\CallCenter\CallCenterController::class, 'stats'])->name('stats');
     });
 
+    // --- Módulo de Asistencia ---
+    Route::prefix('asistencia')->name('asistencia.')->group(function () {
+        // Rutas del Empleado
+        Route::middleware(['can:asistencia.marcar'])->group(function () {
+            Route::get('/', [App\Http\Controllers\Modules\Asistencia\AsistenciaController::class, 'index'])->name('index');
+            Route::post('/marcar', [App\Http\Controllers\Modules\Asistencia\AsistenciaController::class, 'marcar'])->name('marcar');
+            Route::get('/historial', [App\Http\Controllers\Modules\Asistencia\AsistenciaController::class, 'historial'])->name('historial');
+            Route::post('/justificar/{registro}', [App\Http\Controllers\Modules\Asistencia\AsistenciaController::class, 'justificar'])->name('justificar');
+            
+            Route::prefix('permisos')->name('permisos.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Modules\Asistencia\PermisoController::class, 'index'])->name('index');
+                Route::post('/', [App\Http\Controllers\Modules\Asistencia\PermisoController::class, 'store'])->name('store');
+            });
+        });
+
+        // Rutas del Supervisor / Admin
+        Route::middleware(['can:asistencia.ver_dashboard'])->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\Modules\Asistencia\AsistenciaController::class, 'dashboard'])->name('dashboard');
+            
+            Route::prefix('permisos')->name('permisos.')->group(function () {
+                Route::get('/bandeja', [App\Http\Controllers\Modules\Asistencia\PermisoController::class, 'bandeja'])->name('bandeja');
+                Route::post('/{permiso}/decidir', [App\Http\Controllers\Modules\Asistencia\PermisoController::class, 'decidir'])->name('decidir');
+            });
+
+            Route::prefix('reportes')->name('reportes.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Modules\Asistencia\ReporteAsistenciaController::class, 'index'])->name('index');
+                Route::get('/export', [App\Http\Controllers\Modules\Asistencia\ReporteAsistenciaController::class, 'export'])->name('export');
+            });
+
+            Route::prefix('configuracion')->name('configuracion.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Modules\Asistencia\ConfiguracionController::class, 'index'])->name('index');
+                Route::post('/turno', [App\Http\Controllers\Modules\Asistencia\ConfiguracionController::class, 'saveTurno'])->name('save_turno');
+                Route::post('/asignar-turno', [App\Http\Controllers\Modules\Asistencia\ConfiguracionController::class, 'asignarTurno'])->name('asignar_turno');
+                Route::post('/global', [App\Http\Controllers\Modules\Asistencia\ConfiguracionController::class, 'updateGlobal'])->name('global');
+            });
+        });
+    });
+
     // --- Administración y Actualizaciones ---
     Route::middleware(['auth', 'can:access_update_manager'])->prefix('admin/updates')->name('admin.updates.')->group(function () {
         Route::get('/', [App\Http\Controllers\Modules\Admin\UpdateManagerController::class, 'index'])->name('index');
@@ -457,6 +509,55 @@ Route::middleware('auth')->group(function () {
         Route::get('/periodos/{period}', [DispersionController::class, 'show'])->name('show');
         Route::get('/periodos/{period}/report', [DispersionController::class, 'downloadReport'])->name('report');
     });
+
+    // --------------------------------------------------------------------------
+    // MODULO: PROGRAMA PYP (PROMOCIÓN Y PREVENCIÓN)
+    // Prefix: /pyp | Name: pyp.*
+    // --------------------------------------------------------------------------
+    Route::prefix('pyp')->name('pyp.')->middleware(['auth', 'app_access:pyp'])->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Modules\Pyp\DashboardController::class, 'index'])->name('dashboard');
+        
+        // Gestión de Afiliados (Buscador y Ficha)
+        Route::get('/afiliados', [\App\Http\Controllers\Modules\Pyp\AfiliadoController::class, 'index'])->name('afiliados.index');
+        Route::get('/afiliados/{afiliado:uuid}', [\App\Http\Controllers\Modules\Pyp\AfiliadoController::class, 'show'])->name('afiliados.show');
+        
+        // Evaluaciones Médicas
+        Route::get('/afiliados/{afiliado:uuid}/evaluar', [\App\Http\Controllers\Modules\Pyp\EvaluacionController::class, 'create'])->name('evaluaciones.create');
+        Route::post('/afiliados/{afiliado:uuid}/evaluar', [\App\Http\Controllers\Modules\Pyp\EvaluacionController::class, 'store'])->name('evaluaciones.store');
+        
+        // Seguimientos CRM
+        Route::post('/afiliados/{afiliado:uuid}/seguimiento', [\App\Http\Controllers\Modules\Pyp\SeguimientoController::class, 'store'])->name('seguimientos.store');
+
+        // Matriculación (Crear Afiliado desde PyP)
+        Route::get('/afiliados/crear/nuevo', [\App\Http\Controllers\Modules\Pyp\AfiliadoController::class, 'create'])->name('afiliados.create');
+        Route::post('/afiliados/crear/nuevo', [\App\Http\Controllers\Modules\Pyp\AfiliadoController::class, 'store'])->name('afiliados.store');
+        
+        Route::get('/programas', [\App\Http\Controllers\Modules\Pyp\DashboardController::class, 'index'])->name('programas.index'); // Placeholder
+    });
+
+    // --------------------------------------------------------------------------
+    // MODULO: RED DE PRESTADORES (PSS)
+    // Prefix: /pss | Name: pss.*
+    // --------------------------------------------------------------------------
+    Route::prefix('pss')->name('pss.')->middleware(['auth'])->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\PssManagementController::class, 'index'])->name('dashboard');
+        
+        // Médicos
+        Route::get('/medicos', [\App\Http\Controllers\PssManagementController::class, 'medicos'])->name('medicos.index');
+        Route::get('/medicos/crear', [\App\Http\Controllers\PssManagementController::class, 'medicos'])->name('medicos.create');
+        
+        // Centros
+        Route::get('/centros', [\App\Http\Controllers\PssManagementController::class, 'centros'])->name('centros.index');
+        
+        // Catálogos
+        Route::get('/catalogos', [\App\Http\Controllers\PssManagementController::class, 'catalogos'])->name('catalogos.index');
+        
+        // Importación
+        Route::get('/importar', [\App\Http\Controllers\PssManagementController::class, 'import'])->name('import.index');
+    });
+
+    // --- DOCUMENTACIÓN Y MANUALES ---
+    Route::get('admin/docs/afiliacion/pdf', [App\Http\Controllers\Admin\DocumentationController::class, 'exportManualAfiliacion'])->name('admin.docs.afiliacion.pdf');
 });
 
 

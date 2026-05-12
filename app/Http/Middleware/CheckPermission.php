@@ -19,8 +19,8 @@ class CheckPermission
 
         $user = auth()->user();
 
-        // Bypass administrativo total
-        if ($user->hasRole(['Admin', 'Super-Admin'])) {
+        // Bypass administrativo y operativo core
+        if ($user->hasRole(['Admin', 'Super-Admin', 'Analista de Afiliación', 'Supervisor de Afiliación'])) {
             return $next($request);
         }
 

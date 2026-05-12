@@ -38,10 +38,12 @@ class AfiliadoService
         $oldNombre = strtolower($oldEstado->nombre ?? 'pendiente');
         $newNombre = strtolower($newEstado->nombre);
 
-        // Rule 5.3: Immutability of closure
+        // Rule 5.3: Immutability of closure (Disabled by user request)
+        /*
         if ($oldNombre === 'completado') {
             throw new Exception("Regla 5.3: El registro está Completado y es inmutable. Requiere proceso de reapertura.");
         }
+        */
 
         // Rule 5.5: Valid transitions (Disabled by user request to allow flexibility)
         /*

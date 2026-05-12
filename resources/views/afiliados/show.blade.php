@@ -4,36 +4,30 @@
     <!-- Breadcrumbs & Actions -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <nav class="flex items-center gap-2">
-            <a href="{{ route('carnetizacion.afiliados.index') }}" class="text-xs text-slate-500 hover:text-primary transition-colors uppercase tracking-wider font-bold">Afiliados</a>
+            <a href="{{ $returnUrl }}" class="text-xs text-slate-500 hover:text-primary transition-colors uppercase tracking-wider font-bold">{{ $returnLabel }}</a>
             <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
             <span class="text-xs text-primary uppercase tracking-wider font-extrabold">Detalle de Perfil</span>
         </nav>
         <div class="flex gap-3">
-            @if(strtolower($afiliado->estado?->nombre) !== 'completado')
-                <button type="button" onclick="document.getElementById('estadoModal').style.display='flex'" class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg">sync_alt</span>
-                    Actualizar Estado
-                </button>
-                <button type="button" onclick="document.getElementById('reassignModal').style.display='flex'" class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg">person_add</span>
-                    Reasignar
-                </button>
-                <a href="{{ route('carnetizacion.afiliados.edit', $afiliado) }}" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-xl shadow-lg hover:bg-slate-800 transition-colors flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg">edit</span>
-                    Editar Perfil
-                </a>
-            @else
-                <div class="flex items-center gap-2">
-                    <div class="px-5 py-2.5 bg-emerald-100 text-emerald-800 font-bold text-sm rounded-xl flex items-center gap-2 border border-emerald-200">
-                        <span class="material-symbols-outlined text-lg">lock</span>
-                        Expediente Completado e Inmutable
-                    </div>
-                    <button type="button" onclick="document.getElementById('reopenModal').style.display='flex'" class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 text-slate-500 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2">
-                        <span class="material-symbols-outlined text-sm">history_toggle_off</span>
-                        Solicitar Reapertura
-                    </button>
+            @if(strtolower($afiliado->estado?->nombre) === 'completado')
+                <div class="px-5 py-2.5 bg-emerald-100 text-emerald-800 font-bold text-sm rounded-xl flex items-center gap-2 border border-emerald-200">
+                    <span class="material-symbols-outlined text-lg">check_circle</span>
+                    Expediente Completado
                 </div>
             @endif
+
+            <button type="button" onclick="document.getElementById('estadoModal').style.display='flex'" class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">sync_alt</span>
+                Actualizar Estado
+            </button>
+            <button type="button" onclick="document.getElementById('reassignModal').style.display='flex'" class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">person_add</span>
+                Reasignar
+            </button>
+            <a href="{{ route('carnetizacion.afiliados.edit', $afiliado) }}" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-sm rounded-xl shadow-lg hover:bg-slate-800 transition-colors flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">edit</span>
+                Editar Perfil
+            </a>
         </div>
     </div>
 
@@ -268,15 +262,12 @@
                                         Ver Documento
                                     </a>
                                 </div>
-                                @if(strtolower($afiliado->estado?->nombre) !== 'completado')
                                 <form action="{{ route('evidencias.update_status', $acuse->id) }}" method="POST" class="flex gap-1">
                                     @csrf
                                     <input type="hidden" name="status" value="valido">
                                     <button type="submit" class="flex-1 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-tighter transition-colors">Validar</button>
                                 </form>
-                                @endif
                             </div>
-                        @elseif(strtolower($afiliado->estado?->nombre) !== 'completado')
                             <form action="{{ route('carnetizacion.afiliados.upload_evidencia', $afiliado) }}" method="POST" enctype="multipart/form-data" class="w-full flex gap-2 items-center">
                                 @csrf
                                 <input type="hidden" name="tipo_documento" value="acuse_recibo">
@@ -321,15 +312,12 @@
                                         Ver Documento
                                     </a>
                                 </div>
-                                @if(strtolower($afiliado->estado?->nombre) !== 'completado')
                                 <form action="{{ route('evidencias.update_status', $formulario->id) }}" method="POST" class="flex gap-1">
                                     @csrf
                                     <input type="hidden" name="status" value="valido">
                                     <button type="submit" class="flex-1 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-tighter transition-colors">Validar</button>
                                 </form>
-                                @endif
                             </div>
-                        @elseif(strtolower($afiliado->estado?->nombre) !== 'completado')
                             <form action="{{ route('carnetizacion.afiliados.upload_evidencia', $afiliado) }}" method="POST" enctype="multipart/form-data" class="w-full flex gap-2 items-center">
                                 @csrf
                                 <input type="hidden" name="tipo_documento" value="formulario_firmado">
@@ -354,15 +342,13 @@
                     <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary">history_edu</span> Auditoría e Historia del Expediente
                     </h3>
-                    @if(strtolower($afiliado->estado?->nombre) !== 'completado')
                     <button onclick="document.getElementById('noteSection').scrollIntoView({behavior: 'smooth'})" class="text-xs font-black uppercase tracking-widest text-primary hover:text-blue-700 flex items-center gap-1 transition-colors">
                         <span class="material-symbols-outlined text-sm">add_comment</span> Nueva Nota
                     </button>
-                    @endif
                 </div>
 
                 <div class="space-y-8 relative before:absolute before:left-[17px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-50">
-                    {{-- Combine notes and history and sort --}}
+                    {{-- Combine notes, history and audits and sort --}}
                     @php
                         $timeline = collect();
                         foreach($afiliado->historialEstados as $h) {
@@ -371,6 +357,11 @@
                         foreach($afiliado->notas as $n) {
                             $timeline->push(['type' => 'note', 'date' => $n->created_at, 'data' => $n]);
                         }
+                        if (isset($auditLogs)) {
+                            foreach($auditLogs as $a) {
+                                $timeline->push(['type' => 'audit', 'date' => $a->created_at, 'data' => $a]);
+                            }
+                        }
                         $timeline = $timeline->sortByDesc('date');
                     @endphp
 
@@ -378,10 +369,14 @@
                         <div class="relative pl-12 page-transition">
                             <!-- Timeline Node -->
                             <div class="absolute left-0 top-1.5 w-[36px] h-[36px] rounded-full bg-white border-2 border-slate-50 flex items-center justify-center z-10 shadow-sm
-                                @if($item['type'] === 'status') border-primary/20 @else border-amber-200 @endif">
+                                @if($item['type'] === 'status') border-primary/20 
+                                @elseif($item['type'] === 'note') border-amber-200 
+                                @else border-emerald-200 @endif">
                                 <span class="material-symbols-outlined text-[18px] 
-                                    @if($item['type'] === 'status') text-primary @else text-amber-500 @endif">
-                                    {{ $item['type'] === 'status' ? 'sync_alt' : 'sticky_note_2' }}
+                                    @if($item['type'] === 'status') text-primary 
+                                    @elseif($item['type'] === 'note') text-amber-500 
+                                    @else text-emerald-500 @endif">
+                                    {{ $item['type'] === 'status' ? 'sync_alt' : ($item['type'] === 'note' ? 'sticky_note_2' : 'cloud_sync') }}
                                 </span>
                             </div>
                             
@@ -389,15 +384,19 @@
                                 <div class="flex justify-between items-start mb-3">
                                     <div>
                                         <p class="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 mb-0.5">
-                                            {{ $item['type'] === 'status' ? 'Cambio de Estado' : 'Nota de Seguimiento' }}
+                                            @if($item['type'] === 'status') Cambio de Estado
+                                            @elseif($item['type'] === 'note') Nota de Seguimiento
+                                            @else Sincronización Cloud @endif
                                         </p>
                                         <h4 class="text-sm font-bold text-slate-800">
                                             @if($item['type'] === 'status')
                                                 <span class="text-slate-400 font-medium">{{ $item['data']->estadoAnterior?->nombre }}</span> 
                                                 <span class="mx-1 text-slate-300">&rarr;</span> 
                                                 <span class="text-primary">{{ $item['data']->estadoNuevo?->nombre }}</span>
-                                            @else
+                                            @elseif($item['type'] === 'note')
                                                 Observación Registrada
+                                            @else
+                                                Actualización de Campo: <span class="text-emerald-600">{{ ucfirst(str_replace('_', ' ', $item['data']->field)) }}</span>
                                             @endif
                                         </h4>
                                     </div>
@@ -409,15 +408,28 @@
                                 
                                 <div class="bg-slate-50/50 rounded-xl p-4 border border-slate-50 group-hover:bg-white group-hover:border-primary/10 transition-colors">
                                     <p class="text-[0.85rem] text-slate-700 leading-relaxed font-medium">
-                                        {{ $item['type'] === 'status' ? ($item['data']->observacion ?: 'Sin detalles adicionales.') : $item['data']->contenido }}
+                                        @if($item['type'] === 'status')
+                                            {{ $item['data']->observacion ?: 'Sin detalles adicionales.' }}
+                                        @elseif($item['type'] === 'note')
+                                            {{ $item['data']->contenido }}
+                                        @else
+                                            <span class="text-slate-400">De:</span> <span class="line-through">{{ $item['data']->old_value ?: '(Vacío)' }}</span><br>
+                                            <span class="text-slate-400">A:</span> <span class="font-bold text-emerald-700">{{ $item['data']->new_value ?: '(Vacío)' }}</span>
+                                        @endif
                                     </p>
                                 </div>
 
                                 <div class="flex items-center gap-2 mt-4">
-                                    <div class="w-6 h-6 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-[8px] font-black text-white shadow-sm">
-                                        {{ strtoupper(substr($item['data']->user->name ?? 'S', 0, 1)) }}
-                                    </div>
-                                    <span class="text-[0.7rem] font-bold text-slate-500">{{ $item['data']->user->name ?? 'Sistema Automático' }}</span>
+                                    @if($item['type'] === 'audit')
+                                        <div class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[0.55rem] font-black uppercase tracking-widest">
+                                            Origen: {{ $item['data']->company_origin }}
+                                        </div>
+                                    @else
+                                        <div class="w-6 h-6 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-[8px] font-black text-white shadow-sm">
+                                            {{ strtoupper(substr($item['data']->user->name ?? 'S', 0, 1)) }}
+                                        </div>
+                                        <span class="text-[0.7rem] font-bold text-slate-500">{{ $item['data']->user->name ?? 'Sistema Automático' }}</span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -430,7 +442,6 @@
                 </div>
 
                 <!-- Note Form Integrated at Bottom of Timeline -->
-                @if(strtolower($afiliado->estado?->nombre) !== 'completado')
                 <div id="noteSection" class="mt-12 pt-10 border-t border-slate-100">
                     <div class="bg-slate-50 rounded-3xl p-8 border border-slate-100">
                         <div class="flex items-center gap-3 mb-6">
@@ -455,7 +466,6 @@
                         </form>
                     </div>
                 </div>
-                @endif
             </div>
             
         </div>

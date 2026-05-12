@@ -568,36 +568,16 @@ class ReporteController extends Controller
     /**
      * Reporte Avanzado de Producción de Traspasos
      */
+    /**
+     * Reporte Avanzado de Producción de Traspasos
+     */
     public function produccionTraspasos(Request $request)
     {
-        $fecha_desde = $request->input('fecha_desde', now()->subMonths(3)->startOfMonth()->format('Y-m-d'));
+        $fecha_desde = $request->input('fecha_desde', now()->startOfMonth()->format('Y-m-d'));
         $fecha_hasta = $request->input('fecha_hasta', now()->format('Y-m-d'));
         $supervisor_id = $request->input('supervisor_id');
 
-        // 1. Efectividad y Producción (Transaccional)
-        $rankingAgentes = Traspaso::select('agente_id')
-            ->selectRaw('sum(case when fecha_solicitud >= ? and fecha_solicitud <= ? then 1 else 0 end) as total_solicitudes', [$fecha_desde, $fecha_hasta])
-            ->selectRaw('sum(case when fecha_efectivo >= ? and fecha_efectivo <= ? then 1 else 0 end) as efectivos', [$fecha_desde, $fecha_hasta])
-            ->selectRaw('sum(case when fecha_efectivo >= ? and fecha_efectivo <= ? then cantidad_dependientes else 0 end) as dependientes_efectivos', [$fecha_desde, $fecha_hasta])
-            ->selectRaw('sum(case when estado_id = (select id from estado_traspasos where slug = "rechazado" limit 1) and updated_at >= ? and updated_at <= ? then 1 else 0 end) as rechazados', [$fecha_desde, $fecha_hasta])
-            ->selectRaw('sum(case when fecha_efectivo is null and estado_id != (select id from estado_traspasos where slug = "rechazado" limit 1) then 1 else 0 end) as pendientes')
-            ->selectRaw('sum(case when fecha_solicitud >= ? and fecha_solicitud <= ? then cantidad_dependientes else 0 end) as total_dependientes_sol', [$fecha_desde, $fecha_hasta])
-            ->where(function($q) use ($fecha_desde, $fecha_hasta) {
-                $q->whereBetween('fecha_solicitud', [$fecha_desde, $fecha_hasta])
-                  ->orWhereBetween('fecha_efectivo', [$fecha_desde, $fecha_hasta]);
-            })
-            ->when($supervisor_id, function($q) use ($supervisor_id) {
-                $q->whereHas('agenteRel', fn($sq) => $sq->where('supervisor_id', $supervisor_id));
-            })
-            ->groupBy('agente_id')
-            ->with('agenteRel.supervisor')
-            ->get()
-            ->map(function($item) {
-                $item->hit_rate = $item->total_solicitudes > 0 ? round(($item->efectivos / $item->total_solicitudes) * 100, 1) : 0;
-                $item->total_vidas_efectivas = $item->efectivos + $item->dependientes_efectivos;
-                return $item;
-            })
-            ->sortByDesc('efectivos');
+        $rankingAgentes = $this->getProduccionData($fecha_desde, $fecha_hasta, $supervisor_id);
 
         // 3. Resumen Ejecutivo (Los 4 Números Clave)
         $stats = [
@@ -638,5 +618,122 @@ class ReporteController extends Controller
             'rankingAgentes', 'tendencia', 'stats', 'supervisores',
             'fecha_desde', 'fecha_hasta', 'supervisor_id'
         ));
+    }
+
+    /**
+     * Obtiene los datos de producción procesados
+     */
+    private function getProduccionData($fecha_desde, $fecha_hasta, $supervisor_id = null)
+    {
+        return Traspaso::select('agente_id')
+            ->selectRaw('sum(case when fecha_solicitud >= ? and fecha_solicitud <= ? then 1 else 0 end) as total_solicitudes', [$fecha_desde, $fecha_hasta])
+            ->selectRaw('sum(case when fecha_efectivo >= ? and fecha_efectivo <= ? then 1 else 0 end) as efectivos', [$fecha_desde, $fecha_hasta])
+            ->selectRaw('sum(case when fecha_efectivo >= ? and fecha_efectivo <= ? then cantidad_dependientes else 0 end) as dependientes_efectivos', [$fecha_desde, $fecha_hasta])
+            ->selectRaw('sum(case when estado_id = (select id from estado_traspasos where slug = "rechazado" limit 1) and fecha_rechazo >= ? and fecha_rechazo <= ? then 1 else 0 end) as rechazados', [$fecha_desde, $fecha_hasta])
+            ->selectRaw('sum(case when fecha_efectivo is null and estado_id != (select id from estado_traspasos where slug = "rechazado" limit 1) then 1 else 0 end) as pendientes')
+            ->selectRaw('sum(case when fecha_solicitud >= ? and fecha_solicitud <= ? then cantidad_dependientes else 0 end) as total_dependientes_sol', [$fecha_desde, $fecha_hasta])
+            ->where(function($q) use ($fecha_desde, $fecha_hasta) {
+                $q->whereBetween('fecha_solicitud', [$fecha_desde, $fecha_hasta])
+                  ->orWhereBetween('fecha_efectivo', [$fecha_desde, $fecha_hasta])
+                  ->orWhereBetween('fecha_rechazo', [$fecha_desde, $fecha_hasta]);
+            })
+            ->when($supervisor_id, function($q) use ($supervisor_id) {
+                $q->whereHas('agenteRel', fn($sq) => $sq->where('supervisor_id', $supervisor_id));
+            })
+            ->groupBy('agente_id')
+            ->with('agenteRel.supervisor')
+            ->get()
+            ->map(function($item) {
+                $item->hit_rate = $item->total_solicitudes > 0 ? round(($item->efectivos / $item->total_solicitudes) * 100, 1) : 0;
+                $item->total_vidas_efectivas = $item->efectivos + $item->dependientes_efectivos;
+                return $item;
+            })
+            ->sortByDesc('efectivos');
+    }
+
+    /**
+     * Exporta el ranking de producción a CSV
+     */
+    public function exportProduccionTraspasos(Request $request)
+    {
+        $fecha_desde = $request->input('fecha_desde');
+        $fecha_hasta = $request->input('fecha_hasta');
+        $supervisor_id = $request->input('supervisor_id');
+
+        $data = $this->getProduccionData($fecha_desde, $fecha_hasta, $supervisor_id);
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="produccion_traspasos_'.date('Y-m-d').'.csv"',
+        ];
+
+        $callback = function() use ($data) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, [
+                'Rank', 'Agente', 'Equipo/Supervisor', 'Titulares Efectivos', 'Dependientes Efectivos', 
+                'Total Vidas', 'Pendientes', 'Rechazados', 'Total Solicitudes', 'Hit Rate (%)'
+            ]);
+
+            $i = 1;
+            foreach ($data as $ag) {
+                fputcsv($file, [
+                    $i++,
+                    $ag->agenteRel->nombre ?? 'N/A',
+                    $ag->agenteRel->supervisor->nombre ?? 'Sin Equipo',
+                    $ag->efectivos,
+                    $ag->dependientes_efectivos,
+                    $ag->total_vidas_efectivas,
+                    $ag->pendientes,
+                    $ag->rechazados,
+                    $ag->total_solicitudes,
+                    $ag->hit_rate . '%'
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Exporta el reporte de producción a PDF
+     */
+    public function exportProduccionTraspasosPdf(Request $request)
+    {
+        $fecha_desde = $request->input('fecha_desde', now()->startOfMonth()->format('Y-m-d'));
+        $fecha_hasta = $request->input('fecha_hasta', now()->format('Y-m-d'));
+        $supervisor_id = $request->input('supervisor_id');
+
+        // 1. Resumen por Agente (Ranking)
+        $rankingAgentes = $this->getProduccionData($fecha_desde, $fecha_hasta, $supervisor_id);
+
+        // 2. Desglose Detallado (Listado Nominal)
+        $detallesAfiliados = Traspaso::with(['agenteRel', 'estadoRel'])
+            ->where(function($q) use ($fecha_desde, $fecha_hasta) {
+                $q->whereBetween('fecha_solicitud', [$fecha_desde, $fecha_hasta])
+                  ->orWhereBetween('fecha_efectivo', [$fecha_desde, $fecha_hasta])
+                  ->orWhereBetween('fecha_rechazo', [$fecha_desde, $fecha_hasta]);
+            })
+            ->when($supervisor_id, function($q) use ($supervisor_id) {
+                $q->whereHas('agenteRel', fn($sq) => $sq->where('supervisor_id', $supervisor_id));
+            })
+            ->orderBy('fecha_solicitud', 'desc')
+            ->get();
+
+        $stats = [
+            'total_efectivos' => $rankingAgentes->sum('efectivos'),
+            'total_rechazados' => $rankingAgentes->sum('rechazados'),
+            'total_solicitudes' => $rankingAgentes->sum('total_solicitudes'),
+            'hit_rate_promedio' => $rankingAgentes->count() > 0 ? round($rankingAgentes->avg('hit_rate'), 1) : 0
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.pdf.produccion_traspasos', compact(
+            'rankingAgentes', 'detallesAfiliados', 'stats', 'fecha_desde', 'fecha_hasta'
+        ));
+
+        // Configurar papel A4 vertical
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download('reporte_produccion_detallado_' . now()->format('Ymd') . '.pdf');
     }
 }

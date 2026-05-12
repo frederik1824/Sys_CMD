@@ -13,7 +13,7 @@ class ResponsableScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        if (auth()->check() && !auth()->user()->hasRole(['Admin'])) {
+        if (auth()->check() && !auth()->user()->hasRole(['Admin', 'Analista de Afiliación', 'Supervisor de Afiliación'])) {
             // Si es un usuario con rol restrictivo (como Operador), debe tener un responsable_id
             // Si no lo tiene, forzamos un filtro que devuelva vacío (id = 0) por seguridad.
             $builder->where('responsable_id', auth()->user()->responsable_id ?? 0);

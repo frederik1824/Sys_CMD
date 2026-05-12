@@ -165,7 +165,7 @@
                 </button>
             </div>
 
-            <form action="{{ route('admin.access.store') }}" method="POST" class="p-8 space-y-6">
+            <form action="{{ route('admin.access.store') }}" method="POST" class="p-8 space-y-6" x-data="{ selectedApp: null }">
                 @csrf
                 <input type="hidden" name="user_id" :value="selectedUser">
 
@@ -174,7 +174,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         @foreach($applications as $app)
                         <label class="relative flex flex-col p-4 bg-slate-50 border-2 border-transparent rounded-3xl cursor-pointer hover:bg-slate-100 transition-all has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 group">
-                            <input type="radio" name="application_id" value="{{ $app->id }}" class="sr-only" required>
+                            <input type="radio" name="application_id" value="{{ $app->id }}" @change="selectedApp = $el.value" class="sr-only" required>
                             <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                                 <i class="{{ $app->icon }} text-2xl text-{{ $app->color }}-600"></i>
                             </div>
@@ -184,14 +184,30 @@
                     </div>
                 </div>
 
-                <div class="space-y-2">
+                <div class="space-y-2" x-show="selectedApp">
                     <label class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Rol en esta Aplicación</label>
-                    <select name="role_id" class="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700 appearance-none">
-                        <option value="">Sin Rol Específico (Acceso Base)</option>
-                        @foreach($roles as $role)
-                            <option value="{{ $role->id }}">{{ $role->name }}</option>
-                        @endforeach
-                    </select>
+                    <div class="relative">
+                        <select name="role_id" class="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700 appearance-none">
+                            <option value="">Acceso Estándar (Sin Rol Crítico)</option>
+                            @foreach($roles as $role)
+                                <option value="{{ $role->id }}" 
+                                        x-show="selectedApp == '{{ $role->app_id }}' || '{{ $role->app_id }}' == '0'">
+                                    {{ $role->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <i class="ph ph-caret-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Expiración (Opcional)</label>
+                    <div class="relative">
+                        <i class="ph ph-calendar-blank absolute left-6 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="date" name="expires_at" 
+                               class="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700">
+                    </div>
+                    <p class="text-[10px] text-slate-400 font-medium ml-1">Deja vacío para acceso permanente.</p>
                 </div>
 
                 <div class="pt-4 flex gap-3">

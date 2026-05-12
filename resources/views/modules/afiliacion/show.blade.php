@@ -42,13 +42,36 @@
     confirmApprove(event) {
         event.preventDefault();
         Swal.fire({
-            title: '¿Confirmar Aprobación?',
-            text: '¿Estás seguro de finalizar este trámite con una aprobación definitiva?',
+            title: '¿Aprobación Técnica?',
+            text: 'El expediente será aprobado técnicamente, pero quedará abierto para su cierre definitivo en los próximos días.',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#059669',
             cancelButtonColor: '#64748b',
-            confirmButtonText: 'Sí, Aprobar Expediente',
+            confirmButtonText: 'Sí, Aprobar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'rounded-[32px]',
+                confirmButton: 'rounded-xl px-6 py-3 font-black uppercase tracking-widest text-[10px]',
+                cancelButton: 'rounded-xl px-6 py-3 font-black uppercase tracking-widest text-[10px]'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                event.target.submit();
+            }
+        });
+    },
+
+    confirmComplete(event) {
+        event.preventDefault();
+        Swal.fire({
+            title: '¿Cierre Definitivo?',
+            text: '¿Estás seguro de finalizar completamente este trámite? Ya no podrá ser editado.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Cerrar Definitivamente',
             cancelButtonText: 'Cancelar',
             customClass: {
                 popup: 'rounded-[32px]',
@@ -73,23 +96,24 @@
             <div class="flex flex-col md:flex-row md:items-center gap-6">
                 <div class="relative">
                     <div class="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-14 bg-indigo-600 rounded-full hidden md:block"></div>
-                    <h1 class="text-5xl font-black tracking-tighter text-slate-900 leading-none">
-                        {{ $solicitud->codigo_solicitud }}
-                    </h1>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] {{ $solicitud->status_color }} shadow-sm border border-black/5">
-                        {{ $solicitud->estado }}
-                    </span>
-                    <div class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                        <i class="ph ph-lightning-fill text-amber-400"></i> Prioridad {{ $solicitud->prioridad }}
-                    </div>
+                <h1 class="text-6xl font-black tracking-tighter text-slate-900 leading-none">
+                    {{ $solicitud->codigo_solicitud }}
+                </h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] {{ $solicitud->status_color }} shadow-xl shadow-slate-100 border border-black/5">
+                    {{ $solicitud->status_label }}
+                </span>
+                <div class="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-slate-200">
+                    <i class="ph-fill ph-lightning text-amber-400 text-lg"></i> Prioridad {{ $solicitud->prioridad }}
                 </div>
             </div>
-            <p class="text-slate-500 font-medium text-xl leading-relaxed">
-                <span class="text-slate-900 font-black">{{ $solicitud->tipoSolicitud->nombre }}</span> • 
-                {{ $solicitud->nombre_completo }} <span class="text-slate-400 font-bold ml-2">[{{ $solicitud->cedula }}]</span>
-            </p>
+        </div>
+        <p class="text-slate-400 font-medium text-2xl leading-relaxed">
+            <span class="text-slate-900 font-black">{{ $solicitud->tipoSolicitud->nombre }}</span> 
+            <span class="mx-3 text-slate-200">/</span>
+            {{ $solicitud->nombre_completo }} <span class="text-indigo-600 font-black ml-2">[{{ $solicitud->cedula }}]</span>
+        </p>
             
             {{-- $afiliadoMaestro pre-cargado en el controlador --}}
 
@@ -105,38 +129,53 @@
             @endif
         </div>
 
-        <div class="flex flex-wrap gap-4 items-center">
-            @if($solicitud->estado == 'Pendiente' && auth()->user()->can('solicitudes_afiliacion.asignarse'))
-            <form action="{{ route('afiliacion.assign', $solicitud) }}" method="POST">
-                @csrf
-                <button type="submit" class="bg-indigo-600 text-white rounded-[24px] px-10 py-6 text-xs font-black uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all flex items-center gap-4 shadow-xl shadow-indigo-200">
-                    <i class="ph-fill ph-hand-pointing text-2xl"></i> Asignarme este Expediente
-                </button>
-            </form>
-            @endif
-
-            @if($solicitud->asignado_user_id == auth()->id() && $solicitud->estado == 'En revisión')
-            <div class="flex flex-wrap gap-3 p-3 bg-white border border-slate-100 rounded-[32px] shadow-sm">
-                <button @click="showReturnModal = true" class="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-orange-600 bg-orange-50 hover:bg-orange-100 transition-all">
-                    Devolver
-                </button>
-                <button @click="showRejectionModal = true" class="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all">
-                    Rechazar
-                </button>
-                @can('solicitudes_afiliacion.escalar')
-                <button @click="showEscalationModal = true" class="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-purple-600 bg-purple-50 hover:bg-purple-100 transition-all">
-                    Escalar
-                </button>
-                @endcan
-                <div class="w-px h-10 bg-slate-100 mx-2 hidden md:block"></div>
-                <form action="{{ route('afiliacion.approve', $solicitud) }}" method="POST" @submit="confirmApprove($event)">
+        <div class="flex flex-wrap gap-4 items-center" id="action-bar-container">
+            <div class="flex flex-wrap gap-4 items-center transition-all duration-500" 
+                 :class="{ 'fixed top-4 right-10 z-[150] bg-white/80 backdrop-blur-xl p-4 rounded-[32px] shadow-2xl border border-white/20 scale-90 origin-right': $store.scroll > 200 }">
+                
+                @if($solicitud->estado == 'Pendiente' && auth()->user()->can('solicitudes_afiliacion.asignarse'))
+                <form action="{{ route('afiliacion.assign', $solicitud) }}" method="POST">
                     @csrf
-                    <button type="submit" class="bg-emerald-600 text-white rounded-2xl px-10 py-4 text-xs font-black uppercase tracking-[0.15em] hover:bg-emerald-700 transition-all flex items-center gap-3 shadow-lg shadow-emerald-100">
-                        <i class="ph-bold ph-check-circle text-xl"></i> Aprobar Expediente
+                    <button type="submit" class="bg-indigo-600 text-white rounded-[24px] px-10 py-6 text-xs font-black uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all flex items-center gap-4 shadow-xl shadow-indigo-200">
+                        <i class="ph-fill ph-hand-pointing text-2xl"></i> Asignarme
                     </button>
                 </form>
+                @endif
+
+                @if($solicitud->asignado_user_id == auth()->id() && $solicitud->estado == 'En revisión')
+                <div class="flex flex-wrap gap-3 p-3 bg-white border border-slate-100 rounded-[32px] shadow-sm">
+                    <button @click="showReturnModal = true" class="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-orange-600 bg-orange-50 hover:bg-orange-100 transition-all">
+                        Devolver
+                    </button>
+                    <button @click="showRejectionModal = true" class="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all">
+                        Rechazar
+                    </button>
+                    @can('solicitudes_afiliacion.escalar')
+                    <button @click="showEscalationModal = true" class="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-purple-600 bg-purple-50 hover:bg-purple-100 transition-all">
+                        Escalar
+                    </button>
+                    @endcan
+                    <div class="w-px h-10 bg-slate-100 mx-2 hidden md:block"></div>
+                    <form action="{{ route('afiliacion.approve', $solicitud) }}" method="POST" @submit="confirmApprove($event)">
+                        @csrf
+                        <button type="submit" class="bg-emerald-600 text-white rounded-2xl px-10 py-4 text-xs font-black uppercase tracking-[0.15em] hover:bg-emerald-700 transition-all flex items-center gap-3 shadow-lg shadow-emerald-100">
+                            <i class="ph-bold ph-check-circle text-xl"></i> Aprobar
+                        </button>
+                    </form>
+                </div>
+                @endif
+
+                @if($solicitud->asignado_user_id == auth()->id() && $solicitud->estado == 'Aprobada')
+                <div class="flex flex-wrap gap-3 p-3 bg-white border border-slate-100 rounded-[32px] shadow-sm">
+                    <form action="{{ route('afiliacion.complete', $solicitud) }}" method="POST" @submit="confirmComplete($event)">
+                        @csrf
+                        <button type="submit" class="bg-indigo-600 text-white rounded-2xl px-10 py-4 text-xs font-black uppercase tracking-[0.15em] hover:bg-indigo-700 transition-all flex items-center gap-3 shadow-lg shadow-indigo-100">
+                            <i class="ph-bold ph-lock-key text-xl"></i> Cierre Definitivo
+                        </button>
+                    </form>
+                </div>
+                @endif
             </div>
-            @endif
         </div>
     </div>
 
@@ -155,47 +194,54 @@
                         <h2 class="text-2xl font-black text-slate-900 tracking-tight">Detalles Técnicos</h2>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
                         <div class="space-y-4">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block">Originador</label>
-                            <div class="flex items-center gap-4">
-                                <img src="{{ $solicitud->solicitante->avatar_url }}" class="w-12 h-12 rounded-2xl border-4 border-slate-50 shadow-sm">
-                                <div>
-                                    <p class="text-sm font-black text-slate-900 leading-none mb-1">{{ $solicitud->solicitante->name }}</p>
-                                    <p class="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">{{ $solicitud->solicitante->email }}</p>
+                            <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] block">Originador del Caso</label>
+                            <div class="flex items-center gap-5 p-2 pr-6 bg-slate-50/50 rounded-[28px] border border-slate-100/50">
+                                <img src="{{ $solicitud->solicitante->avatar_url }}" class="w-14 h-14 rounded-2xl border-4 border-white shadow-xl">
+                                <div class="overflow-hidden">
+                                    <p class="text-[13px] font-black text-slate-900 leading-tight mb-0.5 truncate">{{ $solicitud->solicitante->name }}</p>
+                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{{ explode(' ', $solicitud->solicitante->roles->first()?->name ?? 'Usuario')[0] }}</p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="space-y-4">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block">Propietario Actual</label>
+                            <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] block">Analista Responsable</label>
                             @if($solicitud->asignado)
-                            <div class="flex items-center gap-4 text-indigo-600">
-                                <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center font-black text-lg">
+                            <div class="flex items-center gap-5 p-2 pr-6 bg-indigo-50/30 rounded-[28px] border border-indigo-100/50 group/analyst">
+                                <div class="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-xl shadow-indigo-100 group-hover/analyst:rotate-3 transition-transform">
                                     {{ substr($solicitud->asignado->name, 0, 1) }}
                                 </div>
-                                <div>
-                                    <p class="text-sm font-black leading-none mb-1">{{ $solicitud->asignado->name }}</p>
-                                    <p class="text-[10px] font-bold opacity-60">Desde {{ $solicitud->fecha_asignacion->diffForHumans() }}</p>
+                                <div class="overflow-hidden">
+                                    <p class="text-[13px] font-black text-indigo-900 leading-tight mb-0.5 truncate">{{ $solicitud->asignado->name }}</p>
+                                    <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest truncate">Desde {{ $solicitud->fecha_asignacion->diffForHumans() }}</p>
                                 </div>
                             </div>
                             @else
-                            <div class="flex items-center gap-4 text-slate-300">
-                                <div class="w-12 h-12 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-                                    <i class="ph ph-user-minus text-xl"></i>
+                            <div class="flex items-center gap-5 p-2 pr-6 border-2 border-dashed border-slate-100 rounded-[28px] bg-slate-50/30">
+                                <div class="w-14 h-14 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300">
+                                    <i class="ph ph-user-circle-plus text-2xl"></i>
                                 </div>
-                                <span class="text-xs font-black uppercase tracking-widest italic">Pendiente de Asignación</span>
+                                <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Por Asignar</span>
                             </div>
                             @endif
                         </div>
 
                         <div class="space-y-4">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block">SLA de Respuesta</label>
-                            <div class="inline-flex items-center gap-3 px-5 py-3 rounded-2xl {{ now()->isAfter($solicitud->sla_fecha_limite) ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600' }}">
-                                <i class="ph-bold ph-clock-countdown text-xl"></i>
-                                <div>
-                                    <p class="text-xs font-black leading-none mb-1">{{ $solicitud->sla_fecha_limite->format('d M, Y') }}</p>
-                                    <p class="text-[9px] font-bold opacity-70 uppercase tracking-tighter">{{ $solicitud->sla_fecha_limite->format('h:i A') }}</p>
+                            <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] block">Tiempo de Respuesta (SLA)</label>
+                            @php 
+                                $isDelayed = now()->isAfter($solicitud->sla_fecha_limite);
+                                $slaColor = $isDelayed ? 'rose' : 'blue';
+                            @endphp
+                            <div class="inline-flex items-center gap-4 p-2 pr-8 rounded-[28px] bg-{{ $slaColor }}-50 border border-{{ $slaColor }}-100 shadow-sm relative overflow-hidden group/sla">
+                                <div class="absolute inset-0 bg-gradient-to-r from-{{ $slaColor }}-100/50 to-transparent opacity-0 group-hover/sla:opacity-100 transition-opacity"></div>
+                                <div class="w-14 h-14 rounded-2xl bg-{{ $slaColor }}-600 text-white flex items-center justify-center relative z-10 shadow-lg shadow-{{ $slaColor }}-100">
+                                    <i class="ph-bold ph-clock-countdown text-2xl {{ $isDelayed ? 'animate-pulse' : '' }}"></i>
+                                </div>
+                                <div class="relative z-10">
+                                    <p class="text-[13px] font-black text-{{ $slaColor }}-900 leading-tight mb-0.5">{{ $solicitud->sla_fecha_limite->format('d M, Y') }}</p>
+                                    <p class="text-[9px] font-black text-{{ $slaColor }}-500 uppercase tracking-widest">{{ $solicitud->sla_fecha_limite->format('h:i A') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -216,7 +262,7 @@
                                 </div>
                             </div>
 
-                            <div class="space-y-3">
+                            <div class="md:col-span-2 space-y-3">
                                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block">Canales de Respuesta</label>
                                 <div class="flex gap-4">
                                     <div class="flex-1 p-4 bg-slate-50 rounded-3xl border border-slate-100 flex items-center gap-3">
@@ -229,6 +275,31 @@
                                     </div>
                                 </div>
                             </div>
+
+                            @if($solicitud->tipo_solicitud_id == 6)
+                            <div class="md:col-span-3 space-y-4 pt-6 mt-4 border-t border-indigo-100/50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                                        <i class="ph ph-bank-fill"></i>
+                                    </div>
+                                    <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Información de Pensión / Jubilación</h3>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div class="p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/50 flex flex-col gap-1">
+                                        <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Resolución Nº</span>
+                                        <span class="text-sm font-black text-indigo-900">{{ $solicitud->numero_resolucion ?? 'No provista' }}</span>
+                                    </div>
+                                    <div class="p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/50 flex flex-col gap-1">
+                                        <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Tipo de Pensión</span>
+                                        <span class="text-sm font-black text-indigo-900">{{ $solicitud->tipo_pension ?? 'N/A' }}</span>
+                                    </div>
+                                    <div class="p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/50 flex flex-col gap-1">
+                                        <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Institución</span>
+                                        <span class="text-sm font-black text-indigo-900">{{ $solicitud->institucion_pension ?? 'N/A' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
 
                             <div class="md:col-span-2 space-y-3">
                                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block">Exposición del Caso</label>
@@ -582,5 +653,16 @@
         background: #e2e8f0;
     }
 </style>
+@push('scripts')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('scroll', 0);
+    });
+    
+    window.addEventListener('scroll', () => {
+        Alpine.store('scroll', window.scrollY);
+    });
+</script>
+@endpush
 @endsection
 

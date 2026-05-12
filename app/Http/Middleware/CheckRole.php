@@ -21,8 +21,8 @@ class CheckRole
 
         $user = auth()->user();
 
-        // Bypass total para administradores
-        if ($user->hasAnyRole(['Admin', 'Super-Admin'])) {
+        // Bypass total para administradores y roles operativos core
+        if ($user->hasAnyRole(['Admin', 'Super-Admin', 'Analista de Afiliación', 'Supervisor de Afiliación'])) {
             return $next($request);
         }
 

@@ -24,6 +24,7 @@ class PortalController extends Controller
             $apps = Application::where('is_active', true)
                         ->orderBy('order_weight')
                         ->get();
+            \Illuminate\Support\Facades\Log::info("Portal Apps for Admin: " . $apps->pluck('slug')->implode(', '));
         } else {
             $apps = Application::where('is_active', true)
                         ->whereHas('userAccess', function($q) use ($user) {

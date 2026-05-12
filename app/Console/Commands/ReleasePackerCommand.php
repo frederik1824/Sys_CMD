@@ -13,6 +13,9 @@ class ReleasePackerCommand extends Command
 
     public function handle()
     {
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+        
         $this->info('🚀 Iniciando empaquetado de SysCarnet Release...');
 
         // 1. Actualizar version.json
@@ -85,8 +88,31 @@ class ReleasePackerCommand extends Command
                 $filePath = $file->getRealPath();
                 $relativePath = $zipPath . '/' . substr($filePath, strlen($folderPath) + 1);
                 
-                // Excluir archivos específicos si es necesario
-                if (str_contains($relativePath, '.sql') || str_contains($relativePath, 'node_modules')) {
+                // Excluir archivos específicos de configuración, seguridad y datos pesados
+                $excludedPatterns = [
+                    '.sql', 
+                    '.zip',
+                    'node_modules', 
+                    '.env', 
+                    'sys_carnet_lan.conf', 
+                    'sys_carnet-firebase-adminsdk',
+                    'public/storage',      // Evidencias (MUY PESADO)
+                    'storage/app/backups', // Backups previos (MUY PESADO)
+                    'storage/framework/sessions',
+                    '.git',
+                    '.vscode'
+                ];
+
+                $shouldExclude = false;
+                $pathForCheck = str_replace('\\', '/', $relativePath);
+                foreach ($excludedPatterns as $pattern) {
+                    if (str_contains($pathForCheck, $pattern)) {
+                        $shouldExclude = true;
+                        break;
+                    }
+                }
+
+                if ($shouldExclude) {
                     continue;
                 }
 

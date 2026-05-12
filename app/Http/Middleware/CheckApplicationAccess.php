@@ -20,8 +20,8 @@ class CheckApplicationAccess
 
         $user = auth()->user();
 
-        // 1. Master Bypass para Administradores
-        if ($user->hasRole(['Admin', 'Super-Admin'])) {
+        // 1. Master Bypass para Roles Administrativos y Operativos Core
+        if ($user->hasRole(['Admin', 'Super-Admin', 'Analista de Afiliación', 'Supervisor de Afiliación'])) {
             return $next($request);
         }
 
@@ -31,6 +31,10 @@ class CheckApplicationAccess
                 $q->where('slug', $applicationKey)->where('is_active', true);
             })
             ->where('is_active', true)
+            ->where(function($q) {
+                $q->whereNull('expires_at')
+                  ->orWhere('expires_at', '>', now());
+            })
             ->exists();
 
         if (!$hasAccess) {

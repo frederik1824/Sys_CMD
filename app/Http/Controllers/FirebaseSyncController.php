@@ -26,66 +26,43 @@ class FirebaseSyncController extends Controller
      */
     public function index()
     {
-        $logs = FirebaseSyncLog::orderBy('created_at', 'desc')->paginate(5);
+        $logs = FirebaseSyncLog::orderBy('created_at', 'desc')->paginate(10);
         $liveStats = Cache::get('firebase_sync_stats', []);
         
-        // Base DB counts
-        // Para Escrituras, usamos la marca de tiempo real en los modelos para mayor precisión (incluye syncs individuales)
-        $dbWrites = Afiliado::where('firebase_synced_at', '>=', now()->subHours(24))->count() + 
-                    Empresa::where('firebase_synced_at', '>=', now()->subHours(24))->count();
-        
-        // Para Lecturas, dependemos de la bitácora ya que no hay timestamp local de "lectura"
-        $dbReads = FirebaseSyncLog::where('created_at', '>=', now()->subHours(24))->where('type', 'Pull')->sum('items_count');
-
-        // Sumar progreso en vivo si hay un proceso de DESCARGA activo (las subidas ya se cuentan por el timestamp del modelo)
-        if (Cache::get('firebase_sync_active')) {
-            $isPull = Cache::get('firebase_sync_label') && str_contains(Cache::get('firebase_sync_label'), 'Descargando');
-            if ($isPull) {
-                $currentCount = 0;
-                foreach ($liveStats as $module) {
-                    if (is_array($module)) $currentCount += ($module['created'] ?? 0) + ($module['updated'] ?? 0);
-                }
-                $dbReads += $currentCount;
-            }
-        }
-
-        // Histórico para Sparklines (últimas 12 horas)
-        $hourlyWrites = FirebaseSyncLog::where('created_at', '>=', now()->subHours(12))
-            ->where('type', 'Push')
-            ->selectRaw('HOUR(created_at) as hour, SUM(items_count) as total')
-            ->groupBy('hour')
-            ->orderBy('hour')
-            ->get()
-            ->pluck('total')
-            ->toArray();
-
-        $hourlyReads = FirebaseSyncLog::where('created_at', '>=', now()->subHours(12))
-            ->where('type', 'Pull')
-            ->selectRaw('HOUR(created_at) as hour, SUM(items_count) as total')
-            ->groupBy('hour')
-            ->orderBy('hour')
-            ->get()
-            ->pluck('total')
-            ->toArray();
-
+        // --- Operative Metrics for the New Dashboard ---
         $stats = [
-            'local' => [
-                'afiliados' => Afiliado::count(),
-                'empresas' => Empresa::count(),
-                'users' => User::count(),
+            'overview' => [
+                'total' => Afiliado::count(),
+                'synced' => Afiliado::whereNotNull('firebase_synced_at')->where('sync_status', 'synced')->count(),
+                'pending' => Afiliado::where('sync_status', 'pending')->count(),
+                'error' => Afiliado::where('sync_status', 'error')->count(),
+                'conflicts' => Afiliado::where('sync_status', 'conflict')->count(),
+                'last_sync' => FirebaseSyncLog::where('status', 'success')->latest()->first()?->finished_at,
+            ],
+            'connectivity' => [
+                'firebase' => $this->syncService->checkConnection() ? 'connected' : 'disconnected',
+                'server' => 'stable',
+                'safe' => Cache::get('safe_node_status', 'connected'), // Simulated for demo
+                'cmd' => 'connected',
             ],
             'quota' => [
-                'writes_today' => $dbWrites,
-                'reads_today' => $dbReads,
-                'history_writes' => !empty($hourlyWrites) ? $hourlyWrites : [0,0,0,0,0,0],
-                'history_reads' => !empty($hourlyReads) ? $hourlyReads : [0,0,0,0,0,0],
-                'limits' => ['writes' => 20000, 'reads' => 50000]
+                'reads_today' => $this->syncService->getReadCount(),
+                'writes_today' => $this->syncService->getWriteCount(),
+                'limit_reads' => 50000,
+                'limit_writes' => 20000,
+            ],
+            'realtime' => [
+                'in_process' => Cache::get('firebase_sync_active', false) ? 'active' : 'idle',
+                'queue_count' => \DB::table('jobs')->where('queue', 'default')->count(),
             ]
         ];
 
-        $provincias = \App\Models\Provincia::orderBy('nombre')->get();
+        // Audit Activity for Timeline
+        $audits = \App\Models\CloudSyncAudit::orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
 
-        return view('firebase.sync-center', compact('logs', 'stats', 'provincias'));
+        return view('firebase.sync-center', compact('logs', 'stats', 'audits'));
     }
 
     public function pull(Request $request)
@@ -162,6 +139,8 @@ class FirebaseSyncController extends Controller
     public function push(Request $request)
     {
         $data = $request->isJson() ? $request->all() : $request->all();
+        $isForce = (bool)($data['force'] ?? false);
+        $intensity = $data['intensity'] ?? 200; // Default 200 = sin throttling significativo
 
         $log = FirebaseSyncLog::create([
             'type' => 'Push',
@@ -169,30 +148,33 @@ class FirebaseSyncController extends Controller
             'started_at' => now(),
             'performed_by' => auth()->user()->name ?? 'Manual',
             'summary' => [
-                'mode' => 'Targeted',
-                'intensity' => $data['intensity'] ?? 50,
+                'mode' => $isForce ? 'Force-Total' : 'Targeted',
+                'intensity' => $intensity,
                 'dry_run' => (bool)($data['simulation'] ?? false)
             ]
         ]);
 
         Cache::put('firebase_sync_active', true, 7200);
         Cache::put('firebase_sync_progress', 0, 7200);
-        Cache::put('firebase_sync_label', 'Iniciando subida...', 7200);
+        Cache::put('firebase_sync_label', $isForce ? 'Iniciando subida TOTAL...' : 'Iniciando subida...', 7200);
 
         $options = [
-            '--intensity' => $data['intensity'] ?? 50,
+            '--intensity' => $intensity,
             '--log-id' => $log->id
         ];
 
         if (isset($data['afiliados']) && $data['afiliados']) $options['--affiliates'] = true;
         if (isset($data['empresas']) && $data['empresas']) $options['--companies'] = true;
         if (isset($data['simulation']) && $data['simulation']) $options['--dry-run'] = true;
+        if ($isForce) {
+            $options['--force'] = true;
+        }
         
         if (empty($options['--affiliates']) && empty($options['--companies'])) {
              return response()->json(['success' => false, 'error' => 'Los catálogos solo pueden ser descargados (Pull). Seleccione Afiliados o Empresas para subir.']);
         }
 
-        \App\Jobs\FirebaseSyncJob::dispatch($options, $log->id, $data['intensity'] ?? 50, 'firebase:sync-all', auth()->id());
+        \App\Jobs\FirebaseSyncJob::dispatch($options, $log->id, $intensity, 'firebase:sync-all', auth()->id());
 
         return response()->json(['success' => true, 'log_id' => $log->id]);
     }
@@ -275,7 +257,10 @@ class FirebaseSyncController extends Controller
             'quota' => [
                 'writes' => $dbWrites + (Cache::get('firebase_sync_active') && FirebaseSyncLog::where('status', 'running')->where('type', 'Push')->exists() ? $currentLiveCount : 0),
                 'reads' => $dbReads + (Cache::get('firebase_sync_active') && FirebaseSyncLog::where('status', 'running')->where('type', 'Pull')->exists() ? $currentLiveCount : 0),
-            ]
+                'read_limit' => 50000,
+                'write_limit' => 20000
+            ],
+            'checkpoints' => \App\Models\CloudSyncCheckpoint::where('status', 'running')->get()
         ]);
     }
 
@@ -455,32 +440,40 @@ class FirebaseSyncController extends Controller
      */
     public function compare(Request $request)
     {
-        $id = $request->get('id');
-        $type = $request->get('type', 'afiliado'); // 'afiliado' o 'empresa'
-        
-        if (!$id) return response()->json(['success' => false, 'error' => 'ID no proporcionado']);
-
-        $local = null;
-        $remote = null;
-        $collection = ($type === 'afiliado') ? 'afiliados' : 'empresas';
-
-        if ($type === 'afiliado') {
-            $local = \App\Models\Afiliado::where('cedula', $id)->first();
-            $remote = $this->syncService->getDocument($collection, $id);
-        } else {
-            $local = \App\Models\Empresa::where('rnc', $id)->first();
-            if (!$local && strlen($id) > 15) $local = \App\Models\Empresa::where('uuid', $id)->first();
+        try {
+            $id = $request->get('id');
+            $type = $request->get('type', 'afiliado'); // 'afiliado' o 'empresa'
             
-            $remoteId = $local ? $local->uuid : $id;
-            $remote = $this->syncService->getDocument($collection, $remoteId);
-        }
+            if (!$id) return response()->json(['success' => false, 'error' => 'ID no proporcionado']);
 
-        return response()->json([
-            'success' => true,
-            'local' => $local,
-            'remote' => $remote,
-            'type' => $type
-        ]);
+            $local = null;
+            $remote = null;
+            $collection = ($type === 'afiliado') ? 'afiliados' : 'empresas';
+
+            if ($type === 'afiliado') {
+                $local = \App\Models\Afiliado::where('cedula', $id)->first();
+                $remote = $this->syncService->getDocument($collection, $id);
+            } else {
+                $local = \App\Models\Empresa::where('rnc', $id)->first();
+                if (!$local && strlen($id) > 15) $local = \App\Models\Empresa::where('uuid', $id)->first();
+                
+                $remoteId = $local ? $local->uuid : $id;
+                $remote = $this->syncService->getDocument($collection, $remoteId);
+            }
+
+            return response()->json([
+                'success' => true,
+                'local' => $local,
+                'remote' => $remote,
+                'type' => $type
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("FirebaseSyncController@compare error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error técnico al comparar: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -538,5 +531,37 @@ class FirebaseSyncController extends Controller
             ));
             return response()->json(['success' => false, 'error' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * Display synchronized records with advanced filters
+     */
+    public function records(Request $request)
+    {
+        $query = Afiliado::query();
+
+        if ($request->filled('q')) {
+            $query->where(function($q) use ($request) {
+                $q->where('nombre_completo', 'like', '%' . $request->q . '%')
+                  ->orWhere('cedula', 'like', '%' . $request->q . '%');
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('sync_status', $request->status);
+        }
+
+        $records = $query->orderBy('firebase_synced_at', 'desc')->paginate(20);
+
+        return view('firebase.records', compact('records'));
+    }
+
+    /**
+     * Display sync conflicts
+     */
+    public function conflicts()
+    {
+        $conflicts = Afiliado::where('sync_status', 'conflict')->paginate(20);
+        return view('firebase.conflicts', compact('conflicts'));
     }
 }

@@ -47,7 +47,9 @@ class Afiliado extends Model
         'codigo', 'lote_id', 'proveedor_id', 'costo_entrega', 'poliza', 'contrato',
         'fecha_entrega_proveedor', 'liquidado', 'fecha_liquidacion', 'recibo_liquidacion',
         'fecha_entrega_safesure', 'lote_liquidacion_id',
-        'provincia_id', 'municipio_id', 'reasignado', 'firebase_synced_at'
+        'provincia_id', 'municipio_id', 'reasignado', 'firebase_synced_at', 'observaciones',
+        'sync_status', 'firebase_updated_at', 'last_sync_attempt_at', 'sync_error_message',
+        'sync_attempts', 'updated_from', 'hash_checksum', 'sync_version'
     ];
 
     protected $casts = [
@@ -343,5 +345,40 @@ class Afiliado extends Model
     public function asignacionesLlamadas()
     {
         return $this->hasMany(AsignacionLlamada::class);
+    }
+
+    /**
+     * RELACIÓN: Módulo Programa PyP
+     */
+    public function pypExpediente()
+    {
+        return $this->hasOne(PypExpediente::class);
+    }
+
+    /**
+     * Genera un hash de los campos críticos para detectar cambios reales
+     */
+    public function calculateHash(): string
+    {
+        $relevantFields = [
+            'nombre_completo' => $this->nombre_completo,
+            'cedula' => $this->cedula,
+            'estado_id' => $this->estado_id,
+            'provincia_id' => $this->provincia_id,
+            'municipio_id' => $this->municipio_id,
+            'empresa_id' => $this->empresa_id,
+            'lote_id' => $this->lote_id,
+            'proveedor_id' => $this->proveedor_id,
+            'responsable_id' => $this->responsable_id,
+            'corte_id' => $this->corte_id,
+            'fecha_entrega_proveedor' => $this->fecha_entrega_proveedor?->toDateTimeString(),
+            'observaciones' => $this->observaciones,
+            'poliza' => $this->poliza,
+            'contrato' => $this->contrato,
+            'telefono' => $this->telefono,
+            'direccion' => $this->direccion,
+        ];
+        
+        return hash('sha256', json_encode($relevantFields));
     }
 }

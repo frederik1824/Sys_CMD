@@ -73,7 +73,6 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
             'last_login_at' => 'datetime',
             'firebase_synced_at' => 'datetime',
         ];
@@ -147,5 +146,19 @@ class User extends Authenticatable
     public function promocionesCallCenter()
     {
         return $this->hasMany(CallCenterBandejaSalida::class, 'enviado_por');
+    }
+
+    /**
+     * Personalización del mapeo para Firebase (Excluir campos sensibles)
+     */
+    public function getFirebaseMapping(): array
+    {
+        $fields = $this->getFillable();
+        // Excluimos explícitamente password y remember_token
+        $excluded = ['password', 'remember_token'];
+        
+        $syncFields = array_diff($fields, $excluded);
+        
+        return array_combine($syncFields, $syncFields);
     }
 }
