@@ -85,6 +85,11 @@ class ReleasePackerCommand extends Command
 
         foreach ($files as $name => $file) {
             if (!$file->isDir()) {
+                // Saltar enlaces simbólicos (especialmente importante en Windows para public/storage)
+                if ($file->isLink()) {
+                    continue;
+                }
+
                 $filePath = $file->getRealPath();
                 $relativePath = $zipPath . '/' . substr($filePath, strlen($folderPath) + 1);
                 
@@ -97,6 +102,8 @@ class ReleasePackerCommand extends Command
                     'sys_carnet_lan.conf', 
                     'sys_carnet-firebase-adminsdk',
                     'public/storage',      // Evidencias (MUY PESADO)
+                    'public/build',        // Assets de compilación
+                    'public/hot',          // Vite hot
                     'storage/app/backups', // Backups previos (MUY PESADO)
                     'storage/framework/sessions',
                     '.git',
@@ -115,6 +122,14 @@ class ReleasePackerCommand extends Command
                 if ($shouldExclude) {
                     continue;
                 }
+
+                // Verificar si el archivo está bloqueado (no se puede abrir para lectura)
+                $handle = @fopen($filePath, 'r');
+                if (!$handle) {
+                    $this->warn("⚠️ Archivo bloqueado o sin permisos: $relativePath");
+                    continue;
+                }
+                fclose($handle);
 
                 $zip->addFile($filePath, $relativePath);
             }
