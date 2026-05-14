@@ -19,7 +19,12 @@ class CallCenterController extends Controller
     public function index()
     {
         $cargas = CallCenterCarga::with('user')->latest()->paginate(10);
-        return view('modules.call_center.index', compact('cargas'));
+        
+        $enlacesPendientesCount = CallCenterRegistro::where('prioridad', '>=', 100)
+            ->whereNull('operador_id')
+            ->count();
+
+        return view('modules.call_center.index', compact('cargas', 'enlacesPendientesCount'));
     }
 
     public function create()
@@ -283,7 +288,14 @@ class CallCenterController extends Controller
 
         // Filtros obligatorios
         if (!auth()->user()->hasRole('Supervisor Call Center')) {
-            $query->where('operador_id', auth()->id());
+            $query->where(function($q) {
+                $q->where('operador_id', auth()->id())
+                  ->orWhere(function($sub) {
+                      // Bolsa de Emergencias: Tickets Urgentes sin operador
+                      $sub->whereNull('operador_id')
+                          ->where('prioridad', '>=', 100);
+                  });
+            });
         } elseif ($request->filled('operador_id')) {
             $query->where('operador_id', $request->operador_id);
         }
@@ -319,6 +331,29 @@ class CallCenterController extends Controller
         $operadores = \App\Models\User::role('Operador Call Center')->get();
 
         return view('modules.call_center.worklist', compact('registros', 'estados', 'empresas', 'operadores'));
+    }
+
+    public function enlaceWorklist(Request $request)
+    {
+        $query = CallCenterRegistro::with(['estado', 'carga', 'operador', 'empresa'])
+            ->where('prioridad', '>=', 100)
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function($q) use ($s) {
+                $q->where('nombre', 'LIKE', "%$s%")
+                  ->orWhere('cedula', 'LIKE', "%$s%");
+            });
+        }
+
+        $registros = $query->paginate(20)->withQueryString();
+        
+        $estados = CallCenterEstado::orderBy('orden')->get();
+        $empresas = Empresa::orderBy('nombre')->get();
+        $operadores = \App\Models\User::role('Operador Call Center')->get();
+
+        return view('modules.call_center.enlaces', compact('registros', 'estados', 'empresas', 'operadores'));
     }
 
     public function manage(CallCenterRegistro $registro)
@@ -375,6 +410,7 @@ class CallCenterController extends Controller
                 'proximo_contacto_at' => $request->fecha_proximo_contacto,
                 'telefono' => $request->telefono_contactado ?: $registro->telefono,
                 'celular' => $request->celular_contactado ?: $registro->celular,
+                'operador_id' => $registro->operador_id ?? auth()->id(), // Asignar automáticamente si no tiene dueño
             ];
 
             if ($request->filled('direccion_contactada')) {

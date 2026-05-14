@@ -81,6 +81,30 @@ Route::middleware('auth')->group(function () {
     Route::get('sistema/usuarios/{user}/edit', function($user) { return redirect()->route('admin.access.users.edit', $user); });
 
     // --------------------------------------------------------------------------
+    // MODULO: CONTROL DE DISPERSIÓN (UNIFICADO)
+    // --------------------------------------------------------------------------
+    Route::prefix('dispersion')->name('dispersion.')->middleware(['auth', 'app_access:dispersion'])->group(function () {
+        // General / Admin
+        Route::get('/', [\App\Http\Controllers\Modules\Admin\DispersionController::class, 'index'])->name('index');
+        
+        // Pensionados (TSS Decoding Engine)
+        Route::prefix('pensionados')->name('pensionados.')->group(function() {
+            Route::get('/', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'index'])->name('index');
+            Route::get('/historial', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'history'])->name('history');
+            Route::post('/upload', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'upload'])->name('upload');
+            Route::get('/carga/{uuid}', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'show'])->name('show');
+            Route::post('/carga/{uuid}/reprocess', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'reprocess'])->name('reprocess');
+            Route::delete('/carga/{uuid}', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'destroy'])->name('destroy');
+            Route::get('/reportes', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'reports'])->name('reports');
+            Route::get('/configuracion', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'config'])->name('config');
+            Route::post('/master', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'storeMaster'])->name('master.store');
+            Route::post('/master/import', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'importMaster'])->name('master.import');
+            Route::get('/master/{pensionado}/history', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'historyMaster'])->name('master.history');
+            Route::post('/master/{pensionado}/notified', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'markNotified'])->name('master.notified');
+        });
+    });
+
+    // --------------------------------------------------------------------------
     // MODULO: CARNETIZACIÓN (ID SYSTEM / CMD)
     // Prefix: /carnetizacion | Name: carnetizacion.*
     // --------------------------------------------------------------------------
@@ -282,6 +306,8 @@ Route::middleware('auth')->group(function () {
     Route::prefix('solicitudes-afiliacion')->name('afiliacion.')->middleware('app_access:afiliacion')->group(function () {
         Route::get('/', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'index'])->name('index');
         Route::get('/search-afiliado', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'searchAfiliado'])->name('search-afiliado');
+        Route::get('/analytics', [\App\Http\Controllers\Modules\Afiliacion\AnaliticaController::class, 'index'])->name('analytics');
+        Route::get('/analytics/export', [\App\Http\Controllers\Modules\Afiliacion\AnaliticaController::class, 'export'])->name('analytics.export');
         Route::get('/check-stats', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'checkStats'])->name('check-stats');
         Route::get('/crear', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'store'])->name('store');
@@ -312,6 +338,7 @@ Route::middleware('auth')->group(function () {
         Route::middleware('can:solicitudes_afiliacion.escalar')->post('/{solicitud}/escalar', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'escalate'])->name('escalate');
         Route::get('/documentos/{documento}', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'viewDocumento'])->name('documentos.view');
         Route::post('/{solicitud}/documentos/{documento}/validar', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'validateDocument'])->name('documentos.validate');
+        Route::post('/{solicitud}/feedback', [\App\Http\Controllers\Modules\Afiliacion\SolicitudController::class, 'storeFeedback'])->name('feedback');
     });
 
     // --------------------------------------------------------------------------
@@ -429,6 +456,12 @@ Route::middleware('auth')->group(function () {
         return back();
     })->name('notifications.markAllAsRead');
 
+    // --- Módulo de Autorizaciones Médicas (Ticketing) ---
+    Route::prefix('autorizaciones')->name('autorizaciones.')->group(function () {
+        Route::get('/ticket-carnet', [App\Http\Controllers\Modules\CallCenter\CallCenterTicketController::class, 'create'])->name('ticket.create');
+        Route::post('/ticket-carnet', [App\Http\Controllers\Modules\CallCenter\CallCenterTicketController::class, 'store'])->name('ticket.store');
+    });
+
     // --- Módulo de Call Center V2 ---
     Route::prefix('call-center')->name('call-center.')->group(function () {
         Route::get('/', [App\Http\Controllers\Modules\CallCenter\CallCenterController::class, 'index'])->name('index');
@@ -437,6 +470,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/importar/procesar-chunk', [App\Http\Controllers\Modules\CallCenter\CallCenterController::class, 'processChunk'])->name('import.chunk');
         Route::post('/importar', [App\Http\Controllers\Modules\CallCenter\CallCenterController::class, 'importData'])->name('import.store');
         Route::get('/bandeja', [App\Http\Controllers\Modules\CallCenter\CallCenterController::class, 'worklist'])->name('worklist');
+        Route::get('/enlaces', [App\Http\Controllers\Modules\CallCenter\CallCenterController::class, 'enlaceWorklist'])->name('enlaces');
         Route::get('/gestionar/{registro:uuid}', [App\Http\Controllers\Modules\CallCenter\CallCenterController::class, 'manage'])->name('manage');
         Route::post('/gestionar/{registro:uuid}/llamada', [App\Http\Controllers\Modules\CallCenter\CallCenterController::class, 'storeGestion'])->name('gestion.store');
         Route::post('/gestionar/{registro:uuid}/documento', [App\Http\Controllers\Modules\CallCenter\CallCenterController::class, 'updateDocument'])->name('document.update');

@@ -89,7 +89,7 @@
                 <th width="5%">RK</th>
                 <th width="35%">Agente / Responsable</th>
                 <th width="10%" style="text-align: center;">Efect.</th>
-                <th width="10%" style="text-align: center;">Vidas</th>
+                <th width="10%" style="text-align: center;">Traspasos</th>
                 <th width="10%" style="text-align: center;">Rech.</th>
                 <th width="10%" style="text-align: center;">Pend.</th>
                 <th width="20%" style="text-align: right;">Efectividad</th>
@@ -117,10 +117,11 @@
     <table class="main-table">
         <thead>
             <tr>
-                <th width="12%">Cédula</th>
-                <th width="30%">Nombre del Afiliado</th>
-                <th width="20%">Agente Proceso</th>
-                <th width="13%" style="text-align: center;">F. Solicitud</th>
+                <th width="10%">Cédula</th>
+                <th width="12%">Solicitud</th>
+                <th width="24%">Nombre del Afiliado</th>
+                <th width="19%">Agente Proceso</th>
+                <th width="10%" style="text-align: center;">F. Solicitud</th>
                 <th width="10%" style="text-align: center;">Estado</th>
                 <th width="15%" style="text-align: center;">F. Efectiva/Rechazo</th>
             </tr>
@@ -129,6 +130,7 @@
             @foreach($detallesAfiliados as $index => $traspaso)
             <tr class="{{ $index % 2 == 0 ? 'row-even' : 'row-odd' }}">
                 <td style="font-family: monospace; font-size: 8px;">{{ $traspaso->cedula_afiliado }}</td>
+                <td style="font-weight: bold; color: #4f46e5;">{{ $traspaso->numero_solicitud_epbd }}</td>
                 <td style="font-weight: bold;">{{ $traspaso->nombre_afiliado }}</td>
                 <td>{{ $traspaso->agenteRel->nombre ?? 'N/A' }}</td>
                 <td style="text-align: center;">{{ \Carbon\Carbon::parse($traspaso->fecha_solicitud)->format('d/m/Y') }}</td>

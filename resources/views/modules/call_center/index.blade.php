@@ -22,7 +22,7 @@
 
     <!-- Estadísticas Globales Premium -->
     <div class="bg-white rounded-[40px] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden">
-        <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-50">
+        <div class="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-50">
             <!-- Stat 1 -->
             <div class="p-8 flex items-center gap-6 group hover:bg-slate-50/50 transition-colors">
                 <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
@@ -51,6 +51,22 @@
                 <div>
                     <h6 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Data Actualizada</h6>
                     <p class="text-3xl font-black text-slate-900 leading-none tracking-tight">{{ $cargas->sum('registros_actualizados') }}</p>
+                </div>
+            </div>
+            <!-- NEW: Enlaces Directos Stat -->
+            <div class="p-8 flex items-center gap-6 group bg-indigo-600 transition-all relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 text-white/5 group-hover:scale-150 transition-transform duration-700">
+                    <i class="ph-bold ph-link text-8xl"></i>
+                </div>
+                <div class="w-14 h-14 bg-white/20 text-white rounded-2xl flex items-center justify-center shadow-inner border border-white/30 z-10">
+                    <i class="ph-bold ph-link text-2xl"></i>
+                </div>
+                <div class="z-10">
+                    <h6 class="text-[10px] font-black text-white/70 uppercase tracking-widest mb-1">Enlaces Pendientes</h6>
+                    <p class="text-3xl font-black text-white leading-none tracking-tight">{{ $enlacesPendientesCount }}</p>
+                    <a href="{{ route('call-center.enlaces') }}" class="text-[9px] font-black text-white uppercase tracking-widest mt-3 flex items-center gap-1 hover:underline">
+                        Ver Bandeja <i class="ph-bold ph-arrow-right"></i>
+                    </a>
                 </div>
             </div>
         </div>

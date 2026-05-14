@@ -91,7 +91,7 @@ class TraspasoController extends Controller
         $globalEfectivos = Traspaso::whereHas('estadoRel', fn($q) => $q->where('slug', 'efectivo'))->count();
         
         $statsGlobal = [
-            'total_vidas' => $globalTotalTitulares + $globalTotalDependientes,
+            'total_traspasos' => $globalTotalTitulares + $globalTotalDependientes,
             'total_titulares' => $globalTotalTitulares,
             'total_dependientes' => $globalTotalDependientes,
             'efectivos' => $globalEfectivos,
@@ -126,8 +126,8 @@ class TraspasoController extends Controller
                                     ->whereMonth('fecha_solicitud', $lastMonthStart->month)
                                     ->sum('cantidad_dependientes');
         
-        $vidasPrev = $solicitudesPrev + $dependientesPrev;
-        $crecimiento = $vidasPrev > 0 ? (($solicitudesActual - $vidasPrev) / $vidasPrev) * 100 : 0;
+        $traspasosPrev = $solicitudesPrev + $dependientesPrev;
+        $crecimiento = $traspasosPrev > 0 ? (($solicitudesActual - $traspasosPrev) / $traspasosPrev) * 100 : 0;
 
         // 1. Efectividad (Hit Rate) con LAG de 2 meses (Justicia operativa)
         $monthLag = $now->copy()->subMonths(2);

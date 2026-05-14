@@ -21,7 +21,7 @@ class UpdateAfiliadoRequest extends FormRequest
     {
         return [
             'nombre_completo' => 'required|string|max:255',
-            'cedula' => ['required', 'string', 'max:20', new \App\Rules\CedulaDominicana],
+            'cedula' => ['required', 'string', 'max:20'],
             'sexo' => 'nullable|string|in:M,F',
             'telefono' => 'nullable|string|max:20',
             'direccion' => 'nullable|string',

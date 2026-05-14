@@ -1,219 +1,198 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="p-4 md:p-10 max-w-[1600px] mx-auto min-h-[calc(100vh-100px)]">
-    <!-- HEADER ESTRATÉGICO -->
-    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 mb-16">
-        <div class="space-y-4">
-            <div class="flex items-center gap-4 mb-2">
-                <div class="w-3 h-10 bg-gradient-to-b from-indigo-600 to-indigo-400 rounded-full shadow-lg shadow-indigo-100"></div>
-                <h1 class="text-6xl font-black tracking-tighter text-slate-900 leading-none">Bandeja Operativa</h1>
-            </div>
-            <p class="text-slate-500 font-medium text-xl max-w-2xl leading-relaxed">Gestión de expedientes de afiliación y procesos de validación con inteligencia operativa en tiempo real.</p>
-        </div>
-        <div class="flex flex-wrap gap-4">
-            @can('solicitudes_afiliacion.configurar')
-            <a href="{{ route('afiliacion.config') }}" 
-               class="bg-white text-slate-900 border border-slate-200 rounded-[22px] px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 hover:border-slate-400 hover:shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3 shadow-sm group">
-                <i class="ph ph-sliders-horizontal text-xl group-hover:rotate-180 transition-transform duration-700"></i> Configuración
-            </a>
-            @endcan
-            <a href="{{ route('afiliacion.create') }}" 
-               class="bg-slate-900 text-white rounded-[22px] px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-600 hover:shadow-2xl hover:shadow-indigo-200 hover:-translate-y-1 transition-all flex items-center gap-3 shadow-2xl shadow-slate-200 group">
-                <i class="ph ph-plus-circle-fill text-xl group-hover:scale-125 transition-transform"></i> Nueva Solicitud
-            </a>
-        </div>
-    </div>
-
-    <!-- DASHBOARD DE INDICADORES -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 mb-12">
-        <!-- PENDIENTES -->
-        <div class="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
-            <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-50 rounded-full blur-2xl group-hover:bg-amber-100 transition-colors"></div>
-            <div class="flex justify-between items-start mb-6 relative z-10">
-                <div class="w-14 h-14 bg-amber-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-100 group-hover:scale-110 transition-transform">
-                    <i class="ph-bold ph-hourglass-high text-2xl"></i>
+<div class="p-4 md:p-8 max-w-[1600px] mx-auto min-h-screen">
+    <!-- COMPACT COMMAND CENTER HEADER -->
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-8 bg-white/40 backdrop-blur-xl p-6 rounded-[2rem] border border-white/60 shadow-xl">
+        <div class="flex items-center gap-5">
+            <div class="relative">
+                <div class="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl rotate-2">
+                    <i class="ph-fill ph-tray text-2xl"></i>
                 </div>
-                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg">Fase 1</span>
+                <div class="absolute -bottom-1 -right-1 w-7 h-7 bg-indigo-600 rounded-xl border-2 border-white flex items-center justify-center text-white shadow-md">
+                    <i class="ph-bold ph-lightning text-xs"></i>
+                </div>
             </div>
-            <div class="relative z-10">
-                <div class="text-4xl font-black text-slate-900 tracking-tighter mb-1">{{ $stats['pendientes'] }}</div>
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Pendientes de Asignación</div>
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse"></span>
+                    <p class="text-[9px] font-black text-indigo-600 uppercase tracking-[0.3em]">Live Dashboard</p>
+                </div>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tighter leading-none">Bandeja Operativa</h1>
+                <p class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Gestión de Afiliaciones</p>
             </div>
         </div>
-
-        <!-- EN REVISIÓN -->
-        <div class="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
-            <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-50 rounded-full blur-2xl group-hover:bg-indigo-100 transition-colors"></div>
-            <div class="flex justify-between items-start mb-6 relative z-10">
-                <div class="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">
-                    <i class="ph-bold ph-eye text-2xl"></i>
-                </div>
-                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg">Fase 2</span>
+        
+        <div class="flex items-center gap-4">
+            <div class="hidden md:flex flex-col items-end mr-4 pr-4 border-r border-slate-200">
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Sistema</span>
+                <span class="text-[10px] font-black text-emerald-500 flex items-center gap-1.5 mt-1">
+                    <i class="ph-fill ph-circle text-[6px]"></i> Latencia Óptima
+                </span>
             </div>
-            <div class="relative z-10">
-                <div class="text-4xl font-black text-slate-900 tracking-tighter mb-1">{{ $stats['en_revision'] }}</div>
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">En Evaluación Técnica</div>
-            </div>
-        </div>
-
-        <!-- DEVUELTAS -->
-        <div class="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
-            <div class="absolute -right-4 -top-4 w-24 h-24 bg-orange-50 rounded-full blur-2xl group-hover:bg-orange-100 transition-colors"></div>
-            <div class="flex justify-between items-start mb-6 relative z-10">
-                <div class="w-14 h-14 bg-orange-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-orange-100 group-hover:scale-110 transition-transform">
-                    <i class="ph-bold ph-warning-circle text-2xl"></i>
-                </div>
-                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg">Fase X</span>
-            </div>
-            <div class="relative z-10">
-                <div class="text-4xl font-black text-slate-900 tracking-tighter mb-1">{{ $stats['devueltas'] }}</div>
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Observadas / Enmienda</div>
-            </div>
-        </div>
-
-        <!-- APROBADAS (PENDIENTE CIERRE) -->
-        <div class="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
-            <div class="absolute -right-4 -top-4 w-24 h-24 bg-teal-50 rounded-full blur-2xl group-hover:bg-teal-100 transition-colors"></div>
-            <div class="flex justify-between items-start mb-6 relative z-10">
-                <div class="w-14 h-14 bg-teal-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-teal-100 group-hover:scale-110 transition-transform">
-                    <i class="ph-bold ph-check-square text-2xl"></i>
-                </div>
-                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg">Fase 3</span>
-            </div>
-            <div class="relative z-10">
-                <div class="text-4xl font-black text-slate-900 tracking-tighter mb-1">{{ $stats['aprobadas'] }}</div>
-                <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Pendiente Cierre Final</div>
-            </div>
-        </div>
-
-        <!-- COMPLETADAS -->
-        <div class="bg-slate-900 p-8 rounded-[40px] border border-slate-800 shadow-2xl shadow-emerald-200 relative overflow-hidden group">
-            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
-            <div class="flex justify-between items-start mb-6 relative z-10">
-                <div class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:rotate-12 transition-transform">
-                    <i class="ph-bold ph-check-circle text-2xl"></i>
-                </div>
-                <span class="text-[9px] font-black text-white/40 uppercase tracking-widest bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">Éxito</span>
-            </div>
-            <div class="relative z-10">
-                <div class="text-4xl font-black text-white tracking-tighter mb-1">{{ $stats['completadas'] }}</div>
-                <div class="text-[10px] font-black text-white/50 uppercase tracking-[0.1em]">Trámites Completados</div>
+            
+            <div class="flex gap-2">
+                @can('solicitudes_afiliacion.configurar')
+                <a href="{{ route('afiliacion.config') }}" class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-900 hover:text-white transition-all shadow-sm group">
+                    <i class="ph ph-gear-six text-xl group-hover:rotate-90 transition-transform"></i>
+                </a>
+                @endcan
+                <a href="{{ route('afiliacion.create') }}" class="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all group">
+                    <i class="ph-bold ph-plus-circle text-lg group-hover:scale-110 transition-transform"></i>
+                    Nueva Solicitud
+                </a>
             </div>
         </div>
     </div>
 
+    <!-- COMPACT MINI-METRIC BAR (Operational Focus) -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-10">
+        @php
+            $kpiSchema = [
+                'pendientes' => ['label' => 'Pendientes', 'icon' => 'ph-hourglass-high', 'color' => 'amber'],
+                'en_revision' => ['label' => 'Evaluación', 'icon' => 'ph-eye', 'color' => 'indigo'],
+                'devueltas' => ['label' => 'Observadas', 'icon' => 'ph-warning-circle', 'color' => 'rose'],
+                'aprobadas' => ['label' => 'Cierres', 'icon' => 'ph-check-square', 'color' => 'teal'],
+                'completadas' => ['label' => 'Completadas', 'icon' => 'ph-check-circle', 'color' => 'emerald']
+            ];
+        @endphp
+
+        @foreach($kpiSchema as $key => $kpi)
+        <div class="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm hover:shadow-xl transition-all duration-300 group flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-{{ $kpi['color'] }}-50 text-{{ $kpi['color'] }}-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <i class="ph-fill {{ $kpi['icon'] }} text-xl"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{{ $kpi['label'] }}</p>
+                <div class="flex items-baseline gap-2">
+                    <h3 class="text-2xl font-black text-slate-900 leading-none">{{ $stats[$key] ?? 0 }}</h3>
+                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">Items</span>
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+
     <!-- ÁREA DE GESTIÓN OPERATIVA -->
     <!-- ÁREA DE GESTIÓN OPERATIVA -->
-    <div class="bg-white rounded-[56px] border border-slate-100 shadow-2xl shadow-slate-200/30 overflow-hidden backdrop-blur-3xl">
-        <!-- TOOLBAR DE FILTROS -->
-        <div class="p-8 md:p-12 border-b border-slate-50 bg-gradient-to-b from-slate-50/50 to-transparent flex flex-col xl:flex-row justify-between items-center gap-10">
-            <div class="flex flex-col md:flex-row items-center gap-8 w-full xl:w-auto">
-                <!-- SWITCHER DE VISTA -->
-                <div class="flex items-center gap-1 p-1.5 bg-slate-100/50 rounded-[24px] border border-slate-200 shadow-inner">
+    <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/30 overflow-hidden">
+        <!-- ADVANCED TOOLBAR -->
+        <div class="px-8 py-6 border-b border-slate-50 flex flex-col xl:flex-row justify-between items-center gap-6 bg-slate-50/30">
+            <div class="flex flex-col md:flex-row items-center gap-6 w-full xl:w-auto">
+                <!-- VIEW SWITCHER -->
+                <div class="flex p-1.5 bg-slate-200/50 rounded-3xl border border-slate-200/60 w-full md:w-auto">
                     <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['view' => 'list'])) }}" 
-                       class="px-6 py-3 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all {{ request('view', 'list') == 'list' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50' }}">
-                        <i class="ph-bold ph-rows-fill mr-2"></i> Lista
+                       class="flex-1 md:flex-none px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('view', 'list') == 'list' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-400 hover:text-slate-600' }}">
+                        Lista
                     </a>
                     <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['view' => 'kanban'])) }}" 
-                       class="px-6 py-3 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all {{ request('view') == 'kanban' ? 'bg-white text-indigo-600 shadow-xl shadow-indigo-100/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50' }}">
-                        <i class="ph-bold ph-kanban-fill mr-2"></i> Tablero
+                       class="flex-1 md:flex-none px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all {{ request('view') == 'kanban' ? 'bg-white text-indigo-600 shadow-lg' : 'text-slate-400 hover:text-slate-600' }}">
+                        Tablero
                     </a>
                 </div>
 
-                <div class="flex items-center gap-2 px-6 py-2 bg-slate-50 border border-slate-100 rounded-[32px] shadow-inner p-1.5">
-                    @php 
-                        $statusFilters = [
-                            ['slug' => '', 'label' => 'Todas', 'color' => 'slate-900'],
-                            ['slug' => 'Pendiente', 'label' => 'Pendientes', 'color' => 'amber-500'],
-                            ['slug' => 'En revisión', 'label' => 'Evaluación', 'color' => 'indigo-600'],
-                            ['slug' => 'Devuelta', 'label' => 'Devueltas', 'color' => 'orange-500'],
-                            ['slug' => 'Aprobada', 'label' => 'Aprobadas', 'color' => 'teal-600'],
-                            ['slug' => 'Completada', 'label' => 'Éxito', 'color' => 'emerald-600']
-                        ];
-                    @endphp
+                @php 
+                    $statusFilters = [
+                        ['slug' => '', 'label' => 'Todas', 'color' => 'slate-900'],
+                        ['slug' => 'Pendiente', 'label' => 'Pendientes', 'color' => 'amber-500'],
+                        ['slug' => 'En revisión', 'label' => 'Evaluación', 'color' => 'indigo-600'],
+                        ['slug' => 'Devuelta', 'label' => 'Devueltas', 'color' => 'rose-500'],
+                        ['slug' => 'Aprobada', 'label' => 'Aprobadas', 'color' => 'teal-600'],
+                        ['slug' => 'Completada', 'label' => 'Éxito', 'color' => 'emerald-600']
+                    ];
+                @endphp
+                <!-- STATUS QUICK FILTERS -->
+                <div class="flex flex-wrap items-center gap-2">
                     @foreach($statusFilters as $filter)
                     <a href="{{ route('afiliacion.index', array_merge(request()->all(), ['estado' => $filter['slug']])) }}" 
-                       class="px-6 py-4 rounded-[24px] text-[9px] font-black uppercase tracking-[0.15em] transition-all {{ request('estado') == $filter['slug'] ? 'bg-white text-'.$filter['color'].' shadow-md border border-slate-100' : 'text-slate-400 hover:text-slate-600' }}">
+                       class="px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all {{ request('estado') == $filter['slug'] ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/10' : 'bg-white text-slate-400 border border-slate-100 hover:border-slate-300' }}">
                         {{ $filter['label'] }}
                     </a>
                     @endforeach
                 </div>
             </div>
-            
-            <form action="{{ route('afiliacion.index') }}" method="GET" class="relative w-full xl:w-[500px] group">
+
+            <!-- SMART SEARCH -->
+            <form action="{{ route('afiliacion.index') }}" method="GET" class="relative w-full xl:w-[450px]">
                 <input type="hidden" name="view" value="{{ request('view', 'list') }}">
                 <input type="hidden" name="estado" value="{{ request('estado') }}">
-                <div class="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center group-focus-within:bg-indigo-600 transition-colors">
-                    <i class="ph-bold ph-magnifying-glass text-indigo-400 text-xl group-focus-within:text-white transition-colors"></i>
-                </div>
+                <i class="ph ph-magnifying-glass absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 text-xl"></i>
                 <input type="text" name="search" value="{{ request('search') }}" 
-                       placeholder="Buscar por cédula, nombre o folio..." 
-                       class="w-full pl-20 pr-10 py-6 bg-slate-50 border-2 border-transparent rounded-[32px] text-sm font-black text-slate-800 placeholder-slate-400 focus:ring-0 focus:border-indigo-100 focus:bg-white transition-all shadow-inner">
-                @if(request('search') || request('estado'))
-                <a href="{{ route('afiliacion.index') }}" class="absolute right-8 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-rose-500 hover:text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-xl transition-all">Limpiar</a>
-                @endif
+                       placeholder="Buscar expediente..." 
+                       class="w-full pl-16 pr-8 py-5 bg-white border border-slate-200 rounded-3xl text-sm font-bold text-slate-700 placeholder-slate-300 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all">
             </form>
         </div>
 
         @if(request('view') == 'kanban')
-            <!-- VISTA KANBAN (Tablero) -->
-            <div class="p-10 bg-slate-50 overflow-x-auto">
-                <div class="flex gap-8 min-w-max pb-4">
-                    @foreach(['Pendiente', 'En revisión', 'Devuelta', 'Aprobada', 'Completada'] as $estado)
-                    <div class="w-96 flex flex-col gap-6">
-                        <div class="flex items-center justify-between px-2">
-                            <div class="flex items-center gap-3">
-                                <span class="w-3 h-3 rounded-full {{ $estado == 'Pendiente' ? 'bg-amber-500' : ($estado == 'En revisión' ? 'bg-indigo-600' : ($estado == 'Devuelta' ? 'bg-orange-500' : ($estado == 'Aprobada' ? 'bg-teal-500' : 'bg-emerald-500'))) }}"></span>
-                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-[0.15em]">
-                                    {{ $estado == 'Aprobada' ? 'Pendiente de Cierre' : ($estado == 'En revisión' ? 'En Evaluación' : $estado) }}
-                                </h3>
+            <!-- CYBER-KANBAN BOARD -->
+            <div class="p-10 bg-slate-50/50 overflow-x-auto min-h-[600px]">
+                <div class="flex gap-10 min-w-max pb-10">
+                    @php
+                        $kanbanStates = [
+                            'Pendiente' => ['color' => 'amber', 'label' => 'Sin Asignar'],
+                            'En revisión' => ['color' => 'indigo', 'label' => 'En Evaluación'],
+                            'Devuelta' => ['color' => 'rose', 'label' => 'Rechazadas'],
+                            'Aprobada' => ['color' => 'teal', 'label' => 'Pendiente Cierre'],
+                            'Completada' => ['color' => 'emerald', 'label' => 'Finalizadas']
+                        ];
+                    @endphp
+
+                    @foreach($kanbanStates as $estado => $meta)
+                    <div class="w-[380px] flex flex-col gap-8">
+                        <!-- Column Header -->
+                        <div class="flex items-center justify-between px-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 bg-{{ $meta['color'] }}-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-{{ $meta['color'] }}-100">
+                                    <span class="text-sm font-black">{{ isset($tablero[$estado]) ? $tablero[$estado]->count() : 0 }}</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-black text-slate-900 tracking-tight">{{ $meta['label'] }}</h3>
+                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">{{ $estado }}</p>
+                                </div>
                             </div>
-                            <span class="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-black text-slate-500">
-                                {{ isset($tablero[$estado]) ? $tablero[$estado]->count() : 0 }}
-                            </span>
                         </div>
 
-                        <div class="space-y-4">
+                        <!-- Card List -->
+                        <div class="flex flex-col gap-5">
                             @if(isset($tablero[$estado]))
                                 @foreach($tablero[$estado] as $sol)
-                                <div class="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <span class="text-[9px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-widest">{{ $sol->codigo_solicitud }}</span>
-                                        <div class="flex gap-1">
-                                            <div class="w-2 h-2 rounded-full {{ $sol->priority_color_simple }}"></div>
-                                        </div>
-                                    </div>
+                                <div class="group bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all cursor-default relative overflow-hidden">
+                                    <div class="absolute top-0 right-0 w-24 h-24 bg-{{ $meta['color'] }}-50 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                     
-                                    <h4 class="text-sm font-black text-slate-900 mb-1 leading-tight">{{ $sol->nombre_completo }}</h4>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">{{ $sol->tipoSolicitud->nombre }}</p>
+                                    <div class="relative z-10">
+                                        <div class="flex justify-between items-center mb-6">
+                                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3 py-1 bg-slate-50 rounded-lg">{{ $sol->codigo_solicitud }}</span>
+                                            <div class="w-3 h-3 rounded-full {{ $sol->priority_color_simple }} shadow-lg"></div>
+                                        </div>
 
-                                    @if(!in_array($sol->estado, ['Completada', 'Rechazada', 'Cerrada']))
-                                    <div class="mb-4">
-                                        <div class="flex justify-between items-center text-[8px] font-black uppercase tracking-widest mb-1">
-                                            <span class="text-slate-400">Progreso SLA</span>
-                                            <span class="{{ $sol->sla_percentage > 80 ? 'text-rose-500 font-bold' : ($sol->sla_percentage > 50 ? 'text-amber-500' : 'text-emerald-500') }}">
-                                                {{ $sol->sla_percentage }}%
-                                            </span>
-                                        </div>
-                                        <div class="w-full h-1 bg-slate-50 rounded-full overflow-hidden">
-                                            <div class="h-full {{ $sol->sla_percentage > 80 ? 'bg-rose-500' : ($sol->sla_percentage > 50 ? 'bg-amber-500' : 'bg-emerald-500') }} transition-all duration-1000" style="width: {{ $sol->sla_percentage }}%"></div>
-                                        </div>
-                                    </div>
-                                    @endif
+                                        <h4 class="text-sm font-black text-slate-900 mb-1 tracking-tight">{{ $sol->nombre_completo }}</h4>
+                                        <p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-6">{{ $sol->tipoSolicitud->nombre }}</p>
 
-                                    <div class="flex items-center justify-between pt-4 border-t border-slate-50">
-                                        <div class="flex -space-x-2">
-                                            <img src="{{ $sol->solicitante->avatar_url }}" class="w-8 h-8 rounded-full border-2 border-white shadow-sm" title="Solicitante: {{ $sol->solicitante->name }}">
-                                            @if($sol->asignado)
-                                                <div class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-black border-2 border-white shadow-sm" title="Asignado a: {{ $sol->asignado->name }}">
-                                                    {{ substr($sol->asignado->name, 0, 1) }}
-                                                </div>
-                                            @endif
+                                        <div class="flex flex-col gap-1 mb-6">
+                                            <div class="flex items-center gap-2">
+                                                <i class="ph ph-clock-countdown text-indigo-500 text-xs"></i>
+                                                <span class="text-[10px] font-black text-slate-900">hace {{ $sol->created_at->diffForHumans(null, true) }}</span>
+                                            </div>
+                                            <div class="w-full h-1 bg-slate-50 rounded-full overflow-hidden">
+                                                @php
+                                                    $days = $sol->created_at->diffInDays(now());
+                                                    $agingWidth = min(($days / 15) * 100, 100); // Gradiente visual basado en 15 días
+                                                @endphp
+                                                <div class="h-full {{ $days > 10 ? 'bg-rose-500' : ($days > 5 ? 'bg-amber-500' : 'bg-emerald-500') }} transition-all" style="width: {{ $agingWidth }}%"></div>
+                                            </div>
                                         </div>
-                                        <a href="{{ route('afiliacion.show', $sol) }}" class="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all">
-                                            <i class="ph ph-arrow-right font-bold"></i>
-                                        </a>
+
+                                        <div class="flex items-center justify-between pt-4 border-t border-slate-50">
+                                            <div class="flex -space-x-3">
+                                                <img src="{{ $sol->solicitante->avatar_url }}" class="w-10 h-10 rounded-2xl border-4 border-white shadow-xl" title="Creado por {{ $sol->solicitante->name }}">
+                                                @if($sol->asignado)
+                                                    <img src="{{ $sol->asignado->avatar_url }}" class="w-10 h-10 rounded-2xl border-4 border-white shadow-xl object-cover" title="Asignado a {{ $sol->asignado->name }}">
+                                                @endif
+                                            </div>
+                                            <a href="{{ route('afiliacion.show', $sol) }}" class="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center hover:bg-slate-900 hover:text-white transition-all shadow-inner">
+                                                <i class="ph ph-arrow-right text-xl"></i>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                                 @endforeach
@@ -224,157 +203,116 @@
                 </div>
             </div>
         @else
-            <!-- TABLA DE ALTA DENSIDAD -->
-            <div class="overflow-x-auto" x-data="{ selected: [] }">
-                <!-- ACCIONES MASIVAS -->
-                <div x-show="selected.length > 0" x-transition class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-10 py-6 rounded-[32px] shadow-2xl z-[100] flex items-center gap-8 border border-white/10 backdrop-blur-md">
-                    <div class="flex items-center gap-4 pr-8 border-r border-white/10">
-                        <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-black" x-text="selected.length"></div>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Seleccionadas</span>
-                    </div>
+            <!-- RESTRUCTURED TACTICAL NEXUS (Folio & Priority Focus) -->
+            <div class="px-6 py-6 bg-slate-50/40" x-data="{ selected: [] }">
+                <!-- MASS ACTIONS OVERLAY (Hidden if no selection, though user asked to remove Sel, I'll keep the logic if needed for later but remove the checkbox) -->
 
-                    <form action="{{ route('afiliacion.bulk-assign') }}" method="POST" class="flex items-center gap-4">
-                        @csrf
-                        <input type="hidden" name="ids" :value="selected.join(',')">
-                        <select name="user_id" required class="bg-white/10 border-none rounded-xl text-[10px] font-black uppercase tracking-widest focus:ring-0 px-6 py-3">
-                            <option value="" class="text-slate-900">Asignar a Analista...</option>
-                            @foreach($usuarios as $u)
-                                <option value="{{ $u->id }}" class="text-slate-900">{{ $u->name }}</option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all">Ejecutar Asignación</button>
-                    </form>
-
-                    <button @click="selected = []" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors">Cancelar</button>
+                <!-- HEADERS -->
+                <div class="grid grid-cols-12 gap-4 px-10 mb-4 opacity-30">
+                    <div class="col-span-2 text-[8px] font-black uppercase tracking-widest"># Solicitud</div>
+                    <div class="col-span-3 text-[8px] font-black uppercase tracking-widest">Información del Afiliado</div>
+                    <div class="col-span-1 text-[8px] font-black uppercase tracking-widest text-center">Prioridad</div>
+                    <div class="col-span-2 text-[8px] font-black uppercase tracking-widest text-center">Estado</div>
+                    <div class="col-span-2 text-[8px] font-black uppercase tracking-widest">Responsable</div>
+                    <div class="col-span-1 text-[8px] font-black uppercase tracking-widest">Antigüedad</div>
+                    <div class="col-span-1 text-right text-[8px] font-black uppercase tracking-widest">Acc.</div>
                 </div>
 
-                <table class="w-full text-left border-collapse table-fixed">
-                    <thead>
-                        <tr class="bg-white border-b border-slate-100">
-                            <th class="w-16 px-6 py-8 text-center">
-                                <input type="checkbox" @change="selected = $event.target.checked ? {{ $solicitudes->pluck('id')->toJson() }} : []" :checked="selected.length === {{ $solicitudes->count() }}" class="rounded-lg border-slate-200 text-indigo-600 focus:ring-indigo-500 shadow-inner">
-                            </th>
-                            <th class="w-1/4 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Folio / Tipo de Trámite</th>
-                            <th class="w-36 px-4 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Prioridad</th>
-                            <th class="w-1/5 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Afiliado</th>
-                            <th class="w-1/5 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Origen / Gestión</th>
-                            <th class="w-48 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Estado / SLA</th>
-                            <th class="w-36 px-6 py-8 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50/60">
-                        @forelse($solicitudes as $solicitud)
-                        @php
-                            $isFinished = in_array($solicitud->estado, ['Completada', 'Rechazada', 'Cerrada', 'Cancelada']);
-                            $rowStyle = match($solicitud->prioridad) {
-                                'Urgente' => 'bg-gradient-to-r from-rose-50 to-white border-l-[6px] border-rose-600 shadow-[inset_10px_0_15px_-10px_rgba(225,29,72,0.1)]',
-                                'Alta' => 'bg-gradient-to-r from-amber-50/50 to-white border-l-[6px] border-amber-500',
-                                default => 'hover:bg-slate-50/80'
-                            };
-                            
-                            if ($isFinished) {
-                                $rowStyle = 'opacity-60 grayscale-[0.4] bg-white border-l-[4px] border-slate-200';
-                            }
-                        @endphp
-                        <tr class="{{ $rowStyle }} transition-all duration-300 group relative border-b border-slate-50 hover:scale-[1.005] hover:shadow-2xl hover:shadow-slate-200/50 hover:z-10 cursor-default">
-                            <td class="px-6 py-8 text-center">
-                                <input type="checkbox" value="{{ $solicitud->id }}" x-model="selected" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                            </td>
-                            <td class="px-6 py-5">
-                                <div class="flex flex-col gap-0.5">
-                                    <span class="text-xs font-black text-slate-900 leading-none">{{ $solicitud->codigo_solicitud }}</span>
-                                    <span class="text-[10px] font-bold text-indigo-600 truncate max-w-[180px]">{{ $solicitud->tipoSolicitud->nombre }}</span>
-                                    <span class="text-[8px] font-medium text-slate-400 uppercase tracking-tighter">{{ $solicitud->created_at->format('d/m/Y H:i') }}</span>
+                <!-- CARD LIST CONTAINER -->
+                <div class="space-y-2">
+                    @forelse($solicitudes as $solicitud)
+                    <div class="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/30 transition-all duration-300 p-4 grid grid-cols-12 gap-4 items-center">
+                        
+                        <!-- FOLIO / CODIGO -->
+                        <div class="col-span-2">
+                            <div class="bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl inline-flex flex-col">
+                                <span class="text-[9px] font-black text-indigo-600 leading-none">#{{ $solicitud->codigo_solicitud }}</span>
+                                <span class="text-[7px] font-black text-slate-400 uppercase tracking-tighter mt-1">Expediente</span>
+                            </div>
+                        </div>
+
+                        <!-- TITLE & INFO -->
+                        <div class="col-span-3 flex items-center gap-4">
+                            <div class="shrink-0 relative">
+                                <div class="w-10 h-10 rounded-xl overflow-hidden border border-slate-100 shadow-sm">
+                                    <img src="{{ $solicitud->solicitante->avatar_url }}" class="w-full h-full object-cover">
                                 </div>
-                            </td>
-                            <td class="px-4 py-5">
-                                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border {{ $solicitud->priority_color }}">
-                                    <i class="{{ $solicitud->priority_icon }} text-xs"></i>
-                                    <span class="text-[9px] font-black uppercase tracking-widest">{{ $solicitud->prioridad }}</span>
+                                <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white shadow-sm"></div>
+                            </div>
+                            <div class="flex flex-col min-w-0">
+                                <h4 class="text-xs font-black text-slate-900 tracking-tight truncate leading-none mb-1">{{ $solicitud->nombre_completo }}</h4>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[9px] font-bold text-slate-400">{{ $solicitud->cedula }}</span>
                                 </div>
-                            </td>
-                            <td class="px-6 py-5">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-tighter truncate">{{ $solicitud->institucion_pension ?: ($solicitud->empresa ?: 'Particular') }}</span>
+                                    <span class="w-1 h-1 bg-slate-200 rounded-full"></span>
+                                    <span class="text-[8px] font-bold text-indigo-500 uppercase tracking-tighter">{{ $solicitud->tipoSolicitud->nombre }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PRIORITY -->
+                        <div class="col-span-1 flex justify-center">
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="w-3 h-3 rounded-full {{ $solicitud->priority_color_simple }} shadow-lg ring-2 ring-white"></div>
+                                <span class="text-[8px] font-black text-slate-400 uppercase">{{ $solicitud->prioridad }}</span>
+                            </div>
+                        </div>
+
+                        <!-- STATUS BADGE -->
+                        <div class="col-span-2 flex justify-center">
+                            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border {{ $solicitud->status_color }} bg-white/50 shadow-sm">
+                                <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                                <span class="text-[9px] font-black uppercase tracking-widest leading-none">{{ $solicitud->status_label }}</span>
+                            </div>
+                        </div>
+
+                        <!-- ASSIGNEE -->
+                        <div class="col-span-2">
+                            @if($solicitud->asignado)
+                            <div class="flex items-center gap-3">
+                                <img src="{{ $solicitud->asignado->avatar_url }}" class="w-8 h-8 rounded-xl border-2 border-white shadow-md object-cover">
                                 <div class="flex flex-col">
-                                    <span class="text-xs font-black text-slate-900 truncate max-w-[150px]">{{ $solicitud->nombre_completo }}</span>
-                                    <span class="text-[9px] font-black text-slate-400 tracking-widest">{{ $solicitud->cedula }}</span>
+                                    <span class="text-[9px] font-black text-slate-700 uppercase leading-none">{{ explode(' ', $solicitud->asignado->name)[0] }}</span>
+                                    <span class="text-[7px] font-black text-slate-400 uppercase tracking-tighter">Analista</span>
                                 </div>
-                            </td>
-                            <td class="px-6 py-5">
-                                <div class="flex flex-col gap-3">
-                                    <!-- SOLICITANTE -->
-                                    <div class="flex items-center gap-2 opacity-80 scale-90 origin-left">
-                                        <div class="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-[8px] font-black text-slate-500 overflow-hidden">
-                                            <img src="{{ $solicitud->solicitante->avatar_url }}" class="w-full h-full object-cover">
-                                        </div>
-                                        <span class="text-[10px] font-bold text-slate-600 truncate">{{ explode(' ', $solicitud->solicitante->name)[0] }}</span>
-                                    </div>
-                                    <!-- ASIGNADO -->
-                                    @if($solicitud->asignado)
-                                    <div class="flex items-center gap-2 scale-90 origin-left">
-                                        <div class="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-[8px] font-black text-white shadow-sm">
-                                            {{ substr($solicitud->asignado->name, 0, 2) }}
-                                        </div>
-                                        <span class="text-[10px] font-black text-indigo-700 truncate">{{ explode(' ', $solicitud->asignado->name)[0] }}</span>
-                                    </div>
-                                    @else
-                                    <div class="flex items-center gap-2 text-slate-300 scale-90 origin-left">
-                                        <i class="ph ph-user-circle-plus text-lg"></i>
-                                        <span class="text-[8px] font-black uppercase italic">Sin asignar</span>
-                                    </div>
-                                    @endif
+                            </div>
+                            @else
+                            <div class="flex items-center gap-2 text-slate-200">
+                                <div class="w-8 h-8 rounded-xl border border-slate-100 border-dashed flex items-center justify-center">
+                                    <i class="ph ph-user text-[10px]"></i>
                                 </div>
-                            </td>
-                            <td class="px-6 py-5">
-                                <div class="flex flex-col items-center gap-2">
-                                    <span class="px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-[0.1em] {{ $solicitud->status_color }} border border-black/5">
-                                        {{ $solicitud->status_label }}
-                                    </span>
-                                    @if(!in_array($solicitud->estado, ['Completada', 'Rechazada', 'Cerrada']))
-                                    <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                        <div class="h-full {{ $solicitud->sla_percentage > 80 ? 'bg-rose-500' : ($solicitud->sla_percentage > 50 ? 'bg-amber-500' : 'bg-emerald-500') }}" style="width: {{ $solicitud->sla_percentage }}%"></div>
-                                    </div>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="px-6 py-5">
-                                <div class="flex justify-end gap-3 scale-95 origin-right">
-                                    @if(in_array($solicitud->estado, ['Borrador', 'Devuelta']) && $solicitud->solicitante_user_id == auth()->id())
-                                    <a href="{{ route('afiliacion.edit', $solicitud) }}" class="w-12 h-12 flex items-center justify-center text-amber-500 hover:text-white hover:bg-amber-500 rounded-[18px] transition-all shadow-sm hover:shadow-lg hover:shadow-amber-100 group/btn">
-                                        <i class="ph-bold ph-pencil-simple text-xl group-hover/btn:rotate-12 transition-transform"></i>
-                                    </a>
-                                    @endif
-                                    <a href="{{ route('afiliacion.show', $solicitud) }}" class="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-900 rounded-[18px] transition-all shadow-sm hover:shadow-lg hover:shadow-slate-200 group/btn">
-                                        <i class="ph-bold ph-arrow-square-out text-xl group-hover/btn:scale-110 transition-transform"></i>
-                                    </a>
-                                    @if($solicitud->estado == 'Pendiente' && auth()->user()->can('solicitudes_afiliacion.asignarse'))
-                                    <form action="{{ route('afiliacion.assign', $solicitud) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="w-12 h-12 flex items-center justify-center text-emerald-500 hover:text-white hover:bg-emerald-500 rounded-[18px] transition-all shadow-sm hover:shadow-lg hover:shadow-emerald-100 group/btn">
-                                            <i class="ph-bold ph-hand-pointing text-xl group-hover/btn:-translate-y-1 transition-transform"></i>
-                                        </button>
-                                    </form>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="px-10 py-32 text-center">
-                                <div class="flex flex-col items-center max-w-sm mx-auto">
-                                    <div class="w-24 h-24 bg-slate-50 rounded-[32px] flex items-center justify-center mb-8 border border-slate-100 shadow-inner">
-                                        <i class="ph ph-folder-dotted text-5xl text-slate-200"></i>
-                                    </div>
-                                    <h3 class="text-2xl font-black text-slate-900 tracking-tight mb-3">Sin resultados técnicos</h3>
-                                    <p class="text-slate-400 font-medium text-base leading-relaxed">No hemos encontrado expedientes que coincidan con los criterios de búsqueda actuales.</p>
-                                    @if(request('search') || request('estado'))
-                                    <a href="{{ route('afiliacion.index') }}" class="mt-8 text-[11px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 underline decoration-indigo-200 underline-offset-8 transition-all">Limpiar todos los filtros</a>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                <span class="text-[7px] font-black uppercase tracking-widest">Pendiente</span>
+                            </div>
+                            @endif
+                        </div>
+
+                        <!-- TIME AGING -->
+                        <div class="col-span-1 flex flex-col gap-0.5">
+                            <span class="text-[9px] font-black text-slate-900 uppercase">hace {{ $solicitud->created_at->diffForHumans(null, true) }}</span>
+                            <div class="w-full h-0.5 bg-slate-100 rounded-full overflow-hidden">
+                                @php
+                                    $days = $solicitud->created_at->diffInDays(now());
+                                    $agingWidth = min(($days / 15) * 100, 100);
+                                @endphp
+                                <div class="h-full {{ $days > 10 ? 'bg-rose-500' : ($days > 5 ? 'bg-amber-500' : 'bg-emerald-500') }} transition-all" style="width: {{ $agingWidth }}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- ACTION LINK -->
+                        <div class="col-span-1 flex justify-end">
+                            <a href="{{ route('afiliacion.show', $solicitud) }}" class="w-9 h-9 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-indigo-600 transition-all shadow-md group/link">
+                                <i class="ph ph-arrow-right text-base group-hover:translate-x-0.5 transition-transform"></i>
+                            </a>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="bg-white rounded-2xl border border-slate-100 p-16 text-center">
+                        <p class="text-xs font-black text-slate-300 uppercase tracking-widest">Sin expedientes activos</p>
+                    </div>
+                    @endforelse
+                </div>
             </div>
         @endif
         

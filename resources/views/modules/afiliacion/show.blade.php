@@ -100,10 +100,26 @@
                     {{ $solicitud->codigo_solicitud }}
                 </h1>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-4">
                 <span class="px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] {{ $solicitud->status_color }} shadow-xl shadow-slate-100 border border-black/5">
                     {{ $solicitud->status_label }}
                 </span>
+
+                @if($solicitud->tipo_pension || $solicitud->institucion_pension)
+                    @if($solicitud->hasConfirmedPayment())
+                        <div class="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-emerald-200">
+                            <i class="ph-fill ph-check-circle text-lg text-emerald-200"></i> Pago TSS Confirmado
+                            @if($solicitud->pago_confirmado_at)
+                                <span class="ml-2 border-l border-white/20 pl-3 opacity-80 italic">Procesado en {{ $solicitud->lead_time_pago }}</span>
+                            @endif
+                        </div>
+                    @else
+                        <div class="px-6 py-3 bg-amber-100 text-amber-700 border border-amber-200 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-3 shadow-xl shadow-amber-50">
+                            <i class="ph ph-hourglass-low text-lg"></i> Esperando Dispersión
+                        </div>
+                    @endif
+                @endif
+
                 <div class="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-slate-200">
                     <i class="ph-fill ph-lightning text-amber-400 text-lg"></i> Prioridad {{ $solicitud->prioridad }}
                 </div>
@@ -210,9 +226,7 @@
                             <label class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] block">Analista Responsable</label>
                             @if($solicitud->asignado)
                             <div class="flex items-center gap-5 p-2 pr-6 bg-indigo-50/30 rounded-[28px] border border-indigo-100/50 group/analyst">
-                                <div class="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-xl shadow-indigo-100 group-hover/analyst:rotate-3 transition-transform">
-                                    {{ substr($solicitud->asignado->name, 0, 1) }}
-                                </div>
+                                <img src="{{ $solicitud->asignado->avatar_url }}" class="w-14 h-14 rounded-2xl border-4 border-white shadow-xl object-cover group-hover/analyst:rotate-3 transition-transform">
                                 <div class="overflow-hidden">
                                     <p class="text-[13px] font-black text-indigo-900 leading-tight mb-0.5 truncate">{{ $solicitud->asignado->name }}</p>
                                     <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest truncate">Desde {{ $solicitud->fecha_asignacion->diffForHumans() }}</p>
@@ -392,6 +406,79 @@
                     @endforeach
                 </div>
             </div>
+
+            <!-- SISALRIL COMPLIANCE: CONTROL DE CALIDAD Y SATISFACCIÓN -->
+            @if($solicitud->estado == 'Completada')
+            <div class="bg-gradient-to-br from-indigo-900 to-indigo-950 rounded-[48px] p-10 md:p-14 shadow-2xl shadow-indigo-200 relative overflow-hidden group">
+                <div class="absolute -right-20 -top-20 w-80 h-80 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors duration-1000"></div>
+                
+                <div class="relative z-10">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-400/20">
+                                    <i class="ph-fill ph-shield-check text-xl"></i>
+                                </div>
+                                <h2 class="text-2xl font-black text-white tracking-tight">Control de Calidad SISALRIL</h2>
+                            </div>
+                            <p class="text-indigo-200/60 font-medium text-lg leading-relaxed">
+                                Este trámite ha sido cerrado satisfactoriamente. Favor completar el registro de calidad.
+                            </p>
+                        </div>
+                        
+                        @if($solicitud->satisfaccion_nivel)
+                        <div class="px-8 py-5 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-md">
+                            <div class="flex items-center gap-1 mb-2">
+                                @for($i=1; $i<=5; $i++)
+                                <i class="ph-fill ph-star {{ $i <= $solicitud->satisfaccion_nivel ? 'text-amber-400' : 'text-white/10' }} text-xl"></i>
+                                @endfor
+                            </div>
+                            <p class="text-[10px] font-black text-white uppercase tracking-widest text-center">Nivel de Satisfacción: {{ $solicitud->satisfaccion_nivel }}/5</p>
+                        </div>
+                        @endif
+                    </div>
+
+                    @if(!$solicitud->satisfaccion_nivel)
+                    <form action="{{ route('afiliacion.feedback', $solicitud) }}" method="POST" class="space-y-8">
+                        @csrf
+                        <div class="space-y-6">
+                            <label class="text-[11px] font-black text-indigo-300 uppercase tracking-[0.2em] block ml-4">¿Cómo calificaría el proceso de esta afiliación?</label>
+                            <div class="flex flex-wrap gap-4" x-data="{ selected: 0 }">
+                                @foreach([1 => 'Muy Malo', 2 => 'Regular', 3 => 'Bueno', 4 => 'Muy Bueno', 5 => 'Excelente'] as $val => $label)
+                                <label class="flex-1 min-w-[120px] cursor-pointer group/star">
+                                    <input type="radio" name="satisfaccion_nivel" value="{{ $val }}" class="hidden peer" required @change="selected = {{ $val }}">
+                                    <div class="p-6 rounded-3xl bg-white/5 border border-white/10 text-center transition-all peer-checked:bg-white peer-checked:border-white peer-checked:shadow-xl peer-checked:shadow-white/10 group/item">
+                                        <i class="ph-fill ph-star text-3xl mb-3 block transition-colors" :class="selected >= {{ $val }} ? 'text-amber-400' : 'text-white/10'"></i>
+                                        <span class="text-[9px] font-black uppercase tracking-widest transition-colors" :class="selected == {{ $val }} ? 'text-slate-900' : 'text-white/40'">{{ $label }}</span>
+                                    </div>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <label class="text-[11px] font-black text-indigo-300 uppercase tracking-[0.2em] block ml-4">Observaciones de Calidad (Opcional)</label>
+                            <textarea name="satisfaccion_comentario" rows="3" placeholder="Comentarios adicionales sobre el desempeño del proceso..." 
+                                class="w-full bg-white/5 border-2 border-transparent focus:border-white/20 focus:bg-white/10 rounded-[32px] p-8 text-white font-medium placeholder:text-white/20 transition-all shadow-sm resize-none"></textarea>
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="submit" class="w-full md:w-auto px-12 py-6 bg-white text-indigo-900 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] hover:bg-indigo-50 transition-all shadow-xl shadow-white/5">
+                                Guardar Registro de Calidad
+                            </button>
+                        </div>
+                    </form>
+                    @else
+                    <div class="p-8 bg-white/5 rounded-[32px] border border-white/5">
+                        <p class="text-[11px] font-black text-indigo-300 uppercase tracking-widest mb-4">Comentario Registrado:</p>
+                        <p class="text-white font-medium text-lg italic">
+                            "{{ $solicitud->satisfaccion_comentario ?? 'Sin comentarios adicionales.' }}"
+                        </p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
         </div>
 
         <!-- DERECHA: AUDITORÍA Y TRAZABILIDAD (4 col) -->

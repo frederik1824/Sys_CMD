@@ -37,5 +37,11 @@ class AppServiceProvider extends ServiceProvider
         // Registro de Observadores para Sincronización con Firebase (Safesure Integration)
         \App\Models\Afiliado::observe(\App\Observers\AfiliadoObserver::class);
         \App\Models\Empresa::observe(\App\Observers\EmpresaObserver::class);
+
+        // View Composer para Navegación Contextual Multi-App
+        view()->composer('*', function ($view) {
+            $appContext = new \App\Services\AppContextService();
+            $view->with('appContext', $appContext);
+        });
     }
 }

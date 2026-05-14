@@ -106,7 +106,7 @@ class AfiliadoController extends Controller
 
     protected function processIndex(Request $request, $segment = null, $bypassDelegation = false)
     {
-        $query = \App\Models\Afiliado::with(['corte', 'responsable', 'estado', 'empresaModel', 'evidenciasAfiliado']);
+        $query = \App\Models\Afiliado::with(['corte', 'responsable.user', 'estado', 'empresaModel', 'evidenciasAfiliado']);
 
         // 1. Manejo de Segregación de Data por Segmento (Vista Maestro)
         if ($segment) {

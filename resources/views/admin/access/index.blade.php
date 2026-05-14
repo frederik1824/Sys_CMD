@@ -83,6 +83,7 @@
                         <td class="px-8 py-6">
                             <div class="flex flex-wrap gap-3">
                                 @forelse($user->applicationAccess as $access)
+                                    @if($access->application)
                                     <div class="flex items-center gap-2 p-2 pr-4 {{ $access->is_active ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-100 opacity-50' }} border rounded-2xl group/app relative">
                                         <div class="w-8 h-8 rounded-xl bg-{{ $access->application->color }}-50 flex items-center justify-center">
                                             <i class="{{ $access->application->icon }} text-[18px] text-{{ $access->application->color }}-600"></i>
@@ -108,6 +109,7 @@
                                             </form>
                                         </div>
                                     </div>
+                                    @endif
                                 @empty
                                     <span class="text-xs text-slate-400 italic">Sin aplicaciones asignadas</span>
                                 @endforelse

@@ -621,17 +621,23 @@ class ReporteController extends Controller
     }
 
     /**
-     * Obtiene los datos de producción procesados
+     * Obtiene los datos de producción procesados con lógica mejorada
      */
     private function getProduccionData($fecha_desde, $fecha_hasta, $supervisor_id = null)
     {
         return Traspaso::select('agente_id')
-            ->selectRaw('sum(case when fecha_solicitud >= ? and fecha_solicitud <= ? then 1 else 0 end) as total_solicitudes', [$fecha_desde, $fecha_hasta])
-            ->selectRaw('sum(case when fecha_efectivo >= ? and fecha_efectivo <= ? then 1 else 0 end) as efectivos', [$fecha_desde, $fecha_hasta])
-            ->selectRaw('sum(case when fecha_efectivo >= ? and fecha_efectivo <= ? then cantidad_dependientes else 0 end) as dependientes_efectivos', [$fecha_desde, $fecha_hasta])
-            ->selectRaw('sum(case when estado_id = (select id from estado_traspasos where slug = "rechazado" limit 1) and fecha_rechazo >= ? and fecha_rechazo <= ? then 1 else 0 end) as rechazados', [$fecha_desde, $fecha_hasta])
-            ->selectRaw('sum(case when fecha_efectivo is null and estado_id != (select id from estado_traspasos where slug = "rechazado" limit 1) then 1 else 0 end) as pendientes')
-            ->selectRaw('sum(case when fecha_solicitud >= ? and fecha_solicitud <= ? then cantidad_dependientes else 0 end) as total_dependientes_sol', [$fecha_desde, $fecha_hasta])
+            // Conteo de Solicitudes (basado en fecha_solicitud)
+            ->selectRaw('sum(case when date(fecha_solicitud) >= ? and date(fecha_solicitud) <= ? then 1 else 0 end) as total_solicitudes', [$fecha_desde, $fecha_hasta])
+            // Conteo de Efectivos (basado en fecha_efectivo y estado)
+            ->selectRaw('sum(case when date(fecha_efectivo) >= ? and date(fecha_efectivo) <= ? then 1 else 0 end) as efectivos', [$fecha_desde, $fecha_hasta])
+            // Vidas (Dependientes) solo de los que son efectivos en el periodo
+            ->selectRaw('sum(case when date(fecha_efectivo) >= ? and date(fecha_efectivo) <= ? then (cantidad_dependientes + 1) else 0 end) as total_vidas_efectivas', [$fecha_desde, $fecha_hasta])
+            ->selectRaw('sum(case when date(fecha_efectivo) >= ? and date(fecha_efectivo) <= ? then cantidad_dependientes else 0 end) as dependientes_efectivos', [$fecha_desde, $fecha_hasta])
+            // Rechazados en el periodo
+            ->selectRaw('sum(case when date(fecha_rechazo) >= ? and date(fecha_rechazo) <= ? then 1 else 0 end) as rechazados', [$fecha_desde, $fecha_hasta])
+            // Pendientes (Todo lo que no es efectivo ni rechazado a la fecha)
+            ->selectRaw('sum(case when fecha_efectivo is null and (fecha_rechazo is null) then 1 else 0 end) as pendientes')
+            
             ->where(function($q) use ($fecha_desde, $fecha_hasta) {
                 $q->whereBetween('fecha_solicitud', [$fecha_desde, $fecha_hasta])
                   ->orWhereBetween('fecha_efectivo', [$fecha_desde, $fecha_hasta])
@@ -644,55 +650,45 @@ class ReporteController extends Controller
             ->with('agenteRel.supervisor')
             ->get()
             ->map(function($item) {
-                $item->hit_rate = $item->total_solicitudes > 0 ? round(($item->efectivos / $item->total_solicitudes) * 100, 1) : 0;
-                $item->total_vidas_efectivas = $item->efectivos + $item->dependientes_efectivos;
+                // Cálculo de Hit Rate basado en lo trabajado vs lo logrado en el periodo
+                $divisor = $item->total_solicitudes > 0 ? $item->total_solicitudes : ($item->efectivos > 0 ? $item->efectivos : 1);
+                $item->hit_rate = round(($item->efectivos / $divisor) * 100, 1);
                 return $item;
             })
             ->sortByDesc('efectivos');
     }
 
     /**
-     * Exporta el ranking de producción a CSV
+     * Exporta el reporte de producción a Excel (.xlsx) con múltiples pestañas
      */
     public function exportProduccionTraspasos(Request $request)
     {
-        $fecha_desde = $request->input('fecha_desde');
-        $fecha_hasta = $request->input('fecha_hasta');
+        $fecha_desde = $request->input('fecha_desde', now()->startOfMonth()->format('Y-m-d'));
+        $fecha_hasta = $request->input('fecha_hasta', now()->format('Y-m-d'));
         $supervisor_id = $request->input('supervisor_id');
 
-        $data = $this->getProduccionData($fecha_desde, $fecha_hasta, $supervisor_id);
+        // 1. Obtener Ranking de Agentes
+        $rankingAgentes = $this->getProduccionData($fecha_desde, $fecha_hasta, $supervisor_id);
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="produccion_traspasos_'.date('Y-m-d').'.csv"',
-        ];
+        // 2. Obtener Desglose Nominal
+        $detallesAfiliados = Traspaso::with(['agenteRel.supervisor', 'estadoRel'])
+            ->where(function($q) use ($fecha_desde, $fecha_hasta) {
+                $q->whereBetween('fecha_solicitud', [$fecha_desde, $fecha_hasta])
+                  ->orWhereBetween('fecha_efectivo', [$fecha_desde, $fecha_hasta])
+                  ->orWhereBetween('fecha_rechazo', [$fecha_desde, $fecha_hasta]);
+            })
+            ->when($supervisor_id, function($q) use ($supervisor_id) {
+                $q->whereHas('agenteRel', fn($sq) => $sq->where('supervisor_id', $supervisor_id));
+            })
+            ->orderBy('fecha_solicitud', 'desc')
+            ->get();
 
-        $callback = function() use ($data) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, [
-                'Rank', 'Agente', 'Equipo/Supervisor', 'Titulares Efectivos', 'Dependientes Efectivos', 
-                'Total Vidas', 'Pendientes', 'Rechazados', 'Total Solicitudes', 'Hit Rate (%)'
-            ]);
+        $fileName = 'Reporte_Produccion_Traspasos_' . now()->format('Ymd_His') . '.xlsx';
 
-            $i = 1;
-            foreach ($data as $ag) {
-                fputcsv($file, [
-                    $i++,
-                    $ag->agenteRel->nombre ?? 'N/A',
-                    $ag->agenteRel->supervisor->nombre ?? 'Sin Equipo',
-                    $ag->efectivos,
-                    $ag->dependientes_efectivos,
-                    $ag->total_vidas_efectivas,
-                    $ag->pendientes,
-                    $ag->rechazados,
-                    $ag->total_solicitudes,
-                    $ag->hit_rate . '%'
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\ProduccionTraspasosExport($fecha_desde, $fecha_hasta, $supervisor_id, $rankingAgentes, $detallesAfiliados),
+            $fileName
+        );
     }
 
     /**

@@ -17,7 +17,8 @@ class SolicitudAfiliacion extends Model
         'afiliado_id', 'cedula', 'nombre_completo', 'telefono', 'correo', 'empresa',
         'rnc_empresa', 'numero_resolucion', 'tipo_pension', 'institucion_pension',
         'estado', 'prioridad', 'observacion_solicitante', 'observacion_interna',
-        'motivo_rechazo', 'motivo_devolucion', 'sla_fecha_limite', 'pausado_at', 'sla_acumulado_segundos', 'fecha_asignacion', 'fecha_cierre'
+        'motivo_rechazo', 'motivo_devolucion', 'sla_fecha_limite', 'pausado_at', 'sla_acumulado_segundos', 'fecha_asignacion', 'fecha_cierre',
+        'satisfaccion_nivel', 'satisfaccion_comentario', 'es_primera_resolucion', 'fecha_primera_asignacion'
     ];
 
     public function departamento()
@@ -30,7 +31,17 @@ class SolicitudAfiliacion extends Model
         'pausado_at' => 'datetime',
         'fecha_asignacion' => 'datetime',
         'fecha_cierre' => 'datetime',
+        'pago_confirmado_at' => 'datetime',
     ];
+
+    /**
+     * Calcula el tiempo transcurrido desde la creación hasta la confirmación del pago.
+     */
+    public function getLeadTimePagoAttribute()
+    {
+        if (!$this->pago_confirmado_at) return null;
+        return $this->created_at->diffForHumans($this->pago_confirmado_at, true);
+    }
 
     public function tipoSolicitud()
     {
@@ -131,6 +142,14 @@ class SolicitudAfiliacion extends Model
         } else {
             $this->attributes['cedula'] = $value;
         }
+    }
+
+    public function hasConfirmedPayment()
+    {
+        $cleanCedula = preg_replace('/[^0-9]/', '', $this->cedula);
+        
+        return \App\Models\Modules\Dispersion\DispersionTitular::whereRaw("REPLACE(cedula, '-', '') = ?", [$cleanCedula])->exists() ||
+               \App\Models\Modules\Dispersion\DispersionDependiente::whereRaw("REPLACE(cedula_dependiente, '-', '') = ?", [$cleanCedula])->exists();
     }
 
     public function getSlaPercentageAttribute()

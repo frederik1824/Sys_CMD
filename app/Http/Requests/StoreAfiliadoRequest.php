@@ -25,7 +25,6 @@ class StoreAfiliadoRequest extends FormRequest
                 'required', 
                 'string', 
                 'max:20', 
-                new \App\Rules\CedulaDominicana,
                 \Illuminate\Validation\Rule::unique('afiliados')->where(fn ($q) => $q->where('corte_id', $this->corte_id))
             ],
             'telefono' => 'nullable|string|max:20',

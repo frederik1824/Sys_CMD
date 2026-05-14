@@ -47,7 +47,7 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 flex-[2]">
                 <div class="text-center md:text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Total Traspasos</p>
-                    <p class="text-2xl font-black">{{ number_format($statsGlobal['total_vidas']) }}</p>
+                    <p class="text-2xl font-black">{{ number_format($statsGlobal['total_traspasos']) }}</p>
                 </div>
                 <div class="text-center md:text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Titulares</p>

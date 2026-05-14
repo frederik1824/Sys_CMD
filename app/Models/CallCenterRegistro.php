@@ -10,7 +10,7 @@ class CallCenterRegistro extends Model
     use \Illuminate\Database\Eloquent\SoftDeletes;
 
     protected $fillable = [
-        'uuid', 'carga_id', 'estado_id', 'operador_id',
+        'uuid', 'carga_id', 'estado_id', 'operador_id', 'created_by_id',
         'cedula', 'poliza', 'nombre', 'telefono', 'celular', 'tipo_afiliado',
         'empresa_nombre', 'empresa_rnc', 'empresa_contacto', 'empresa_direccion',
         'provincia', 'municipio',

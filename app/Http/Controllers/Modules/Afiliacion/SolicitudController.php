@@ -453,11 +453,17 @@ class SolicitudController extends Controller
             return back()->with('error', 'No tienes permiso para gestionar solicitudes de otro departamento.');
         }
 
-        $solicitud->update([
+        $data = [
             'asignado_user_id' => auth()->id(),
             'fecha_asignacion' => now(),
             'estado' => 'En revisión'
-        ]);
+        ];
+
+        if (!$solicitud->fecha_primera_asignacion) {
+            $data['fecha_primera_asignacion'] = now();
+        }
+
+        $solicitud->update($data);
 
         HistorialSolicitudAfiliacion::create([
             'solicitud_id' => $solicitud->id,
@@ -533,7 +539,8 @@ class SolicitudController extends Controller
         $solicitud->update([
             'estado' => 'Devuelta',
             'motivo_devolucion' => $request->motivo,
-            'pausado_at' => now() // Pausar SLA al devolver
+            'pausado_at' => now(), // Pausar SLA al devolver
+            'es_primera_resolucion' => false // Ya no se resolvió en el primer intento
         ]);
 
         HistorialSolicitudAfiliacion::create([
@@ -591,6 +598,21 @@ class SolicitudController extends Controller
         }
 
         return Storage::disk('public')->response($documento->archivo_path);
+    }
+
+    public function storeFeedback(Request $request, SolicitudAfiliacion $solicitud)
+    {
+        $request->validate([
+            'satisfaccion_nivel' => 'required|integer|min:1|max:5',
+            'satisfaccion_comentario' => 'nullable|string|max:500',
+        ]);
+
+        $solicitud->update([
+            'satisfaccion_nivel' => $request->satisfaccion_nivel,
+            'satisfaccion_comentario' => $request->satisfaccion_comentario,
+        ]);
+
+        return back()->with('success', 'Gracias por tu feedback. Tu valoración nos ayuda a cumplir con los estándares de calidad SISALRIL.');
     }
 
     public function checkStats()

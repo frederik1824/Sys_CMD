@@ -10,10 +10,16 @@
             </a>
             <div>
                 <h1 class="text-2xl font-black text-slate-900 tracking-tight">{{ $registro->nombre }}</h1>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión de Prospecto • {{ $registro->cedula }}</p>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Gestión de Enlace • Póliza: {{ $registro->poliza ?: 'Sin Póliza' }}</p>
             </div>
         </div>
         <div class="flex items-center gap-4">
+            @if($registro->prioridad >= 100)
+                <div class="flex items-center gap-2 px-4 py-2 bg-[#00346f] text-white rounded-xl font-black uppercase text-[9px] tracking-widest animate-pulse shadow-lg shadow-[#00346f]/20">
+                    <i class="ph-bold ph-warning-circle text-sm"></i>
+                    Prioridad Médica
+                </div>
+            @endif
             <div class="px-6 py-2 rounded-2xl border font-black uppercase text-[10px] tracking-widest"
                  style="background-color: {{ $registro->estado->color }}10; color: {{ $registro->estado->color }}; border-color: {{ $registro->estado->color }}30;">
                 <i class="ph-bold ph-{{ $registro->estado->icono ?: 'info' }} mr-2"></i>
@@ -43,20 +49,20 @@
                 <div class="flex flex-col items-center text-center space-y-4">
                     <div class="w-24 h-24 bg-slate-100 rounded-[32px] flex items-center justify-center text-slate-400 relative">
                         <i class="ph ph-user text-5xl"></i>
-                        <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-emerald-500 text-white rounded-2xl flex items-center justify-center border-4 border-white shadow-lg">
-                            <i class="ph-bold ph-check"></i>
+                        <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-[#00346f] text-white rounded-2xl flex items-center justify-center border-4 border-white shadow-lg">
+                            <i class="ph-bold ph-identification-card"></i>
                         </div>
                     </div>
                     <div>
                         <h3 class="text-lg font-black text-slate-900 tracking-tight">{{ $registro->nombre }}</h3>
-                        <p class="text-xs font-bold text-slate-400">ID: {{ $registro->uuid }}</p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Póliza: {{ $registro->poliza }}</p>
                     </div>
                 </div>
 
                 <div class="space-y-4 pt-4 border-t border-slate-50">
                     <div class="flex justify-between items-center text-xs">
-                        <span class="font-black text-slate-400 uppercase tracking-widest">Póliza</span>
-                        <span class="font-black text-slate-700">{{ $registro->poliza ?: 'N/A' }}</span>
+                        <span class="font-black text-slate-400 uppercase tracking-widest">Cédula</span>
+                        <span class="font-black text-slate-700">{{ $registro->cedula ?: 'N/A' }}</span>
                     </div>
                     <div class="flex justify-between items-center text-xs">
                         <span class="font-black text-slate-400 uppercase tracking-widest">Empresa</span>
@@ -124,6 +130,31 @@
 
         <!-- COLUMNA CENTRAL: Gestión y Timeline -->
         <div class="xl:col-span-6 space-y-8">
+
+            @if($registro->prioridad >= 100)
+                <!-- PANEL DE NOTAS MÉDICAS (Resaltado) -->
+                <div class="bg-[#00346f] rounded-[40px] p-8 text-white shadow-2xl shadow-[#00346f]/30 border-4 border-[#0060ac]/30 relative overflow-hidden group mb-8">
+                    <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-700">
+                        <i class="ph-fill ph-first-aid text-9xl"></i>
+                    </div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/30 shadow-inner">
+                                <i class="ph-bold ph-warning-octagon text-2xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-black tracking-tight leading-none">Observaciones Críticas</h2>
+                                <p class="text-blue-100 text-[10px] font-bold uppercase tracking-widest mt-1">Enviado por Autorizaciones Médicas</p>
+                            </div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
+                            <p class="text-sm font-bold leading-relaxed text-blue-50">
+                                {{ str_replace('[NOTAS MÉDICAS]: ', '', $registro->observaciones) }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
             <!-- Formulario de Gestión -->
             <div class="bg-white rounded-[40px] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden">
                 <div class="px-8 py-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">

@@ -103,14 +103,16 @@
                         <td class="px-8 py-6">
                             <div class="flex flex-wrap gap-2">
                                 @forelse($user->applicationAccess as $access)
-                                <div class="relative group/app" title="{{ $access->application->name }}">
-                                    <div class="w-10 h-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover/app:bg-slate-900 group-hover/app:text-white transition-all shadow-sm">
-                                        <i class="ph ph-{{ $access->application->icon ?: 'package' }} text-xl"></i>
+                                    @if($access->application)
+                                    <div class="relative group/app" title="{{ $access->application->name }}">
+                                        <div class="w-10 h-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover/app:bg-slate-900 group-hover/app:text-white transition-all shadow-sm">
+                                            <i class="ph ph-{{ $access->application->icon ?: 'package' }} text-xl"></i>
+                                        </div>
+                                        @if(!$access->is_active)
+                                        <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-white"></div>
+                                        @endif
                                     </div>
-                                    @if(!$access->is_active)
-                                    <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-white"></div>
                                     @endif
-                                </div>
                                 @empty
                                 <span class="text-[10px] font-bold text-slate-300 italic uppercase">Sin aplicaciones</span>
                                 @endforelse

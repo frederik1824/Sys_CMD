@@ -249,7 +249,7 @@
                     <i class="ph ph-linkedin-logo text-slate-200 hover:text-cmd-yellow cursor-pointer text-xl transition-colors"></i>
                 </div>
                 <div class="text-[9px] font-black text-slate-200 uppercase tracking-tighter">
-                    v5.0 • SIG • ARS CMD
+                    v{{ $systemVersion }} • SIG • ARS CMD
                 </div>
             </div>
         </section>

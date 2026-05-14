@@ -16,7 +16,10 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('auth.login');
+        $latestUpdate = \App\Models\SystemUpdate::latest()->first();
+        $systemVersion = $latestUpdate ? $latestUpdate->version : '3.0.0';
+        
+        return view('auth.login', compact('systemVersion'));
     }
 
     /**

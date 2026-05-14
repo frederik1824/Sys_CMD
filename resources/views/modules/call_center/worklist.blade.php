@@ -115,14 +115,22 @@
                 </thead>
                 <tbody class="divide-y divide-slate-50">
                     @forelse($registros as $reg)
-                    <tr class="hover:bg-indigo-50/30 transition-all group">
+                    @php $isUrgent = $reg->prioridad >= 100; @endphp
+                    <tr class="transition-all group {{ $isUrgent ? 'bg-rose-50/80 hover:bg-rose-100 border-l-4 border-rose-500 shadow-sm relative z-10' : 'hover:bg-indigo-50/30' }}">
                         <td class="px-8 py-6">
                             <div class="flex items-center gap-5">
                                 <div class="w-14 h-14 rounded-[20px] bg-white border border-slate-100 text-slate-400 flex items-center justify-center font-black text-xl shadow-sm group-hover:border-emerald-200 group-hover:text-emerald-500 transition-all">
                                     {{ substr($reg->nombre, 0, 1) }}
                                 </div>
                                 <div>
-                                    <h4 class="font-black text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">{{ $reg->nombre }}</h4>
+                                    <h4 class="font-black {{ $isUrgent ? 'text-rose-900' : 'text-slate-900 group-hover:text-indigo-600' }} tracking-tight transition-colors flex items-center gap-2">
+                                        {{ $reg->nombre }}
+                                        @if($isUrgent)
+                                            <span class="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-white bg-rose-500 px-2 py-1 rounded-lg animate-pulse shadow-md shadow-rose-500/20">
+                                                <i class="ph-bold ph-siren"></i> Urgente
+                                            </span>
+                                        @endif
+                                    </h4>
                                     <div class="flex items-center gap-2 mt-1">
                                         <span class="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg uppercase tracking-tighter">{{ $reg->cedula }}</span>
                                         @if($reg->poliza)

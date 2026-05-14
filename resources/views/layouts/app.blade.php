@@ -191,21 +191,24 @@
     @endif
 
     @php
-        $isTraspasos = request()->is('traspasos*') || request()->routeIs('traspasos.*', 'reportes.produccion_traspasos');
-        $isAfiliacion = request()->is('solicitudes-afiliacion*') || request()->routeIs('afiliacion.*');
-        $isExecutive = request()->routeIs('reportes.executive.suite', 'reportes.executive') || request()->query('context') === 'executive';
-        $isAccessControl = request()->is('admin/control-accesos*') || request()->routeIs('admin.access.*');
-        $isCallCenter = request()->is('call-center*') || request()->routeIs('call-center.*');
-        $isUpdateManager = request()->is('admin/updates*') || request()->routeIs('admin.updates.*');
-        $isDispersion = request()->is('admin/dispersion*') || request()->routeIs('dispersion.*');
-        $isPyp = request()->is('pyp*') || request()->routeIs('pyp.*');
-        $isAsistencia = request()->is('asistencia*') || request()->routeIs('asistencia.*');
+        $currentApp = $appContext->getCurrentApp();
+        $appMeta = $appContext->getAppMeta();
         
-        // CMD is the default operational context for general system, carnetizacion and global reports
-        $isCMD = !$isTraspasos && !$isAfiliacion && !$isExecutive && !$isAccessControl && !$isCallCenter && !$isUpdateManager && !$isDispersion && !$isPyp && !$isAsistencia;
+        // Context flags for legacy support in existing view logic
+        $isTraspasos = $currentApp === 'traspasos';
+        $isAfiliacion = $currentApp === 'afiliacion';
+        $isExecutive = $currentApp === 'executive';
+        $isAccessControl = $currentApp === 'access_control';
+        $isCallCenter = $currentApp === 'call_center';
+        $isUpdateManager = $currentApp === 'update_manager';
+        $isDispersion = $currentApp === 'dispersion';
+        $isPyp = $currentApp === 'pyp';
+        $isAsistencia = $currentApp === 'asistencia';
+        $isCMD = $currentApp === 'cmd';
     @endphp
 
     <!-- SideNavBar Component -->
+    @unless(request()->routeIs('profile.edit') || request()->routeIs('autorizaciones.*'))
     <aside class="no-print h-screen w-72 fixed left-0 top-0 border-r border-slate-200 bg-white flex flex-col py-8 z-50">
         @php /** @var \App\Models\User $user */ $user = Auth::user(); @endphp
         <div class="px-8 mb-10 w-full">
@@ -216,16 +219,14 @@
                 <div class="w-px h-6 bg-slate-200"></div>
                 <div>
                     <h1 class="text-sm font-black tracking-tight text-slate-900 leading-none">
-                        {{ $isTraspasos ? 'Traspasos' : ($isAfiliacion ? 'Afiliación' : ($isExecutive ? 'Intelligence' : ($isAccessControl ? 'Seguridad' : ($isCallCenter ? 'Call Center' : ($isUpdateManager ? 'Update Manager' : ($isDispersion ? 'Dispersión' : ($isPyp ? 'Programa PyP' : ($isAsistencia ? 'Asistencia' : 'Servicios')))))))) }}
+                        {{ $appMeta['name'] }}
                     </h1>
-                    <p class="text-[0.6rem] font-bold uppercase tracking-wider {{ $isTraspasos ? 'text-amber-600' : ($isAfiliacion ? 'text-indigo-600' : ($isExecutive ? 'text-rose-600' : ($isAccessControl ? 'text-slate-900' : ($isCallCenter ? 'text-emerald-600' : ($isUpdateManager ? 'text-blue-600' : ($isDispersion ? 'text-emerald-600' : ($isPyp ? 'text-indigo-600' : ($isAsistencia ? 'text-emerald-600' : 'text-blue-600')))))))) }} mt-0.5">
-                        {{ $isTraspasos ? 'Operativo' : ($isAfiliacion ? 'Interno' : ($isExecutive ? 'Ejecutivo' : ($isAccessControl ? 'Administración' : ($isCallCenter ? 'Gestión CRM' : ($isUpdateManager ? 'Release Hub' : ($isDispersion ? 'PDSS & Bajas' : ($isPyp ? 'Riesgo Clínico' : ($isAsistencia ? 'Personal SAC' : 'CMD')))))))) }}
+                    <p class="text-[0.6rem] font-bold uppercase tracking-wider text-{{ $appMeta['color'] }}-600 mt-0.5">
+                        {{ $appMeta['type'] }}
                     </p>
                 </div>
             </div>
-        </div>
-
-        <nav class="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar" x-data="{ 
+        </div>        <nav class="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar" x-data="{ 
             activeGroup: '{{ 
                 request()->routeIs('carnetizacion.import.*', 'carnetizacion.afiliados.cmd', 'carnetizacion.afiliados.otros', 'carnetizacion.afiliados.salida_inmediata', 'carnetizacion.afiliados.call_center') ? 'admision' : (
                 request()->routeIs('afiliacion.*') ? 'afiliacion' : (
@@ -247,388 +248,10 @@
                 </a>
             </div>
 
-            @if($isTraspasos)
-                <!-- MENU: TRASPASOS -->
-                <a href="{{ route('traspasos.dashboard') }}" class="flex items-center gap-4 px-6 py-3 rounded-r-xl transition-all {{ request()->routeIs('traspasos.dashboard') ? 'text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-700 hover:bg-slate-50 group/link' }} mb-2">
-                    <i class="ph ph-chart-line-up text-[22px] {{ request()->routeIs('traspasos.dashboard') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Executive Hub</span>
-                </a>
-
-                <a href="{{ route('reportes.produccion_traspasos') }}" class="flex items-center gap-4 px-6 py-3 rounded-r-xl transition-all {{ request()->routeIs('reportes.produccion_traspasos') ? 'text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-700 hover:bg-slate-50 group/link' }} mb-2">
-                    <i class="ph ph-presentation-chart text-[22px] {{ request()->routeIs('reportes.produccion_traspasos') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reporte Producción</span>
-                </a>
-                
-                <a class="{{ request()->routeIs('traspasos.index') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.index') }}">
-                    <i class="ph ph-list-bullets text-[22px] {{ request()->routeIs('traspasos.index') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Bandeja Global</span>
-                </a>
-                
-                <a class="{{ request()->routeIs('traspasos.import') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.import') }}">
-                    <i class="ph ph-upload-simple text-[22px] {{ request()->routeIs('traspasos.import') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Importar Unipago</span>
-                </a>
-
-                <a class="{{ request()->routeIs('traspasos.bulk.effective') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.bulk.effective') }}">
-                    <i class="ph ph-lightning text-[22px] {{ request()->routeIs('traspasos.bulk.effective') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Efectividad Masiva</span>
-                </a>
-                @hasanyrole('Admin|Supervisor de Traspasos')
-                    <div class="px-6 pt-6 pb-2">
-                        <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Administración</p>
-                    </div>
-
-                    <a class="{{ request()->routeIs('traspasos.config.afiliacion-procesos.*') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.config.afiliacion-procesos.index') }}">
-                        <i class="ph ph-notebook text-[22px] {{ request()->routeIs('traspasos.config.afiliacion-procesos.*') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Requisitos Afiliación</span>
-                    </a>
-
-                    <a class="{{ request()->routeIs('traspasos.config.motivos.*') ? 'flex items-center gap-4 px-6 py-3 text-amber-700 font-black bg-amber-50/50 border-l-[3px] border-amber-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-amber-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('traspasos.config.motivos.index') }}">
-                        <i class="ph ph-list-checks text-[22px] {{ request()->routeIs('traspasos.config.motivos.*') ? 'text-amber-600' : 'group-hover/link:text-amber-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Catálogo de Motivos</span>
-                    </a>
-                @endhasanyrole
-            @elseif($isAfiliacion)
-                <!-- MENU: AFILIACIÓN -->
-                <a class="{{ request()->routeIs('solicitudes-afiliacion.index') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.index') }}">
-                    <i class="ph ph-list-checks text-[22px] {{ request()->routeIs('solicitudes-afiliacion.index') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Bandeja Operativa</span>
-                </a>
-                
-                <a class="{{ request()->routeIs('solicitudes-afiliacion.create') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.create') }}">
-                    <i class="ph ph-plus-circle text-[22px] {{ request()->routeIs('solicitudes-afiliacion.create') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Nueva Solicitud</span>
-                </a>
-
-                <a class="{{ request()->routeIs('solicitudes-afiliacion.reports') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.reports') }}">
-                    <i class="ph ph-chart-pie-slice text-[22px] {{ request()->routeIs('solicitudes-afiliacion.reports') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reportes y KPIs</span>
-                </a>
-
-                @hasanyrole('Admin|Supervisor|Supervisor de Afiliación|Supervisor de Autorizaciones|Supervisor de Cuentas Médicas|Supervisor de Servicio al Cliente')
-                <a class="{{ request()->routeIs('solicitudes-afiliacion.workload') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.workload') }}">
-                    <i class="ph ph-chart-bar text-[22px] {{ request()->routeIs('solicitudes-afiliacion.workload') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Balanceo de Carga</span>
-                </a>
-                @endhasanyrole
-
-                @hasanyrole('Admin')
-                <div class="pt-4 mt-4 border-t border-slate-100">
-                    <p class="px-6 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Administración</p>
-                    <a class="{{ request()->routeIs('solicitudes-afiliacion.departamentos.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.departamentos.index') }}">
-                        <i class="ph ph-buildings text-[22px] {{ request()->routeIs('solicitudes-afiliacion.departamentos.*') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Estructura / Dptos</span>
-                    </a>
-                    <a class="{{ request()->routeIs('solicitudes-afiliacion.config') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('afiliacion.config') }}">
-                        <i class="ph ph-gear text-[22px] {{ request()->routeIs('solicitudes-afiliacion.config') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Configuración</span>
-                    </a>
-                </div>
-                @endhasanyrole
-            @elseif($isCallCenter)
-                <!-- MENU: CALL CENTER V2 -->
-                <a class="{{ request()->routeIs('call-center.worklist') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('call-center.worklist') }}">
-                    <i class="ph ph-headset text-[22px] {{ request()->routeIs('call-center.worklist') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Mi Bandeja de Trabajo</span>
-                </a>
-
-                <a class="{{ request()->routeIs('call-center.import') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('call-center.import') }}">
-                    <i class="ph ph-upload-simple text-[22px] {{ request()->routeIs('call-center.import') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Importar Prospectos</span>
-                </a>
-
-                <a class="{{ request()->routeIs('call-center.index') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('call-center.index') }}">
-                    <i class="ph ph-list-numbers text-[22px] {{ request()->routeIs('call-center.index') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Histórico de Cargas</span>
-                </a>
-
-                <a class="{{ request()->routeIs('call-center.stats') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('call-center.stats') }}">
-                    <i class="ph ph-chart-pie-slice text-[22px] {{ request()->routeIs('call-center.stats') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Estadísticas y KPIs</span>
-                </a>
-            @elseif($isUpdateManager)
-                <!-- MENU: UPDATE MANAGER -->
-                <a class="{{ request()->routeIs('admin.updates.index') && !request()->has('anchor') ? 'flex items-center gap-4 px-6 py-3 text-blue-700 font-black bg-blue-50/50 border-l-[3px] border-blue-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.updates.index') }}">
-                    <i class="ph ph-rocket-launch text-[22px] {{ request()->routeIs('admin.updates.index') ? 'text-blue-600' : 'group-hover/link:text-blue-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Historial de Releases</span>
-                </a>
-
-                <a class="flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link mb-2" href="{{ route('admin.updates.index') }}#health">
-                    <i class="ph ph-activity text-[22px] group-hover/link:text-blue-700 text-slate-400"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Monitor de Salud</span>
-                </a>
-
-                <a class="flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link mb-2" href="{{ route('admin.updates.index') }}#backups">
-                    <i class="ph ph-database text-[22px] group-hover/link:text-blue-700 text-slate-400"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Snapshots & Backups</span>
-                </a>
-
-                <a class="flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link mb-2" href="{{ route('admin.updates.index') }}#packer">
-                    <i class="ph ph-package text-[22px] group-hover/link:text-blue-700 text-slate-400"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Generador de Patches</span>
-                </a>
-            @elseif($isDispersion)
-                <!-- MENU: DISPERSION -->
-                <a class="{{ request()->routeIs('dispersion.index') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('dispersion.index') }}">
-                    <i class="ph ph-chart-pie-slice text-[22px] {{ request()->routeIs('dispersion.index') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Dashboard Mensual</span>
-                </a>
-
-                <a class="{{ request()->routeIs('dispersion.history') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('dispersion.history') }}">
-                    <i class="ph ph-calendar-check text-[22px] {{ request()->routeIs('dispersion.history') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Histórico de Periodos</span>
-                </a>
-
-                <a class="{{ request()->routeIs('dispersion.reports') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('dispersion.reports') }}">
-                    <i class="ph ph-file-pdf text-[22px] {{ request()->routeIs('dispersion.reports') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reportes Ejecutivos</span>
-                </a>
-
-                <a class="{{ request()->routeIs('dispersion.config') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('dispersion.config') }}">
-                    <i class="ph ph-gear-six text-[22px] {{ request()->routeIs('dispersion.config') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Configuración</span>
-                </a>
-            @elseif($isPyp)
-                <!-- MENU: PROGRAMA PYP -->
-                <a class="{{ request()->routeIs('pyp.dashboard') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('pyp.dashboard') }}">
-                    <i class="ph ph-activity text-[22px] {{ request()->routeIs('pyp.dashboard') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Dashboard Riesgo</span>
-                </a>
-
-                <a class="{{ request()->routeIs('pyp.afiliados.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('pyp.afiliados.index') }}">
-                    <i class="ph ph-users-three text-[22px] {{ request()->routeIs('pyp.afiliados.*') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Buscador Clínico</span>
-                </a>
-
-                <a class="{{ request()->routeIs('pyp.programas.*') ? 'flex items-center gap-4 px-6 py-3 text-indigo-700 font-black bg-indigo-50/50 border-l-[3px] border-indigo-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('pyp.programas.index') }}">
-                    <i class="ph ph-folder-notched text-[22px] {{ request()->routeIs('pyp.programas.*') ? 'text-indigo-600' : 'group-hover/link:text-indigo-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Programas Base</span>
-                </a>
-                
-                <div class="px-6 pt-6 pb-2">
-                    <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Acciones Médicas</p>
-                </div>
-
-                <a class="flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-indigo-700 hover:bg-slate-50 rounded-r-xl transition-all group/link mb-2" href="{{ route('pyp.afiliados.index') }}">
-                    <i class="ph ph-plus-circle text-[22px] group-hover/link:text-indigo-700 text-slate-400"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Nueva Evaluación</span>
-                </a>
-            @elseif($isAsistencia)
-                <!-- MENU: ASISTENCIA -->
-                <a class="{{ request()->routeIs('asistencia.index') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.index') }}">
-                    <i class="ph ph-clock text-[22px] {{ request()->routeIs('asistencia.index') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reloj Checador</span>
-                </a>
-
-                <a class="{{ request()->routeIs('asistencia.permisos.*') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.permisos.index') }}">
-                    <i class="ph ph-envelope-open text-[22px] {{ request()->routeIs('asistencia.permisos.*') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Mis Permisos</span>
-                </a>
-
-                <a class="{{ request()->routeIs('asistencia.historial') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.historial') }}">
-                    <i class="ph ph-calendar-check text-[22px] {{ request()->routeIs('asistencia.historial') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                    <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Mi Historial</span>
-                </a>
-
-                @hasanyrole('Admin|Supervisor|Recursos Humanos')
-                    <div class="px-6 pt-6 pb-2">
-                        <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Administración</p>
-                    </div>
-
-                    <a class="{{ request()->routeIs('asistencia.dashboard') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.dashboard') }}">
-                        <i class="ph ph-chart-pie text-[22px] {{ request()->routeIs('asistencia.dashboard') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Dashboard Monitor</span>
-                    </a>
-
-                    <a class="{{ request()->routeIs('asistencia.permisos.bandeja') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.permisos.bandeja') }}">
-                        <i class="ph ph-tray text-[22px] {{ request()->routeIs('asistencia.permisos.bandeja') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Bandeja Aprobación</span>
-                    </a>
-
-                    <a class="{{ request()->routeIs('asistencia.reportes.*') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.reportes.index') }}">
-                        <i class="ph ph-file-csv text-[22px] {{ request()->routeIs('asistencia.reportes.*') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Reportes Analíticos</span>
-                    </a>
-
-                    <a class="{{ request()->routeIs('asistencia.configuracion.*') ? 'flex items-center gap-4 px-6 py-3 text-emerald-700 font-black bg-emerald-50/50 border-l-[3px] border-emerald-600 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-emerald-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('asistencia.configuracion.index') }}">
-                        <i class="ph ph-gear text-[22px] {{ request()->routeIs('asistencia.configuracion.*') ? 'text-emerald-600' : 'group-hover/link:text-emerald-700 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Configuración App</span>
-                    </a>
-                @endhasanyrole
-            @else
-                @if($isCMD)
-                    {{-- DASHBOARD GLOBAL --}}
-                    <x-nav-link route="carnetizacion.dashboard" icon="ph ph-chart-pie" label="Dashboard Principal" />
-
-                    {{-- GRUPO: ADMISIÓN --}}
-                    @can('manage_affiliates')
-                    <div class="space-y-1">
-                        <button @click="activeGroup = activeGroup === 'admision' ? '' : 'admision'" 
-                                :class="activeGroup === 'admision' ? 'text-blue-700 bg-slate-50' : 'text-slate-500'"
-                                class="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-50 rounded-xl transition-colors group">
-                            <div class="flex items-center gap-4">
-                                <i class="ph ph-user-plus text-[22px] group-hover:text-blue-600 transition-colors" :class="activeGroup === 'admision' ? 'text-blue-600' : ''"></i>
-                                <span class="text-[0.75rem] tracking-widest uppercase font-black text-slate-500 group-hover:text-blue-700 transition-colors" :class="activeGroup === 'admision' ? 'text-blue-700' : ''">Admisión</span>
-                            </div>
-                            <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'admision' ? 'rotate-180' : ''"></i>
-                        </button>
-                        <div x-show="activeGroup === 'admision'" x-collapse class="pl-4 space-y-1">
-                            <x-nav-link route="carnetizacion.import.index" icon="ph ph-upload-simple" label="Importar Excel" />
-                            <x-nav-link route="carnetizacion.afiliados.cmd" icon="ph ph-identification-card" label="CMD (Paso 1)" />
-                            <x-nav-link route="carnetizacion.afiliados.call_center" icon="ph ph-headset" label="Entrada Call Center" />
-                            <x-nav-link route="carnetizacion.afiliados.otros" icon="ph ph-users" label="Otros (Paso 1)" />
-                            <x-nav-link route="carnetizacion.afiliados.salida_inmediata" icon="ph ph-lightning" label="Salida Inmediata" />
-                        </div>
-                    </div>
-                    @endcan
-
-                    {{-- GRUPO: CALL CENTER --}}
-                    @can('manage_calls')
-                    <div class="space-y-1">
-                        <button @click="activeGroup = activeGroup === 'callcenter' ? '' : 'callcenter'" 
-                                :class="activeGroup === 'callcenter' ? 'text-blue-700 bg-slate-50' : 'text-slate-500'"
-                                class="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-50 rounded-xl transition-colors group">
-                            <div class="flex items-center gap-4">
-                                <i class="ph ph-headset text-[22px] group-hover:text-blue-600 transition-colors" :class="activeGroup === 'callcenter' ? 'text-blue-600' : ''"></i>
-                                <span class="text-[0.75rem] tracking-widest uppercase font-black text-slate-500 group-hover:text-blue-700 transition-colors" :class="activeGroup === 'callcenter' ? 'text-blue-700' : ''">Call Center</span>
-                            </div>
-                            <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'callcenter' ? 'rotate-180' : ''"></i>
-                        </button>
-                        <div x-show="activeGroup === 'callcenter'" x-collapse class="pl-4 space-y-1">
-                            <x-nav-link route="callcenter.dashboard" icon="ph ph-phone-call" label="Panel de Control" />
-                            <x-nav-link route="callcenter.worklist" icon="ph ph-list-bullets" label="Bandeja de Llamadas" />
-                        </div>
-                    </div>
-                    @endcan
-
-                    {{-- GRUPO: LOGÍSTICA --}}
-                    @can('manage_logistics')
-                    <div class="space-y-1">
-                        <button @click="activeGroup = activeGroup === 'logistica' ? '' : 'logistica'" 
-                                :class="activeGroup === 'logistica' ? 'text-blue-700 bg-slate-50' : 'text-slate-500'"
-                                class="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-50 rounded-xl transition-colors group">
-                            <div class="flex items-center gap-4">
-                                <i class="ph ph-truck text-[22px] group-hover:text-blue-600 transition-colors" :class="activeGroup === 'logistica' ? 'text-blue-600' : ''"></i>
-                                <span class="text-[0.75rem] tracking-widest uppercase font-black text-slate-500 group-hover:text-blue-700 transition-colors" :class="activeGroup === 'logistica' ? 'text-blue-700' : ''">Logística</span>
-                            </div>
-                            <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'logistica' ? 'rotate-180' : ''"></i>
-                        </button>
-                        <div x-show="activeGroup === 'logistica'" x-collapse class="pl-4 space-y-1">
-                            <x-nav-link route="carnetizacion.afiliados.index" icon="ph ph-users-four" label="Expedientes (Carnets)" />
-                            <x-nav-link route="lotes.index" icon="ph ph-package" label="Control de Lotes" />
-                            <x-nav-link route="cierre.index" icon="ph ph-lock-key" label="Cierre de Cortes" />
-                            <x-nav-link route="mensajeros.index" icon="ph ph-moped" label="Mensajeros" />
-                            <x-nav-link route="rutas.index" icon="ph ph-map-trifold" label="Rutas de Entrega" />
-                            <x-nav-link route="despachos.index" icon="ph ph-paper-plane-tilt" label="Despachos" />
-                        </div>
-                    </div>
-                    @endcan
-
-                    {{-- GRUPO: GESTIÓN --}}
-                    @can('manage_administration')
-                    <div class="space-y-1">
-                        <button @click="activeGroup = activeGroup === 'gestion' ? '' : 'gestion'" 
-                                :class="activeGroup === 'gestion' ? 'text-blue-700 bg-slate-50' : 'text-slate-500'"
-                                class="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-50 rounded-xl transition-colors group">
-                            <div class="flex items-center gap-4">
-                                <i class="ph ph-files text-[22px] group-hover:text-blue-600 transition-colors" :class="activeGroup === 'gestion' ? 'text-blue-600' : ''"></i>
-                                <span class="text-[0.75rem] tracking-widest uppercase font-black text-slate-500 group-hover:text-blue-700 transition-colors" :class="activeGroup === 'gestion' ? 'text-blue-700' : ''">Gestión</span>
-                            </div>
-                            <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'gestion' ? 'rotate-180' : ''"></i>
-                        </button>
-                        <div x-show="activeGroup === 'gestion'" x-collapse class="pl-4 space-y-1">
-                            <x-nav-link route="evidencias.index" icon="ph ph-camera" label="Evidencias Digitales" />
-                            <x-nav-link route="liquidacion.index" icon="ph ph-hand-coins" label="Liquidación" />
-                        </div>
-                    </div>
-                    @endcan
-
-                    {{-- GRUPO: REPORTES --}}
-                    @can('view_reports')
-                    <div class="space-y-1">
-                        <button @click="activeGroup = activeGroup === 'reportes' ? '' : 'reportes'" 
-                                :class="activeGroup === 'reportes' ? 'text-blue-700 bg-slate-50' : 'text-slate-500'"
-                                class="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-50 rounded-xl transition-colors group">
-                            <div class="flex items-center gap-4">
-                                <i class="ph ph-chart-pie-slice text-[22px] group-hover:text-blue-600 transition-colors" :class="activeGroup === 'reportes' ? 'text-blue-600' : ''"></i>
-                                <span class="text-[0.75rem] tracking-widest uppercase font-black text-slate-500 group-hover:text-blue-700 transition-colors" :class="activeGroup === 'reportes' ? 'text-blue-700' : ''">Reportes</span>
-                            </div>
-                            <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'reportes' ? 'rotate-180' : ''"></i>
-                        </button>
-                        <div x-show="activeGroup === 'reportes'" x-collapse class="pl-4 space-y-1">
-                            <x-nav-link route="reportes.index" icon="ph ph-chart-line-up" label="Estadísticas" />
-                            <x-nav-link route="reportes.produccion_traspasos" icon="ph ph-chart-bar" label="Producción Traspasos" />
-                            <x-nav-link route="reportes.supervision" icon="ph ph-eye" label="Supervisión" />
-                            <x-nav-link route="reportes.export_center" icon="ph ph-file-csv" label="Centro de Exportación" />
-                            <x-nav-link route="reportes.heatmap" icon="ph ph-globe-hemisphere-west" label="Mapa Global" />
-                        </div>
-                    </div>
-                    @endcan
-
-                    {{-- GRUPO: SISTEMA --}}
-                    @can('manage_system')
-                    <div class="space-y-1">
-                        <button @click="activeGroup = activeGroup === 'sistema' ? '' : 'sistema'" 
-                                :class="activeGroup === 'sistema' ? 'text-blue-700 bg-slate-50' : 'text-slate-500'"
-                                class="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-50 rounded-xl transition-colors group">
-                            <div class="flex items-center gap-4">
-                                <i class="ph ph-gear text-[22px] group-hover:text-blue-600 transition-colors" :class="activeGroup === 'sistema' ? 'text-blue-600' : ''"></i>
-                                <span class="text-[0.75rem] tracking-widest uppercase font-black text-slate-500 group-hover:text-blue-700 transition-colors" :class="activeGroup === 'sistema' ? 'text-blue-700' : ''">Sistema</span>
-                            </div>
-                            <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'sistema' ? 'rotate-180' : ''"></i>
-                        </button>
-                        <div x-show="activeGroup === 'sistema'" x-collapse class="pl-4 space-y-1">
-                            <x-nav-link route="sistema.empresas.index" icon="ph ph-buildings" label="Empresas" />
-                            <x-nav-link route="sistema.proveedores.index" icon="ph ph-truck" label="Proveedores" />
-                            <x-nav-link route="intranet.catalogo.index" icon="ph ph-books" label="Catálogo" />
-                            <x-nav-link route="admin.access.audit" icon="ph ph-clock-counter-clockwise" label="Auditoría" />
-                            <x-nav-link route="carnetizacion.sync_center.index" icon="ph ph-arrows-clockwise" label="Sync Center" />
-                            <x-nav-link route="sistema.backups.index" icon="ph ph-database" label="Copias de Seguridad" />
-                            <x-nav-link route="admin.updates.index" icon="ph ph-rocket-launch" label="Update Manager" />
-                            <x-nav-link route="admin.access.index" icon="ph ph-shield-checkered" label="Matriz de Accesos" />
-                        </div>
-                    </div>
-                    @endcan
-                @elseif($isAccessControl)
-                    @hasanyrole('Admin')
-                    <!-- MENU: SEGURIDAD / ACCESOS -->
-                    <div class="px-6 pt-2 pb-2">
-                        <p class="text-[0.65rem] font-black uppercase tracking-[0.25em] text-slate-400">Control Maestro</p>
-                    </div>
-
-                    <a class="{{ request()->routeIs('admin.access.users*') ? 'flex items-center gap-4 px-6 py-3 text-slate-900 font-black bg-slate-100 border-l-[3px] border-slate-900 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.access.users') }}">
-                        <i class="ph ph-users-three text-[22px] {{ request()->routeIs('admin.access.users*') ? 'text-slate-900' : 'group-hover/link:text-slate-900 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Gestión de Nómina</span>
-                    </a>
-
-                    <a class="{{ request()->routeIs('admin.access.apps*') ? 'flex items-center gap-4 px-6 py-3 text-slate-900 font-black bg-slate-100 border-l-[3px] border-slate-900 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.access.apps') }}">
-                        <i class="ph ph-squares-four text-[22px] {{ request()->routeIs('admin.access.apps*') ? 'text-slate-900' : 'group-hover/link:text-slate-900 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Módulos Instalados</span>
-                    </a>
-
-                    <a class="{{ request()->routeIs('admin.access.roles*') ? 'flex items-center gap-4 px-6 py-3 text-slate-900 font-black bg-slate-100 border-l-[3px] border-slate-900 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.access.roles') }}">
-                        <i class="ph ph-shield-star text-[22px] {{ request()->routeIs('admin.access.roles*') ? 'text-slate-900' : 'group-hover/link:text-slate-900 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Diccionario de Roles</span>
-                    </a>
-
-                    <a class="{{ request()->routeIs('admin.access.index') ? 'flex items-center gap-4 px-6 py-3 text-slate-900 font-black bg-slate-100 border-l-[3px] border-slate-900 shadow-sm rounded-r-xl transition-all' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-2" href="{{ route('admin.access.index') }}">
-                        <i class="ph ph-shield-checkered text-[22px] {{ request()->routeIs('admin.access.index') ? 'text-slate-900' : 'group-hover/link:text-slate-900 text-slate-400' }}"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold">Matriz de Accesos</span>
-                    </a>
-                    @endhasanyrole
-                @else
-                    <!-- Navigation Links (Suite Ejecutiva / Otros) -->
-                    <a class="{{ request()->routeIs('executive.suite') ? 'flex items-center gap-4 px-6 py-3 text-blue-700 font-black bg-blue-50/50 border-l-[3px] border-blue-600 shadow-sm rounded-r-xl transition-all relative overflow-hidden' : 'flex items-center gap-4 px-6 py-3 text-slate-500 hover:text-blue-700 hover:bg-slate-50 rounded-r-xl transition-all group/link' }} mb-4 mt-0.5" href="{{ route('reportes.executive.suite') }}">
-                        @if(request()->routeIs('executive.suite'))
-                            <div class="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent"></div>
-                        @endif
-                        <i class="ph ph-crown text-[22px] {{ request()->routeIs('executive.suite') ? 'text-blue-600' : 'group-hover/link:text-blue-700 text-slate-400' }} transition-colors relative z-10"></i>
-                        <span class="text-[0.75rem] tracking-widest uppercase font-extrabold relative z-10">Suite Ejecutiva</span>
-                    </a>
-
-                    {{-- Reportes removidos para comenzar desde cero --}}
-                @endif
-            @endif
+            @includeFirst([
+                "layouts.navigation.$currentApp",
+                "layouts.navigation.cmd"
+            ])
         </nav>
 
         <div class="px-6 mt-auto pt-6 border-t border-slate-100">
@@ -651,11 +274,12 @@
             </a>
         </div>
     </aside>
+    @endunless
 
     <!-- Main Canvas -->
-    <main class="ml-72 print:ml-0 min-h-screen">
+    <main class="{{ request()->routeIs('profile.edit') || request()->routeIs('autorizaciones.*') ? 'ml-0' : 'ml-72' }} print:ml-0 min-h-screen">
         <!-- TopNavBar Component -->
-        @if($isCMD || $isAfiliacion || $isPyp || $isTraspasos || $isCallCenter || $isDispersion || $isAsistencia)
+        @if(($isCMD || $isAfiliacion || $isPyp || $isTraspasos || $isCallCenter || $isDispersion || $isAsistencia) && !request()->routeIs('profile.edit') && !request()->routeIs('autorizaciones.*'))
         @php
             $hasActiveShift = false;
             if(auth()->check()) {
@@ -709,32 +333,41 @@
                     </div>
                 </div>
 
-                <!-- Strategic Navigation -->
-                <nav class="hidden xl:flex items-center gap-8">
-                    @php
-                        $moduleDashboard = match(true) {
-                            $isTraspasos => route('traspasos.dashboard'),
-                            $isAfiliacion => route('afiliacion.reports'),
-                            $isCallCenter => route('call-center.stats'),
-                            $isPyp => route('pyp.dashboard'),
-                            $isDispersion => route('dispersion.index'),
-                            $isAsistencia => route('asistencia.dashboard'),
-                            default => route('carnetizacion.dashboard'),
-                        };
-                        
-                        $isAtDashboard = request()->url() == $moduleDashboard;
-                    @endphp
+                    <!-- Strategic Navigation Contextual -->
+                    @if($isCMD)
+                        @php
+                            $moduleDashboard = route('carnetizacion.dashboard');
+                            $isAtDashboard = request()->routeIs('carnetizacion.dashboard');
+                        @endphp
 
-                    <a class="{{ $isAtDashboard ? 'text-blue-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-blue-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest flex items-center gap-2 py-6" href="{{ $moduleDashboard }}">
-                        <i class="ph ph-chart-pie-slice text-lg"></i> Dashboard
-                    </a>
+                        <a class="{{ $isAtDashboard ? 'text-blue-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-blue-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest flex items-center gap-2 py-6" href="{{ $moduleDashboard }}">
+                            <i class="ph ph-chart-pie-slice text-lg"></i> Dashboard
+                        </a>
 
-                    @can('manage_affiliates')
-                    <a class="{{ request()->routeIs('carnetizacion.afiliados.cmd') ? 'text-blue-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-blue-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest py-6" href="{{ route('carnetizacion.afiliados.cmd') }}">Afiliados</a>
-                    @endcan
-                    @can('manage_companies')
-                    <a class="{{ request()->routeIs('sistema.empresas.*') ? 'text-blue-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-blue-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest py-6" href="{{ route('sistema.empresas.index') }}">Empresas</a>
-                    @endcan
+                        @can('manage_affiliates')
+                        <a class="{{ request()->routeIs('carnetizacion.afiliados.cmd') ? 'text-blue-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-blue-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest py-6" href="{{ route('carnetizacion.afiliados.cmd') }}">Afiliados</a>
+                        @endcan
+                        @can('manage_companies')
+                        <a class="{{ request()->routeIs('sistema.empresas.*') ? 'text-blue-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-blue-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest py-6" href="{{ route('sistema.empresas.index') }}">Empresas</a>
+                        @endcan
+                    @elseif($isTraspasos)
+                        @php
+                            $moduleDashboard = route('traspasos.dashboard');
+                            $isAtDashboard = request()->routeIs('traspasos.dashboard');
+                        @endphp
+                        <a class="{{ $isAtDashboard ? 'text-amber-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-amber-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest flex items-center gap-2 py-6" href="{{ $moduleDashboard }}">
+                            <i class="ph ph-lightning text-lg"></i> Dashboard Traspasos
+                        </a>
+                        <a class="{{ request()->routeIs('traspasos.index') ? 'text-amber-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-amber-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest py-6" href="{{ route('traspasos.index') }}">Bandeja</a>
+                    @elseif($isCallCenter)
+                        <a class="{{ request()->routeIs('call-center.worklist') ? 'text-emerald-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-emerald-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest flex items-center gap-2 py-6" href="{{ route('call-center.worklist') }}">
+                            <i class="ph ph-headset text-lg"></i> Mi Consola
+                        </a>
+                    @elseif($isAfiliacion)
+                         <a class="{{ request()->routeIs('afiliacion.index') ? 'text-indigo-600 font-black relative after:content-[\'\'] after:absolute after:-bottom-[26px] after:left-0 after:w-full after:h-1 after:bg-indigo-600 after:rounded-full' : 'text-slate-400 font-bold hover:text-slate-900 transition-colors' }} text-[11px] uppercase tracking-widest flex items-center gap-2 py-6" href="{{ route('afiliacion.index') }}">
+                            <i class="ph ph-list-checks text-lg"></i> Bandeja Afiliación
+                        </a>
+                    @endif
                 </nav>
             </div>
             
@@ -924,6 +557,37 @@
                 </div>
             </div>
         </header>
+        @elseif($isDispersion)
+        <header class="no-print sticky top-0 z-40 bg-white/80 backdrop-blur-md h-16 px-8 flex justify-between items-center shadow-sm border-b border-slate-100">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 px-4 py-2 bg-slate-900 text-white rounded-2xl shadow-lg">
+                    <i class="ph-duotone ph-chart-pie-slice text-xl text-slate-400"></i>
+                    <span class="text-xs font-black uppercase tracking-widest">Control de Dispersión & Auditoría</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="text-right mr-4 hidden md:block">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Entorno Administrativo</p>
+                    <p class="text-[11px] font-bold text-slate-600">Gestión de Periodos</p>
+                </div>
+                @php $user = Auth::user(); @endphp
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="flex items-center gap-3 p-1 pr-4 bg-white rounded-full border border-slate-100 shadow-sm transition-all">
+                        <img src="{{ $user->avatar_url }}" class="w-8 h-8 rounded-full object-cover">
+                        <span class="text-[0.75rem] font-black text-slate-800">{{ $user->name }}</span>
+                        <i class="ph ph-caret-down text-[10px] text-slate-400 ml-1"></i>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" class="absolute right-0 mt-3 w-56 bg-white rounded-[32px] shadow-2xl border border-slate-100 z-50 overflow-hidden" x-cloak>
+                        <div class="p-2 text-left">
+                            <a href="{{ route('portal') }}" class="flex items-center gap-3 p-4 text-[0.75rem] font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-2xl transition-colors">
+                                <i class="ph ph-circles-four text-lg"></i> Volver al Portal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
         @elseif($isAccessControl)
         <header class="no-print sticky top-0 z-40 bg-white/80 backdrop-blur-md h-16 px-8 flex justify-between items-center shadow-sm border-b border-slate-100">
             <div class="flex items-center gap-4">
@@ -1086,10 +750,19 @@
 
                     searchTimeout = setTimeout(() => {
                         const quickActions = [
-                            { nombre: 'Nueva Empresa', url: '{{ route("sistema.empresas.create") }}', icon: 'add_business', keywords: ['nueva', 'crear', 'empresa'] },
-                            { nombre: 'Importar Excel', url: '{{ route("carnetizacion.import.index") }}', icon: 'upload_file', keywords: ['importar', 'excel', 'subir'] },
-                            { nombre: 'Ver Auditoría', url: '{{ route("admin.access.audit") }}', icon: 'history', keywords: ['auditoria', 'logs', 'historial'] },
-                            { nombre: 'Reporte Supervisión', url: '{{ route("reportes.supervision") }}', icon: 'monitoring', keywords: ['reporte', 'supervision', 'graficos'] }
+                            @if($isTraspasos)
+                                { nombre: 'Importar Unipago', url: '{{ route("traspasos.import") }}', icon: 'upload_file', keywords: ['importar', 'unipago', 'excel'] },
+                                { nombre: 'Bandeja Traspasos', url: '{{ route("traspasos.index") }}', icon: 'list', keywords: ['bandeja', 'traspasos', 'solicitudes'] },
+                                { nombre: 'Producción Traspasos', url: '{{ route("reportes.produccion_traspasos") }}', icon: 'monitoring', keywords: ['reporte', 'produccion', 'traspasos'] },
+                            @elseif($isAfiliacion)
+                                { nombre: 'Nueva Solicitud', url: '{{ route("afiliacion.create") }}', icon: 'add_circle', keywords: ['nueva', 'afiliacion', 'solicitud'] },
+                                { nombre: 'Bandeja Afiliación', url: '{{ route("afiliacion.index") }}', icon: 'list_alt', keywords: ['bandeja', 'afiliacion'] },
+                            @else
+                                { nombre: 'Nueva Empresa', url: '{{ route("sistema.empresas.create") }}', icon: 'add_business', keywords: ['nueva', 'crear', 'empresa'] },
+                                { nombre: 'Importar Excel', url: '{{ route("carnetizacion.import.index") }}', icon: 'upload_file', keywords: ['importar', 'excel', 'subir'] },
+                                { nombre: 'Ver Auditoría', url: '{{ route("admin.access.audit") }}', icon: 'history', keywords: ['auditoria', 'logs', 'historial'] },
+                                { nombre: 'Reporte Supervisión', url: '{{ route("reportes.supervision") }}', icon: 'monitoring', keywords: ['reporte', 'supervision', 'graficos'] }
+                            @endif
                         ];
 
                         const filteredActions = quickActions.filter(a => 

@@ -214,7 +214,12 @@
                                 <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-24 skeleton"></div></td>
                                 <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-32 skeleton"></div></td>
                                 <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-16 skeleton"></div></td>
-                                <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-24 skeleton"></div></td>
+                                <td class="py-2 px-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full bg-slate-100 skeleton"></div>
+                                        <div class="h-3 bg-slate-50 rounded w-16 skeleton"></div>
+                                    </div>
+                                </td>
                                 <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-20 skeleton"></div></td>
                                 <td class="py-2 px-4"><div class="h-3 bg-slate-50 rounded w-12 skeleton"></div></td>
                                 <td class="py-2 px-4"><div class="h-5 bg-slate-50 rounded-full w-20 skeleton"></div></td>
@@ -278,6 +283,13 @@
                             </td>
                             <td class="py-2 px-4">
                                 <div class="flex items-center gap-2">
+                                    @if($afiliado->responsable && $afiliado->responsable->user)
+                                        <img src="{{ $afiliado->responsable->user->avatar_url }}" alt="{{ $afiliado->responsable->nombre }}" class="w-6 h-6 rounded-full object-cover border border-slate-200 shadow-sm">
+                                    @else
+                                        <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 shadow-sm">
+                                            <span class="material-symbols-outlined text-[14px] text-slate-400">person</span>
+                                        </div>
+                                    @endif
                                     <span class="text-[0.7rem] text-slate-600 font-bold">{{ Str::limit($afiliado->responsable->nombre ?? 'Sin asignar', 15) }}</span>
                                 </div>
                             </td>

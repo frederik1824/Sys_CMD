@@ -38,12 +38,31 @@ class DispersionController extends Controller
         return $pdf->download($filename);
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $view = $request->query('view');
+
+        if ($view === 'history') {
+            return $this->history();
+        }
+
+        if ($view === 'reports') {
+            return $this->reports();
+        }
+
+        if ($view === 'config') {
+            return $this->config();
+        }
+
+        if ($view === 'cartera') {
+            return $this->cartera($request);
+        }
+
         $periods = DispersionPeriod::with(['createdBy', 'cortes'])
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
-            ->paginate(12);
+            ->paginate(12)
+            ->withQueryString();
 
         // Datos para el dashboard (Último mes consolidado)
         $latestPeriod = DispersionPeriod::orderBy('year', 'desc')
@@ -78,7 +97,8 @@ class DispersionController extends Controller
         $periods = DispersionPeriod::with(['createdBy', 'cortes'])
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return view('modules.admin.dispersion.history', compact('periods'));
     }
@@ -95,6 +115,43 @@ class DispersionController extends Controller
                 ->get();
 
         return view('modules.admin.dispersion.reports', compact('periods'));
+    }
+
+    /**
+     * Gestión de la Cartera Homologada de Pensionados.
+     */
+    public function cartera(Request $request)
+    {
+        $search = $request->query('search');
+
+        $query = \App\Models\Modules\Dispersion\PensionadoMaster::query();
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nombre_completo', 'like', "%{$search}%");
+                
+                $cleanSearch = preg_replace('/[^0-9]/', '', $search);
+                if (!empty($cleanSearch)) {
+                    $q->orWhereRaw("REPLACE(cedula, '-', '') LIKE ?", ["%{$cleanSearch}%"])
+                      ->orWhereRaw("REPLACE(nss, '-', '') LIKE ?", ["%{$cleanSearch}%"]);
+                }
+            });
+        }
+
+        // Estadísticas sobre el total de la consulta (antes de paginar)
+        $totalCartera = (clone $query)->count();
+        $totalActivos = (clone $query)->where('estado_sistema', 'ACTIVO')->count();
+        $totalEnProceso = (clone $query)->where('estado_sistema', 'EN PROCESO')->count();
+        $totalNuevos = (clone $query)->whereNull('notificado_at')->whereNotNull('ultimo_pago_confirmado_at')->count();
+
+        $pensionados = $query->orderBy('ultimo_pago_confirmado_at', 'desc')
+            ->orderBy('nombre_completo')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('modules.admin.dispersion.pensionados.cartera', compact(
+            'pensionados', 'search', 'totalCartera', 'totalActivos', 'totalEnProceso', 'totalNuevos'
+        ));
     }
 
     /**

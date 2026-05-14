@@ -17,6 +17,10 @@ class PortalController extends Controller
         $user = auth()->user();
         $isAdmin = $user->hasRole(['Admin', 'Super-Admin']);
 
+        // Obtener la versión actual del sistema
+        $latestUpdate = \App\Models\SystemUpdate::latest()->first();
+        $systemVersion = $latestUpdate ? $latestUpdate->version : '3.0.0';
+
         // 1. Obtener aplicaciones autorizadas para el usuario
         // Si es Admin, ve todas las aplicaciones activas
         // Si es usuario regular, ve las que tiene asignadas y están activas
@@ -66,6 +70,6 @@ class PortalController extends Controller
             'eficiencia' => 98
         ];
 
-        return view('portal.index', compact('modules', 'user', 'stats'));
+        return view('portal.index', compact('modules', 'user', 'stats', 'systemVersion'));
     }
 }
