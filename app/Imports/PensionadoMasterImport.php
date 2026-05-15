@@ -22,12 +22,12 @@ class PensionadoMasterImport implements ToModel, WithHeadingRow, WithValidation,
         $data = [
             'nss' => $row['nss'] ?? null,
             'nombre_completo' => strtoupper($row['nombre_completo']),
-            'fecha_nacimiento' => isset($row['fecha_nacimiento']) ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row['fecha_nacimiento']) : null,
+            'fecha_nacimiento' => $this->parseDate($row['fecha_nacimiento'] ?? null),
             'genero' => strtoupper($row['genero'] ?? null),
             'tipo_pension' => $row['tipo_pension'] ?? 'Titular',
             'institucion_pension' => $row['institucion_pension'] ?? null,
             'monto_pension' => $row['monto_pension'] ?? 0,
-            'estado_sistema' => 'ACTIVO',
+            'estado_sistema' => $row['estado_sistema'] ?? 'ACTIVO',
             'data_adicional' => [
                 'telefono' => $row['telefono'] ?? null,
                 'importado_at' => now()->toDateTimeString(),
@@ -51,6 +51,21 @@ class PensionadoMasterImport implements ToModel, WithHeadingRow, WithValidation,
             'cedula' => 'required',
             'nombre_completo' => 'required',
         ];
+    }
+
+    private function parseDate($value)
+    {
+        if (!$value) return null;
+
+        if (is_numeric($value)) {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value);
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     private function formatCedula($cedula)

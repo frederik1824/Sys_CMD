@@ -99,6 +99,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/configuracion', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'config'])->name('config');
             Route::post('/master', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'storeMaster'])->name('master.store');
             Route::post('/master/import', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'importMaster'])->name('master.import');
+            Route::get('/master/export', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'exportMaster'])->name('master.export');
             Route::get('/master/{pensionado}/history', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'historyMaster'])->name('master.history');
             Route::post('/master/{pensionado}/notified', [\App\Http\Controllers\Modules\Dispersion\DispersionController::class, 'markNotified'])->name('master.notified');
         });
@@ -219,7 +220,7 @@ Route::middleware('auth')->group(function () {
     // --------------------------------------------------------------------------
     Route::middleware('can:manage_evidencias')->group(function() {
             Route::get('evidencias', [\App\Http\Controllers\EvidenciaController::class, 'index'])->name('evidencias.index');
-            Route::post('evidencias/{evidencia}/status', [\App\Http\Controllers\EvidenciaController::class, 'updateStatus'])->name('evidencias.status');
+            Route::post('evidencias/{evidencia}/status', [\App\Http\Controllers\EvidenciaController::class, 'updateStatus'])->name('evidencias.status.update');
             Route::post('evidencias/physical', [\App\Http\Controllers\EvidenciaController::class, 'validatePhysical'])->name('evidencias.physical');
         });
 
@@ -404,6 +405,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [\App\Http\Controllers\ReporteController::class, 'index'])->name('index');
         Route::get('executive-suite', [\App\Http\Controllers\ExecutiveSuiteController::class, 'index'])->name('executive.suite');
         Route::get('ejecutivo', [\App\Http\Controllers\ExecutiveDashboardController::class, 'index'])->name('executive');
+        Route::get('ejecutivo/export/pdf', [\App\Http\Controllers\ExecutiveDashboardController::class, 'exportPdf'])->name('executive.export.pdf');
         Route::get('export-center', [\App\Http\Controllers\ReporteController::class, 'exportCenter'])->name('export_center');
         Route::get('resumen', [\App\Http\Controllers\ReporteController::class, 'resumenTable'])->name('resumen');
         Route::get('supervision', [\App\Http\Controllers\ReporteController::class, 'supervision'])->name('supervision');

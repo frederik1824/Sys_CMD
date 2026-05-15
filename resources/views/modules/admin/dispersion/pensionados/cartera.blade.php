@@ -32,6 +32,11 @@
                 Importación Masiva
             </button>
 
+            <a href="{{ route('dispersion.pensionados.master.export') }}" class="flex items-center gap-3 px-6 py-4 bg-amber-50 text-amber-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all border border-amber-100 shadow-lg shadow-amber-200/20 group">
+                <i class="ph-bold ph-file-arrow-down text-lg group-hover:translate-y-1 transition-transform"></i>
+                Exportar Cartera
+            </a>
+
             <button @click="showCreateModal = true" class="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 group">
                 <i class="ph-bold ph-plus-circle text-lg group-hover:rotate-90 transition-transform"></i>
                 Nuevo Pensionado
@@ -304,7 +309,7 @@
                     <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-3">Instrucciones de Formato:</h4>
                     <ul class="text-[11px] font-bold text-slate-600 space-y-2">
                         <li class="flex items-center gap-2"><i class="ph ph-check text-emerald-500"></i> Encabezados requeridos: <span class="text-indigo-600">cedula, nombre_completo</span></li>
-                        <li class="flex items-center gap-2"><i class="ph ph-check text-emerald-500"></i> Opcionales: <span class="text-slate-400">nss, fecha_nacimiento, genero, tipo_pension, institucion_pension, monto_pension, telefono</span></li>
+                        <li class="flex items-center gap-2"><i class="ph ph-check text-emerald-500"></i> Opcionales: <span class="text-slate-400">nss, fecha_nacimiento, genero, tipo_pension, institucion_pension, monto_pension, telefono, estado_sistema</span></li>
                         <li class="flex items-center gap-2"><i class="ph ph-info text-indigo-500"></i> Si el pensionado ya existe, sus datos se actualizarán.</li>
                     </ul>
                 </div>

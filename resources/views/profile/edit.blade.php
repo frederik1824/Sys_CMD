@@ -512,7 +512,7 @@
     <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" id="avatar-form">
         @csrf
         @method('patch')
-        <input type="file" name="avatar" id="avatar-sidebar-input" class="hidden" accept="image/*" onchange="syncAvatarPreview(this); submitAvatar();">
+        <input type="file" name="avatar" id="avatar-sidebar-input" class="hidden" accept="image/*" onchange="syncAvatarPreview(this);">
     </form>
 </div>
 

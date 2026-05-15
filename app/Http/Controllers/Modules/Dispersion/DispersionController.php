@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Imports\PensionadoMasterImport;
+use App\Exports\PensionadoMasterExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DispersionController extends Controller
@@ -220,6 +221,11 @@ class DispersionController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Error durante la importación: ' . $e->getMessage());
         }
+    }
+
+    public function exportMaster()
+    {
+        return Excel::download(new PensionadoMasterExport, 'cartera_pensionados_' . date('Ymd') . '.xlsx');
     }
 
     public function show($uuid)

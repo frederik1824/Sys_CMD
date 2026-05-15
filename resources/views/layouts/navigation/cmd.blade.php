@@ -31,7 +31,7 @@
             class="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-50 rounded-xl transition-colors group">
         <div class="flex items-center gap-4">
             <i class="ph ph-headset text-[22px] group-hover:text-blue-600 transition-colors" :class="activeGroup === 'callcenter' ? 'text-blue-600' : ''"></i>
-            <span class="text-[0.75rem] tracking-widest uppercase font-black text-slate-500 group-hover:text-blue-700 transition-colors" :class="activeGroup === 'callcenter' ? 'text-blue-700' : ''">Call Center</span>
+            <span class="text-[0.75rem] tracking-widest uppercase font-black text-slate-500 group-hover:text-blue-700 transition-colors" :class="activeGroup === 'callcenter' ? 'text-blue-700' : ''">Monitoreo de Cartera</span>
         </div>
         <i class="ph ph-caret-down text-sm transition-transform duration-300" :class="activeGroup === 'callcenter' ? 'rotate-180' : ''"></i>
     </button>

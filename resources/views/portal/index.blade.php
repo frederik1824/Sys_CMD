@@ -31,7 +31,7 @@
 
             <div class="flex items-center gap-6 bg-white/60 backdrop-blur-xl p-2 pr-6 rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200/20 group hover:border-[#00346f]/20 transition-all duration-500">
                 <div class="w-14 h-14 rounded-[24px] border-4 border-white shadow-2xl overflow-hidden group-hover:scale-105 transition-transform">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=00346f&color=fff" class="w-full h-full object-cover">
+                    <img src="{{ auth()->user()->avatar_url }}" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <span class="block text-sm font-black text-slate-900 leading-none mb-1 group-hover:text-[#00346f] transition-colors">{{ auth()->user()->name }}</span>

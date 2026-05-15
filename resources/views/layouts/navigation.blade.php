@@ -52,7 +52,7 @@
                     <x-nav-link :href="route('call-center.index')" :active="request()->routeIs('call-center.*')">
                         <span class="flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-lg leading-none">headset_mic</span>
-                            Call Center
+                            Monitoreo de Cartera
                         </span>
                     </x-nav-link>
                     @endif
@@ -141,7 +141,7 @@
                         Sync Center
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('call-center.index')" :active="request()->routeIs('call-center.*')">
-                        Call Center
+                        Monitoreo de Cartera
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('sistema.proveedores.index')" :active="request()->routeIs('proveedores.*')">
                         Proveedores

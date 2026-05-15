@@ -86,8 +86,8 @@ class AppContextService
                 'icon' => 'ph-list-checks'
             ],
             self::APP_CALL_CENTER => [
-                'name' => 'Call Center',
-                'type' => 'Gestión CRM',
+                'name' => 'Monitoreo de Cartera',
+                'type' => 'Gestión de Cartera',
                 'color' => 'emerald',
                 'icon' => 'ph-headset'
             ],

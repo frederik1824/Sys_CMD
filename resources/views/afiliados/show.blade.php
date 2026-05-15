@@ -130,7 +130,7 @@
                                 @if($afiliado->empresa_id)
                                     <a href="{{ route('sistema.empresas.show', $afiliado->empresaModel) }}" class="text-primary hover:underline flex items-center gap-1">
                                         <i class="fa-solid fa-building text-xs"></i>
-                                        {{ $afiliado->empresaModel->nombre ?? $afiliado->empresa }}
+                                        {{ $afiliado->empresaModel?->nombre ?? $afiliado->empresa }}
                                     </a>
                                 @else
                                     {{ $afiliado->empresa ?? 'No aplica' }}
@@ -181,10 +181,12 @@
                     <div class="flex items-center gap-2 bg-slate-50 p-1 pl-3 pr-1 rounded-full border border-slate-100 text-xs text-slate-500 font-semibold">
                         Responsable Actual:
                         @if($afiliado->responsable)
-                            <span class="bg-white shadow-sm border border-slate-200 px-3 py-1 rounded-full text-slate-700 font-bold flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[14px] text-primary">account_circle</span>
-                                {{ $afiliado->responsable?->nombre }}
-                            </span>
+                            <div class="flex items-center gap-2 bg-white shadow-sm border border-slate-200 pl-1 pr-3 py-1 rounded-full text-slate-700 font-bold transition-all hover:border-primary/30 group/resp">
+                                <div class="w-6 h-6 rounded-full overflow-hidden border border-slate-100">
+                                    <img src="{{ $afiliado->responsable?->user?->avatar_url }}" class="w-full h-full object-cover">
+                                </div>
+                                <span class="text-[11px]">{{ $afiliado->responsable?->nombre }}</span>
+                            </div>
                         @else
                             <span class="bg-white px-3 py-1 rounded-full text-slate-400">Sin asignar</span>
                         @endif
@@ -262,7 +264,7 @@
                                         Ver Documento
                                     </a>
                                 </div>
-                                <form action="{{ route('evidencias.update_status', $acuse->id) }}" method="POST" class="flex gap-1">
+                                <form action="{{ route('evidencias.status.update', $acuse->id) }}" method="POST" class="flex gap-1">
                                     @csrf
                                     <input type="hidden" name="status" value="valido">
                                     <button type="submit" class="flex-1 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-tighter transition-colors">Validar</button>
@@ -312,7 +314,7 @@
                                         Ver Documento
                                     </a>
                                 </div>
-                                <form action="{{ route('evidencias.update_status', $formulario->id) }}" method="POST" class="flex gap-1">
+                                <form action="{{ route('evidencias.status.update', $formulario->id) }}" method="POST" class="flex gap-1">
                                     @csrf
                                     <input type="hidden" name="status" value="valido">
                                     <button type="submit" class="flex-1 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-tighter transition-colors">Validar</button>
@@ -426,9 +428,9 @@
                                         </div>
                                     @else
                                         <div class="w-6 h-6 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-[8px] font-black text-white shadow-sm">
-                                            {{ strtoupper(substr($item['data']->user->name ?? 'S', 0, 1)) }}
+                                            {{ strtoupper(substr($item['data']->user?->name ?? 'S', 0, 1)) }}
                                         </div>
-                                        <span class="text-[0.7rem] font-bold text-slate-500">{{ $item['data']->user->name ?? 'Sistema Automático' }}</span>
+                                        <span class="text-[0.7rem] font-bold text-slate-500">{{ $item['data']->user?->name ?? 'Sistema Automático' }}</span>
                                     @endif
                                 </div>
                             </div>

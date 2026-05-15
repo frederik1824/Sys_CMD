@@ -16,9 +16,9 @@ use ZipArchive;
 
 class UpdateManagerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $updates = SystemUpdate::with('executor')->orderBy('build_number', 'desc')->get();
+        $updates = SystemUpdate::with('executor')->orderBy('build_number', 'desc')->paginate(10, ['*'], 'updates_page');
         $backups = SystemBackup::with('creator')->orderBy('created_at', 'desc')->get();
         $currentVersion = $updates->where('status', 'success')->first();
         $requirements = $this->checkRequirements();
@@ -32,8 +32,20 @@ class UpdateManagerController extends Controller
             $files = File::files($releasesPath);
             foreach ($files as $file) {
                 if ($file->getExtension() === 'zip') {
+                    $name = $file->getFilename();
+                    $version = 'N/A';
+                    $build = 'N/A';
+                    
+                    // Intentar extraer versión y build: SysCarnet_Release_v1.2.3_b45.zip
+                    if (preg_match('/_v([^_]+)_b([^\.]+)/', $name, $matches)) {
+                        $version = $matches[1];
+                        $build = $matches[2];
+                    }
+
                     $generatedReleases[] = [
-                        'name' => $file->getFilename(),
+                        'name' => $name,
+                        'version' => $version,
+                        'build' => $build,
                         'size' => round($file->getSize() / 1024 / 1024, 2) . ' MB',
                         'date' => date('d/m/Y H:i', $file->getMTime()),
                         'timestamp' => $file->getMTime()
@@ -45,6 +57,28 @@ class UpdateManagerController extends Controller
                 return $b['timestamp'] - $a['timestamp'];
             });
         }
+
+        $allDbUpdates = SystemUpdate::whereIn('build_number', array_column($generatedReleases, 'build'))->get()->keyBy('build_number');
+
+        foreach ($generatedReleases as &$release) {
+            if (isset($allDbUpdates[$release['build']])) {
+                $release['changelog'] = $allDbUpdates[$release['build']]->changelog;
+            } else {
+                $release['changelog'] = null;
+            }
+        }
+
+        // Paginación manual para el array de releases generados
+        $currentPage = $request->input('releases_page', 1);
+        $perPage = 10;
+        $pagedReleases = array_slice($generatedReleases, ($currentPage - 1) * $perPage, $perPage);
+        $generatedReleases = new \Illuminate\Pagination\LengthAwarePaginator(
+            $pagedReleases, 
+            count($generatedReleases), 
+            $perPage, 
+            $currentPage, 
+            ['path' => $request->url(), 'query' => $request->query(), 'pageName' => 'releases_page']
+        );
 
         return view('modules.admin.updates.index', compact(
             'updates', 'backups', 'currentVersion', 
@@ -65,7 +99,23 @@ class UpdateManagerController extends Controller
             ]);
 
             if ($exitCode === 0) {
-                return response()->json(['success' => true, 'message' => 'Paquete generado exitosamente en /releases']);
+                // Sincronizar la versión generada con el sistema local (Evitar la "fuga" de versiones)
+                $versionFile = base_path('version.json');
+                if (File::exists($versionFile)) {
+                    $versionInfo = json_decode(file_get_contents($versionFile), true);
+                    
+                    SystemUpdate::create([
+                        'version' => $versionInfo['version'],
+                        'build_number' => $versionInfo['build'],
+                        'type' => 'release_gen', // Tipo especial para generación
+                        'changelog' => 'Generación de Release: ' . $changelog,
+                        'status' => 'success',
+                        'completed_at' => now(),
+                        'executed_by' => auth()->id(),
+                    ]);
+                }
+
+                return response()->json(['success' => true, 'message' => 'Paquete generado exitosamente en /releases. La versión del sistema ha sido actualizada.']);
             }
 
             throw new \Exception("Error al ejecutar el empaquetador.");

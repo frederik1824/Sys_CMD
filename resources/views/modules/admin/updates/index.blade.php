@@ -174,6 +174,79 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- HISTORIAL DE ACTUALIZACIONES APLICADAS -->
+                <div class="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <div>
+                            <h3 class="text-lg font-black text-slate-900 tracking-tight">Historial de Aplicación</h3>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Registro cronológico de parches instalados</p>
+                        </div>
+                        <span class="px-4 py-2 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-xl">
+                            {{ $updates->total() }} Registros
+                        </span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-slate-50/50">
+                                    <th class="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Versión / Build</th>
+                                    <th class="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tipo</th>
+                                    <th class="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                                    <th class="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ejecutado Por</th>
+                                    <th class="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha / Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @foreach($updates as $update)
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="px-10 py-6">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
+                                                    <i class="ph-bold ph-hash"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-black text-slate-800">{{ $update->version }}</p>
+                                                    <p class="text-[10px] font-bold text-slate-400 uppercase">Build: {{ $update->build_number }}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-10 py-6">
+                                            <span class="text-[10px] font-black uppercase px-3 py-1 bg-slate-100 text-slate-600 rounded-lg">
+                                                {{ $update->type }}
+                                            </span>
+                                        </td>
+                                        <td class="px-10 py-6">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-2 h-2 rounded-full {{ $update->status === 'success' ? 'bg-emerald-500' : 'bg-rose-500' }}"></div>
+                                                <span class="text-[10px] font-black uppercase {{ $update->status === 'success' ? 'text-emerald-600' : 'text-rose-600' }}">
+                                                    {{ $update->status }}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="px-10 py-6">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-black text-blue-600 uppercase">
+                                                    {{ substr($update->executor->name ?? 'S', 0, 1) }}
+                                                </div>
+                                                <span class="text-xs font-bold text-slate-600">{{ $update->executor->name ?? 'System' }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-10 py-6">
+                                            <p class="text-xs font-bold text-slate-500">{{ $update->completed_at ? $update->completed_at->format('d/m/Y H:i') : $update->created_at->format('d/m/Y H:i') }}</p>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    @if($updates->hasPages())
+                        <div class="p-10 bg-slate-50/30 border-t border-slate-100">
+                            {{ $updates->appends(request()->except('updates_page'))->fragment('releases')->links() }}
+                        </div>
+                    @endif
+                </div>
             </div>
 
             <!-- SECCIÓN: SALUD -->
@@ -388,24 +461,82 @@
                         </button>
                     </div>
 
-                    <div class="bg-blue-50 rounded-[40px] p-10 border border-blue-100">
-                        <h4 class="text-xs font-black text-blue-900 uppercase tracking-widest mb-4">Output de Releases</h4>
+                    <div class="bg-blue-50 rounded-[40px] p-6 lg:p-8 border border-blue-100">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="text-xs font-black text-blue-900 uppercase tracking-widest">Output de Releases</h4>
+                            <span class="text-[9px] font-bold text-blue-400 bg-white px-2 py-1 rounded-lg border border-blue-100 shrink-0">Paginado</span>
+                        </div>
                         <div class="space-y-4">
                             @foreach($generatedReleases as $release)
-                                <div class="p-4 bg-white rounded-2xl border border-blue-200 flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <i class="ph-bold ph-file-zip text-blue-500 text-xl"></i>
-                                        <div class="min-w-0">
-                                            <p class="text-[10px] font-black text-slate-800 truncate max-w-[120px]">{{ $release['name'] }}</p>
-                                            <p class="text-[8px] font-bold text-slate-400 uppercase">{{ $release['size'] }}</p>
+                                <div class="bg-white rounded-3xl border border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all group overflow-hidden" x-data="{ open: false }">
+                                    <div class="p-4 flex items-center justify-between gap-3">
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                <i class="ph-bold ph-file-zip text-xl"></i>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="flex items-center gap-2 mb-0.5">
+                                                    <span class="text-[10px] font-black text-slate-800">v{{ $release['version'] }}</span>
+                                                    <span class="text-[8px] font-bold text-slate-400 uppercase">B{{ $release['build'] }}</span>
+                                                </div>
+                                                <p class="text-[9px] font-bold text-slate-400 uppercase truncate">{{ $release['date'] }} • {{ $release['size'] }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-1 shrink-0">
+                                            @if($release['changelog'])
+                                                <button @click="open = !open" class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-amber-100 hover:text-amber-600 transition-all">
+                                                    <i class="ph-bold ph-note-pencil text-base"></i>
+                                                </button>
+                                            @endif
+                                            <a href="{{ route('admin.updates.download_release', $release['name']) }}" class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
+                                                <i class="ph-bold ph-download-simple text-base"></i>
+                                            </a>
                                         </div>
                                     </div>
-                                    <a href="{{ route('admin.updates.download_release', $release['name']) }}" class="text-blue-600 hover:text-blue-900 transition-colors">
-                                        <i class="ph-bold ph-download-simple text-lg"></i>
-                                    </a>
+                                    
+                                    @if($release['changelog'])
+                                        <div x-show="open" x-collapse class="px-4 pb-4 border-t border-slate-50 bg-slate-50/30">
+                                            <div class="pt-3">
+                                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Notas del Cambio</p>
+                                                <div class="text-[10px] text-slate-600 font-medium leading-relaxed italic">
+                                                    {{ $release['changelog'] }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
+
+                            @if($generatedReleases->isEmpty())
+                                <div class="text-center py-10">
+                                    <i class="ph ph-ghost text-4xl text-blue-200 mb-2"></i>
+                                    <p class="text-[10px] font-black text-blue-300 uppercase tracking-widest">Sin releases generados</p>
+                                </div>
+                            @endif
                         </div>
+
+                        <!-- PAGINACIÓN DE RELEASES -->
+                        @if($generatedReleases->hasPages())
+                            <div class="mt-6 flex justify-center">
+                                <div class="inline-flex items-center gap-1 p-1.5 bg-white rounded-2xl border border-blue-100 shadow-sm">
+                                    @if ($generatedReleases->onFirstPage())
+                                        <span class="p-1.5 text-slate-300 cursor-not-allowed opacity-50"><i class="ph-bold ph-caret-left"></i></span>
+                                    @else
+                                        <a href="{{ $generatedReleases->previousPageUrl() }}#packer" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph-bold ph-caret-left"></i></a>
+                                    @endif
+
+                                    <span class="text-[9px] font-black text-slate-600 px-3">
+                                        {{ $generatedReleases->currentPage() }} / {{ $generatedReleases->lastPage() }}
+                                    </span>
+
+                                    @if ($generatedReleases->hasMorePages())
+                                        <a href="{{ $generatedReleases->nextPageUrl() }}#packer" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph-bold ph-caret-right"></i></a>
+                                    @else
+                                        <span class="p-1.5 text-slate-300 cursor-not-allowed opacity-50"><i class="ph-bold ph-caret-right"></i></span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

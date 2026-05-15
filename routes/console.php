@@ -45,3 +45,6 @@ Schedule::command('firebase:auto-midnight-sync')
 Schedule::call(function () {
     \Illuminate\Support\Facades\Cache::put('cron_last_heartbeat', now());
 })->everyMinute();
+
+// Warm up Executive Dashboard Cache
+Schedule::job(new \App\Jobs\WarmExecutiveDashboardCache)->everyFifteenMinutes();

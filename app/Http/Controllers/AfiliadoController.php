@@ -524,6 +524,20 @@ class AfiliadoController extends Controller
         }
     }
 
+    public function reopen(Request $request, Afiliado $afiliado)
+    {
+        $request->validate([
+            'motivo' => 'required|string|min:10',
+        ]);
+
+        try {
+            $this->afiliadoService->reopen($afiliado, $request->motivo, auth()->id());
+            return back()->with('success', 'El expediente ha sido reabierto exitosamente.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
     public function bulkAssign(Request $request)
     {
         $request->validate([
